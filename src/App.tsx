@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './hooks/useAuth'
+import { DemoProvider, useDemoIfAvailable } from './hooks/useDemo'
+import DevToolbar from './components/DevToolbar'
 import ClientLayout from './components/layout/ClientLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/client/Dashboard'
@@ -13,7 +15,6 @@ import DgPage from './pages/respondent/DgPage'
 import JournalPage from './pages/client/JournalPage'
 import MessagesPage from './pages/client/MessagesPage'
 import SondageSuiviPage from './pages/client/SondageSuiviPage'
-// Diagnostic sections are now lazy-loaded via DiagnosticSectionPage
 import AdminLayout from './components/layout/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminDiagnosticDetail from './pages/admin/AdminDiagnosticDetail'
@@ -27,8 +28,11 @@ import {
 
 function AppRoutes() {
   const { user, loading } = useAuth()
+  const demo = useDemoIfAvailable()
+  const isDemo = demo?.enabled ?? false
+  const isAuthenticated = isDemo || !!user
 
-  if (loading) {
+  if (loading && !isDemo) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
@@ -43,50 +47,57 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
-      
-      {/* Espace Client */}
-      <Route element={user ? <ClientLayout /> : <Navigate to="/login" />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/questionnaire" element={<QuestionnairePage />} />
-        <Route path="/questionnaire/1" element={<QuestionnaireBloc1 />} />
-        <Route path="/questionnaire/2" element={<QuestionnaireBloc2 />} />
-        <Route path="/questionnaire/3" element={<QuestionnaireBloc3 />} />
-        <Route path="/questionnaire/4" element={<QuestionnaireBloc4 />} />
-        <Route path="/questionnaire/:blockId" element={<QuestionnaireBlock />} />
-        <Route path="/sondage" element={<SondageSuiviPage />} />
-        <Route path="/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
-        <Route path="/journal" element={<JournalPage />} />
-        <Route path="/messages" element={<MessagesPage />} />
-        <Route path="/aide" element={<AidePage />} />
-      </Route>
+    <>
+      <Routes>
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
+        
+        {/* Espace Client */}
+        <Route element={isAuthenticated ? <ClientLayout /> : <Navigate to="/login" />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/questionnaire" element={<QuestionnairePage />} />
+          <Route path="/questionnaire/1" element={<QuestionnaireBloc1 />} />
+          <Route path="/questionnaire/2" element={<QuestionnaireBloc2 />} />
+          <Route path="/questionnaire/3" element={<QuestionnaireBloc3 />} />
+          <Route path="/questionnaire/4" element={<QuestionnaireBloc4 />} />
+          <Route path="/questionnaire/:blockId" element={<QuestionnaireBlock />} />
+          <Route path="/sondage" element={<SondageSuiviPage />} />
+          <Route path="/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
+          <Route path="/journal" element={<JournalPage />} />
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/aide" element={<AidePage />} />
+        </Route>
 
-      {/* Espace Répondant (public) */}
-      <Route path="/sondage/:token" element={<SurveyPage />} />
-      <Route path="/dg/:token" element={<DgPage />} />
+        {/* Espace Répondant (public) */}
+        <Route path="/sondage/:token" element={<SurveyPage />} />
+        <Route path="/dg/:token" element={<DgPage />} />
 
-      {/* Espace Admin */}
-      <Route element={<AdminLayout />}>
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/diagnostics/:id" element={<AdminDiagnosticDetail />} />
-        <Route path="/admin/stats" element={<AdminStats />} />
-        <Route path="/admin/new" element={<NewDiagnostic />} />
-        <Route path="/admin/settings" element={<div className="p-8"><h1 className="text-2xl font-bold">Paramètres</h1><p className="text-sm mt-2" style={{ color: 'var(--color-texte-secondary)' }}>À implémenter.</p></div>} />
-      </Route>
+        {/* Espace Admin */}
+        <Route element={isAuthenticated || isDemo ? <AdminLayout /> : <Navigate to="/login" />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/diagnostics/:id" element={<AdminDiagnosticDetail />} />
+          <Route path="/admin/stats" element={<AdminStats />} />
+          <Route path="/admin/new" element={<NewDiagnostic />} />
+          <Route path="/admin/settings" element={<div className="p-8"><h1 className="text-2xl font-bold">Paramètres</h1><p className="text-sm mt-2" style={{ color: 'var(--color-texte-secondary)' }}>À implémenter.</p></div>} />
+        </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+
+      {/* Dev toolbar — always rendered, self-hides when demo off */}
+      <DevToolbar />
+    </>
   )
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <DemoProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </DemoProvider>
     </BrowserRouter>
   )
 }
