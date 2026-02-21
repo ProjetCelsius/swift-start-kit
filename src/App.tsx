@@ -6,6 +6,7 @@ import Dashboard from './pages/client/Dashboard'
 import QuestionnaireBloc1 from './pages/client/QuestionnaireBloc1'
 import QuestionnaireBloc2 from './pages/client/QuestionnaireBloc2'
 import QuestionnaireBloc3 from './pages/client/QuestionnaireBloc3'
+import QuestionnaireBloc4 from './pages/client/QuestionnaireBloc4'
 import QuestionnaireBlock from './pages/client/QuestionnaireBlock'
 import {
   QuestionnairePage,
@@ -44,6 +45,7 @@ function AppRoutes() {
         <Route path="/questionnaire/1" element={<QuestionnaireBloc1 />} />
         <Route path="/questionnaire/2" element={<QuestionnaireBloc2 />} />
         <Route path="/questionnaire/3" element={<QuestionnaireBloc3 />} />
+        <Route path="/questionnaire/4" element={<QuestionnaireBloc4 />} />
         <Route path="/questionnaire/:blockId" element={<QuestionnaireBlock />} />
         <Route path="/sondage" element={<SondagePage />} />
         <Route path="/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
