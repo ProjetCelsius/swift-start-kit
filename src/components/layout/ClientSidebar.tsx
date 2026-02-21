@@ -57,10 +57,10 @@ export default function ClientSidebar({
   const orgName = isDemo && diag ? diag.organization.name : (user?.organization_id ? 'TechVert Solutions' : 'Mon entreprise')
 
   const questionnaireSections: NavItem['children'] = [
-    { key: 'bloc1', label: 'Votre démarche', path: '/questionnaire/1', status: getBlockStatus(1) },
-    { key: 'bloc2', label: 'Votre maturité', path: '/questionnaire/2', status: getBlockStatus(2) },
-    { key: 'bloc3', label: 'Vos enjeux', path: '/questionnaire/3', status: getBlockStatus(3) },
-    { key: 'bloc4', label: 'La perception', path: '/questionnaire/4', status: getBlockStatus(4) },
+    { key: 'bloc1', label: 'Votre démarche', path: '/client/questionnaire/bloc1', status: getBlockStatus(1) },
+    { key: 'bloc2', label: 'Votre maturité', path: '/client/questionnaire/bloc2', status: getBlockStatus(2) },
+    { key: 'bloc3', label: 'Vos enjeux', path: '/client/questionnaire/bloc3', status: getBlockStatus(3) },
+    { key: 'bloc4', label: 'La perception', path: '/client/questionnaire/bloc4', status: getBlockStatus(4) },
   ]
 
   function getBlockStatus(block: number): string {
@@ -69,15 +69,15 @@ export default function ClientSidebar({
   }
 
   const diagnosticSections: NavItem[] = [
-    { key: 'synthese', label: 'Synthèse éditoriale', path: '/diagnostic/1', icon: <FileText size={18} />, locked: !diagnosticUnlocked },
-    { key: 'priorites', label: 'Ce que nous ferions', path: '/diagnostic/2', icon: <Target size={18} />, locked: !diagnosticUnlocked },
-    { key: 'maturite', label: 'Score de maturité', path: '/diagnostic/3', icon: <BarChart3 size={18} />, locked: !diagnosticUnlocked },
-    { key: 'ecarts', label: 'Écarts de perception', path: '/diagnostic/4', icon: <GitCompare size={18} />, locked: !diagnosticUnlocked },
-    { key: 'capital', label: 'Capital humain', path: '/diagnostic/5', icon: <UserCheck size={18} />, locked: !diagnosticUnlocked },
-    { key: 'empreinte', label: 'Empreinte carbone', path: '/diagnostic/6', icon: <Leaf size={18} />, locked: !diagnosticUnlocked },
-    { key: 'echeances', label: 'Vos échéances', path: '/diagnostic/7', icon: <Calendar size={18} />, locked: !diagnosticUnlocked },
-    { key: 'avancement', label: "Profil d'avancement", path: '/diagnostic/8', icon: <CheckSquare size={18} />, locked: !diagnosticUnlocked },
-    { key: 'etapes', label: 'Prochaines étapes', path: '/diagnostic/9', icon: <ArrowRight size={18} />, locked: !diagnosticUnlocked },
+    { key: 'synthese', label: 'Synthèse éditoriale', path: '/client/diagnostic/1', icon: <FileText size={18} />, locked: !diagnosticUnlocked },
+    { key: 'priorites', label: 'Ce que nous ferions', path: '/client/diagnostic/2', icon: <Target size={18} />, locked: !diagnosticUnlocked },
+    { key: 'maturite', label: 'Score de maturité', path: '/client/diagnostic/3', icon: <BarChart3 size={18} />, locked: !diagnosticUnlocked },
+    { key: 'ecarts', label: 'Écarts de perception', path: '/client/diagnostic/4', icon: <GitCompare size={18} />, locked: !diagnosticUnlocked },
+    { key: 'capital', label: 'Capital humain', path: '/client/diagnostic/5', icon: <UserCheck size={18} />, locked: !diagnosticUnlocked },
+    { key: 'empreinte', label: 'Empreinte carbone', path: '/client/diagnostic/6', icon: <Leaf size={18} />, locked: !diagnosticUnlocked },
+    { key: 'echeances', label: 'Vos échéances', path: '/client/diagnostic/7', icon: <Calendar size={18} />, locked: !diagnosticUnlocked },
+    { key: 'avancement', label: "Profil d'avancement", path: '/client/diagnostic/8', icon: <CheckSquare size={18} />, locked: !diagnosticUnlocked },
+    { key: 'etapes', label: 'Prochaines étapes', path: '/client/diagnostic/9', icon: <ArrowRight size={18} />, locked: !diagnosticUnlocked },
   ]
 
   return (
@@ -140,12 +140,12 @@ export default function ClientSidebar({
         {/* Questionnaire */}
         <div className="mb-1">
           <SidebarNavItem
-            to="/questionnaire"
+            to="/client/questionnaire/bloc1"
             icon={<ClipboardList size={18} />}
             label="Questionnaire"
-            active={location.pathname.startsWith('/questionnaire')}
+            active={location.pathname.startsWith('/client/questionnaire')}
           />
-          {location.pathname.startsWith('/questionnaire') && (
+          {location.pathname.startsWith('/client/questionnaire') && (
             <div className="ml-8 mt-1 space-y-0.5">
               {questionnaireSections.map(child => (
                 <NavLink
@@ -167,11 +167,11 @@ export default function ClientSidebar({
 
         {/* Sondage */}
         <SidebarNavItem
-          to="/sondage"
+          to="/client/sondage"
           icon={<Users size={18} />}
           label="Sondage interne"
           badge={surveyCount > 0 ? `${surveyCount}` : undefined}
-          active={location.pathname === '/sondage'}
+          active={location.pathname === '/client/sondage'}
         />
 
         <div className="mx-2 my-3" style={{ borderTop: '1px solid var(--color-border-light)' }} />
@@ -195,18 +195,18 @@ export default function ClientSidebar({
       {/* Bottom nav */}
       <div className="px-3 pb-4 space-y-0.5">
         <SidebarNavItem
-          to="/journal"
+          to="/client/journal"
           icon={<BookOpen size={18} />}
           label="Journal de bord"
           badge={hasNewJournal ? '•' : undefined}
-          active={location.pathname === '/journal'}
+          active={location.pathname === '/client/journal'}
         />
         <SidebarNavItem
-          to="/messages"
+          to="/client/messages"
           icon={<MessageSquare size={18} />}
           label="Messagerie"
           badge={hasNewMessages ? '•' : undefined}
-          active={location.pathname === '/messages'}
+          active={location.pathname === '/client/messages'}
         />
         <button
           className="flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg hover:bg-[var(--color-gris-100)] disabled:opacity-40 disabled:cursor-not-allowed"
@@ -218,7 +218,7 @@ export default function ClientSidebar({
           Exporter en PDF
         </button>
         <NavLink
-          to="/aide"
+          to="/client/aide"
           className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-[var(--color-gris-100)]"
           style={{ color: 'var(--color-texte-secondary)' }}
         >
