@@ -1,27 +1,87 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Check, Pencil, Eye, Sparkles } from 'lucide-react'
-import { MOCK_DIAGNOSTICS, STATUS_CONFIG, type DiagnosticStatus } from '@/data/mockAdminData'
+import { ChevronLeft, Check, Clock, Circle, Pencil, Sparkles, Lock, Eye, Send } from 'lucide-react'
+import { MOCK_DIAGNOSTICS, STATUS_CONFIG } from '@/data/mockAdminData'
+import { mockDiagnostic } from '@/data/mockDiagnosticData'
 
-const TABS = ['Résumé', 'Réponses client', 'Sondage & DG', 'Diagnostic', 'Journal']
-
-const CHECKLIST_LABELS: Record<string, string> = {
-  appel_lancement: 'Appel de lancement réalisé',
-  bloc1: 'Bloc 1 complété',
-  bloc2: 'Bloc 2 complété',
-  bloc3: 'Bloc 3 complété',
-  bloc4: 'Bloc 4 complété',
-  sondage: 'Sondage lancé',
-  dg: 'Questionnaire DG reçu',
-  ia_generated: 'Diagnostic généré par IA',
-  validated: 'Diagnostic relu et validé',
-  restitution_planned: 'Restitution planifiée',
-  unlocked: 'Diagnostic déverrouillé',
-}
+const TABS = ['Questionnaire', 'Réponses', 'Sondage & DG', 'Diagnostic', 'Journal']
 
 const SECTION_NAMES = [
-  'Synthèse éditoriale', 'Priorités', 'Score de maturité', 'Écarts de perception',
-  'Capital humain', 'Empreinte carbone', 'Échéances clés', "Profil d'avancement", 'Prochaines étapes',
+  'Synthèse et recommandations', 'Vos 3 priorités', 'Votre maturité climat',
+  'Écarts de perception', 'Dimensionnement', 'Empreinte carbone',
+  'Échéances réglementaires', 'Cartographie des démarches', 'Feuille de route',
+]
+
+const BLOC_NAMES = ['Votre démarche', 'Votre maturité', 'Vos enjeux', 'La perception']
+const BLOC_COMPLETION = ['12 janv. 2026', '15 janv. 2026', '18 janv. 2026', '20 janv. 2026']
+
+// Mock questionnaire answers
+const MOCK_ANSWERS: Record<string, { q: string; a: string; score?: number }[]> = {
+  bloc1: [
+    { q: 'Stratégie RSE formalisée ?', a: 'Bien engagé', score: 4 },
+    { q: 'Sujet porté par la DG ?', a: 'Bien engagé', score: 4 },
+    { q: 'Ressources dédiées ?', a: 'Modérément', score: 3 },
+    { q: 'Bilan carbone réalisé ?', a: 'Bien engagé', score: 4 },
+    { q: 'Communication régulière ?', a: 'Modérément', score: 3 },
+    { q: 'Principaux freins', a: 'Manque de temps et de ressources internes dédiées. La RSE est portée par une seule personne.' },
+  ],
+  bloc2: [
+    { q: 'Gouvernance climat', a: 'Score : 73/100', score: 73 },
+    { q: 'Mesure et données', a: 'Score : 67/100', score: 67 },
+    { q: 'Stratégie et trajectoire', a: 'Score : 53/100', score: 53 },
+    { q: 'Culture et engagement', a: 'Score : 47/100', score: 47 },
+  ],
+  bloc3: [
+    { q: 'Moteurs principaux', a: 'Conformité réglementaire, Réduction des coûts, Conviction direction' },
+    { q: 'Frein principal', a: 'Difficulté à mesurer le ROI' },
+    { q: 'CSRD', a: 'Déjà concerné' },
+    { q: 'BEGES', a: 'Déjà concerné' },
+    { q: 'Perte d\'appel d\'offres ?', a: 'Non' },
+    { q: 'Carte blanche', a: 'Notre principal défi est de convaincre les équipes opérationnelles que le climat n\'est pas un frein au business.' },
+    { q: 'Ambition', a: 'Devenir la référence RSE du secteur d\'ici 2028.' },
+  ],
+  bloc4: [
+    { q: 'Direction engagée (P1)', a: '8.2 / 10', score: 8 },
+    { q: 'Moyens suffisants (P2)', a: '5.5 / 10', score: 6 },
+    { q: 'Objectifs clairs (P3)', a: '7.0 / 10', score: 7 },
+    { q: 'Prédiction engagement', a: 'Moteurs 10%, Engagés 25%, Indifférents 40%, Sceptiques 20%, Réfractaires 5%' },
+  ],
+}
+
+// Mock survey data
+const SURVEY_AFFIRMATIONS = [
+  'Direction engagée', 'Moyens suffisants', 'Objectifs clairs', 'Équipes impliquées',
+  'Progrès réels', 'Climat = opportunité', 'Managers relaient', 'Communication honnête',
+]
+const SURVEY_SCORES = {
+  direction: [8.5, 6.2, 7.1, 7.0, 6.8, 7.5, 5.5, 7.0],
+  managers: [5.8, 4.0, 4.2, 5.5, 5.0, 5.2, 3.8, 4.5],
+  collaborateurs: [4.5, 3.5, 2.8, 5.2, 4.5, 4.8, 2.5, 3.8],
+  moyenne: [5.1, 3.8, 3.2, 5.5, 4.9, 5.2, 2.8, 4.1],
+}
+
+const MOCK_VERBATIMS = [
+  { text: 'On nous demande de trier nos déchets mais les camions prennent tout ensemble.', population: 'Collaborateur' },
+  { text: 'J\'aimerais comprendre ce que l\'entreprise fait concrètement.', population: 'Collaborateur' },
+  { text: 'Le sujet est important mais on n\'a pas le temps.', population: 'Manager' },
+  { text: 'La direction devrait montrer l\'exemple sur les déplacements.', population: 'Collaborateur' },
+  { text: 'Très content que l\'entreprise prenne ça au sérieux.', population: 'Direction' },
+]
+
+const MOCK_DG_ANSWERS = [
+  { q: 'Gouvernance climat', a: 'Sujet délégué avec reporting' },
+  { q: 'Budget annuel climat', a: '50-100k€' },
+  { q: 'Horizon ROI attendu', a: '1-3 ans' },
+  { q: 'Bénéfice principal', a: 'Réduction des coûts' },
+  { q: 'Adéquation des moyens (1-10)', a: '6 / 10' },
+]
+
+const MOCK_JOURNAL = [
+  { id: '1', author: 'analyst' as const, name: 'Claire Dubois', initials: 'CD', date: '14 fév.', text: 'Questionnaire complété, 23 répondants au sondage. Je lance l\'analyse.', badge: 'Étape : Analyse', internal: false },
+  { id: '2', author: 'analyst' as const, name: 'Claire Dubois', initials: 'CD', date: '12 fév.', text: 'Les écarts de perception sur P3 (objectifs clairs) sont significatifs : 7.0 RSE vs 3.2 terrain. À creuser dans la synthèse.', badge: null, internal: true },
+  { id: '3', author: 'analyst' as const, name: 'Claire Dubois', initials: 'CD', date: '10 fév.', text: 'Appel de lancement réalisé. Bon échange avec le responsable RSE. L\'historique de la démarche est solide depuis 2019.', badge: 'Étape : Questionnaire', internal: false },
+  { id: '4', author: 'client' as const, name: 'Julien Marchand', initials: 'JM', date: '11 fév.', text: 'Merci Claire, j\'ai hâte de voir les résultats. N\'hésitez pas si vous avez des questions sur nos réponses.', badge: null, internal: false },
+  { id: '5', author: 'analyst' as const, name: 'Claire Dubois', initials: 'CD', date: '8 fév.', text: 'Note interne : le Q27 mentionne un décalage entre discours et budget. À intégrer dans la synthèse avec diplomatie.', badge: null, internal: true },
 ]
 
 export default function AdminDiagnosticDetail() {
@@ -30,346 +90,700 @@ export default function AdminDiagnosticDetail() {
   const [activeTab, setActiveTab] = useState(0)
   const diag = MOCK_DIAGNOSTICS.find(d => d.id === id)
 
-  if (!diag) return <div className="p-8">Diagnostic introuvable.</div>
+  if (!diag) return <div style={{ padding: 32, fontFamily: 'DM Sans, sans-serif', color: '#7A766D' }}>Diagnostic introuvable.</div>
 
   const st = STATUS_CONFIG[diag.status]
 
   return (
     <div>
+      {/* Back link */}
+      <button
+        onClick={() => navigate('/admin')}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 4, marginBottom: 16, border: 'none',
+          background: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+          fontSize: '0.85rem', color: '#7A766D', padding: 0,
+        }}
+      >
+        <ChevronLeft size={16} /> Diagnostics
+      </button>
+
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate('/admin')} className="p-2 rounded-lg hover:bg-[var(--color-gris-100)]">
-          <ArrowLeft size={18} />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold">{diag.company}</h1>
-          <p className="text-xs" style={{ color: 'var(--color-texte-secondary)' }}>{diag.analyst} · {diag.sector}</p>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontFamily: 'Fraunces, serif', fontWeight: 400, fontSize: '1.5rem', color: '#2A2A28', marginBottom: 10 }}>
+          {diag.company}
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+          {[diag.sector, diag.headcount + ' sal.', diag.revenue].map((pill, i) => (
+            <span key={i} style={{
+              padding: '4px 12px', borderRadius: 12, backgroundColor: '#F0EDE6',
+              fontSize: '0.75rem', color: '#7A766D', fontFamily: 'DM Sans, sans-serif',
+            }}>{pill}</span>
+          ))}
+          <span style={{
+            padding: '4px 12px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 600,
+            backgroundColor: st.bg, color: st.color,
+          }}>{st.label}</span>
         </div>
-        <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: st.bg, color: st.color }}>
-          {st.label}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 24, height: 24, borderRadius: '50%', backgroundColor: '#1B4332',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '0.5rem', fontWeight: 600, color: '#fff',
+          }}>{diag.analyst.split(' ').map(n => n[0]).join('')}</div>
+          <span style={{ fontSize: '0.82rem', color: '#2A2A28', fontFamily: 'DM Sans, sans-serif' }}>{diag.analyst}</span>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b" style={{ borderColor: 'var(--color-border)' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid #EDEAE3', marginBottom: 28 }}>
         {TABS.map((tab, i) => (
           <button
             key={tab}
             onClick={() => setActiveTab(i)}
-            className="px-4 py-2.5 text-sm font-medium transition-colors -mb-px"
             style={{
-              borderBottom: activeTab === i ? '2px solid #1B5E3B' : '2px solid transparent',
-              color: activeTab === i ? '#1B5E3B' : 'var(--color-texte-secondary)',
+              padding: '12px 20px', border: 'none', background: 'none', cursor: 'pointer',
+              fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', fontWeight: 500,
+              color: activeTab === i ? '#1B4332' : '#7A766D',
+              borderBottom: activeTab === i ? '2px solid #1B4332' : '2px solid transparent',
+              marginBottom: -1, transition: 'color 0.15s',
             }}
+            onMouseEnter={e => { if (activeTab !== i) e.currentTarget.style.color = '#2D6A4F' }}
+            onMouseLeave={e => { if (activeTab !== i) e.currentTarget.style.color = '#7A766D' }}
           >
             {tab}
           </button>
         ))}
       </div>
 
-      {/* Tab content */}
-      {activeTab === 0 && <TabResume diag={diag} />}
-      {activeTab === 1 && <TabResponses />}
-      {activeTab === 2 && <TabSurvey diag={diag} />}
+      {activeTab === 0 && <TabQuestionnaire />}
+      {activeTab === 1 && <TabReponses />}
+      {activeTab === 2 && <TabSondageDG />}
       {activeTab === 3 && <TabDiagnostic />}
       {activeTab === 4 && <TabJournal />}
     </div>
   )
 }
 
-// ── TAB 1: Résumé ──────────────────────────────
-function TabResume({ diag }: { diag: typeof MOCK_DIAGNOSTICS[0] }) {
-  const [checklist, setChecklist] = useState({ ...diag.checklist })
-  const [status, setStatus] = useState(diag.status)
+// ── TAB 1: QUESTIONNAIRE ──────────────────────────
+function TabQuestionnaire() {
+  const [expanded, setExpanded] = useState<number | null>(null)
+
+  const blocStatuses: ('complete' | 'in_progress' | 'not_started')[] = ['complete', 'complete', 'complete', 'complete']
 
   return (
-    <div className="grid grid-cols-2 gap-6">
-      {/* Info card */}
-      <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}>
-        <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-texte-secondary)', letterSpacing: '0.05em' }}>
-          Informations client
-        </h3>
-        <div className="space-y-3 text-sm">
-          <InfoRow label="Entreprise" value={diag.company} />
-          <InfoRow label="Email" value={diag.contactEmail} />
-          <InfoRow label="Secteur" value={diag.sector} />
-          <InfoRow label="Effectif" value={diag.headcount} />
-          <InfoRow label="CA" value={diag.revenue} />
-          <InfoRow label="Analyste" value={diag.analyst} />
-          <InfoRow label="Créé le" value={new Date(diag.createdAt).toLocaleDateString('fr-FR')} />
-        </div>
-        <div className="mt-4">
-          <label className="text-xs font-medium block mb-1" style={{ color: 'var(--color-texte-secondary)' }}>Statut</label>
-          <select
-            value={status}
-            onChange={e => setStatus(e.target.value as DiagnosticStatus)}
-            className="w-full px-3 py-2 text-sm rounded-lg border focus:outline-none"
-            style={{ borderColor: 'var(--color-border)' }}
-          >
-            {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-              <option key={k} value={k}>{v.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Checklist */}
-      <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}>
-        <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-texte-secondary)', letterSpacing: '0.05em' }}>
-          Avancement
-        </h3>
-        <div className="space-y-2">
-          {Object.entries(CHECKLIST_LABELS).map(([key, label]) => (
-            <label key={key} className="flex items-center gap-3 py-1.5 cursor-pointer text-sm">
-              <div
-                className="w-5 h-5 rounded flex items-center justify-center border transition-colors"
-                style={{
-                  backgroundColor: checklist[key] ? '#1B5E3B' : 'transparent',
-                  borderColor: checklist[key] ? '#1B5E3B' : 'var(--color-gris-300)',
-                }}
-                onClick={() => setChecklist(p => ({ ...p, [key]: !p[key] }))}
-              >
-                {checklist[key] && <Check size={12} color="white" />}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {BLOC_NAMES.map((name, i) => {
+        const status = blocStatuses[i]
+        const isExpanded = expanded === i
+        const blocKey = `bloc${i + 1}`
+        const answers = MOCK_ANSWERS[blocKey] || []
+        return (
+          <div key={i} style={{
+            backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14,
+            overflow: 'hidden', boxShadow: '0 1px 3px rgba(42,42,40,.04)',
+          }}>
+            <button
+              onClick={() => setExpanded(isExpanded ? null : i)}
+              style={{
+                width: '100%', padding: '18px 22px', border: 'none', background: 'none',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14,
+              }}
+            >
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                backgroundColor: status === 'complete' ? '#1B4332' : '#F0EDE6',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{
+                  fontFamily: 'Fraunces, serif', fontWeight: 500, fontSize: '0.75rem',
+                  color: status === 'complete' ? '#fff' : '#7A766D',
+                }}>{i + 1}</span>
               </div>
-              <span style={{ color: checklist[key] ? 'var(--color-texte)' : 'var(--color-texte-secondary)' }}>
-                {label}
-                {key === 'sondage' && ` (${diag.surveyRespondents} répondants)`}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between">
-      <span style={{ color: 'var(--color-texte-secondary)' }}>{label}</span>
-      <span className="font-medium">{value}</span>
-    </div>
-  )
-}
-
-// ── TAB 2: Réponses client ─────────────────────
-function TabResponses() {
-  const blocks = [
-    { name: 'Bloc 1 — Votre démarche', desc: '12 tuiles d\'avancement, effectif, CA, code NAF' },
-    { name: 'Bloc 2 — Maturité climat', desc: '20 questions sur 4 dimensions (score calculé)' },
-    { name: 'Bloc 3 — Enjeux et vision', desc: 'Moteurs, freins, réglementation, ambitions' },
-    { name: 'Bloc 4 — Perception', desc: 'P1-P8 scores, prédictions, population, Q27 confidentiel' },
-  ]
-
-  return (
-    <div className="space-y-4">
-      {blocks.map((b, i) => (
-        <div key={i} className="rounded-xl p-5" style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-bold">{b.name}</h3>
-            <button className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'var(--color-gris-100)', color: 'var(--color-texte-secondary)' }}>
-              <Eye size={12} /> Voir les réponses
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: '0.88rem', color: '#2A2A28' }}>
+                  Bloc {i + 1} — {name}
+                </p>
+                <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 300, fontSize: '0.8rem', color: '#B0AB9F' }}>
+                  {status === 'complete' ? `Complété le ${BLOC_COMPLETION[i]}` : status === 'in_progress' ? 'En cours' : 'Non commencé'}
+                </p>
+              </div>
+              {status === 'complete' && <Check size={18} color="#1B4332" />}
+              {status === 'in_progress' && <Clock size={18} color="#B87333" />}
+              {status === 'not_started' && <Circle size={18} color="#B0AB9F" />}
             </button>
-          </div>
-          <p className="text-xs" style={{ color: 'var(--color-texte-secondary)' }}>{b.desc}</p>
-          {i === 3 && (
-            <div className="mt-3 px-3 py-2 rounded-lg text-xs font-medium" style={{ backgroundColor: 'var(--color-gold-100)', color: '#E8734A' }}>
-              ⚠️ Q27 — Contient une note confidentielle destinée uniquement à l'analyste
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ── TAB 3: Sondage & DG ───────────────────────
-function TabSurvey({ diag }: { diag: typeof MOCK_DIAGNOSTICS[0] }) {
-  const gapColors = (gap: number) => gap > 2 ? '#DC4A4A' : gap >= 1 ? '#E8734A' : '#1B5E3B'
-
-  const mockGaps = [
-    { question: 'Implication des équipes', rse: 7.8, emp: 4.6, gap: 3.2 },
-    { question: 'Objectifs clairs', rse: 6.8, emp: 4.0, gap: 2.8 },
-    { question: 'Moyens suffisants', rse: 7.5, emp: 4.3, gap: 3.2 },
-  ]
-
-  return (
-    <div className="space-y-6">
-      {/* Survey summary */}
-      <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}>
-        <h3 className="text-sm font-bold mb-4">Résultats sondage — {diag.surveyRespondents} répondants</h3>
-        <p className="text-xs mb-4" style={{ color: 'var(--color-texte-secondary)' }}>
-          Moyennes S1-S8, distribution S9, verbatims S10 disponibles ci-dessous.
-        </p>
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          {mockGaps.map((g, i) => (
-            <div key={i} className="rounded-lg p-3 border-l-3" style={{ backgroundColor: 'var(--color-fond)', borderLeftColor: gapColors(g.gap) }}>
-              <p className="text-xs font-medium mb-1">{g.question}</p>
-              <div className="flex gap-2 text-xs">
-                <span>RSE: <strong>{g.rse}</strong></span>
-                <span>Terrain: <strong>{g.emp}</strong></span>
+            <div style={{
+              maxHeight: isExpanded ? 600 : 0, overflow: 'hidden',
+              transition: 'max-height 300ms ease',
+            }}>
+              <div style={{ padding: '0 22px 18px', borderTop: '1px solid #EDEAE3' }}>
+                {answers.map((a, j) => (
+                  <div key={j} style={{ padding: '10px 0', borderBottom: j < answers.length - 1 ? '1px solid #F0EDE6' : 'none' }}>
+                    <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: '0.82rem', color: '#2A2A28', marginBottom: 4 }}>
+                      {a.q}
+                    </p>
+                    <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 400, fontSize: '0.82rem', color: '#7A766D' }}>
+                      {a.a}
+                    </p>
+                  </div>
+                ))}
               </div>
-              <p className="text-xs font-bold mt-1" style={{ color: gapColors(g.gap) }}>Écart: {g.gap.toFixed(1)}</p>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* DG */}
-      <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}>
-        <h3 className="text-sm font-bold mb-3">Questionnaire Direction</h3>
-        <div className="flex items-center gap-2">
-          {diag.dgReceived ? (
-            <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--color-celsius-100)', color: '#1B5E3B' }}>
-              Reçu ✅
-            </span>
-          ) : (
-            <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--color-gold-100)', color: '#E8734A' }}>
-              En attente ⏳
-            </span>
-          )}
-        </div>
-      </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-// ── TAB 4: Diagnostic editor ───────────────────
-function TabDiagnostic() {
-  const [showAIModal, setShowAIModal] = useState(false)
-  const [sectionStatuses, setSectionStatuses] = useState<string[]>(
-    SECTION_NAMES.map(() => 'empty')
-  )
+// ── TAB 2: RÉPONSES ──────────────────────────────
+function TabReponses() {
+  const md = mockDiagnostic
+  return (
+    <div>
+      {/* Profil Climat card */}
+      <div style={{
+        background: 'linear-gradient(135deg, #E8F0EB, #F5EDE4)', borderRadius: 14,
+        padding: 24, marginBottom: 28,
+      }}>
+        <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.56rem', textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F', marginBottom: 8 }}>
+          PROFIL CLIMAT
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: '50%', border: '3px solid #1B4332',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontSize: '1.8rem', color: '#1B4332' }}>
+              {md.section3.globalGrade}
+            </span>
+          </div>
+          <div>
+            <p style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>
+              {md.client.profilClimat.code} — {md.client.profilClimat.name}
+            </p>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', color: '#7A766D' }}>
+              {md.client.profilClimat.family} · {md.section3.globalScore}/100
+            </p>
+          </div>
+        </div>
+      </div>
 
-  const statusConfig: Record<string, { label: string; bg: string; color: string }> = {
-    empty: { label: 'Vide', bg: 'var(--color-gris-100)', color: 'var(--color-gris-400)' },
-    draft: { label: 'Brouillon', bg: 'var(--color-gold-100)', color: '#E8734A' },
-    validated: { label: 'Validé', bg: 'var(--color-celsius-100)', color: '#1B5E3B' },
+      {/* Answers by bloc */}
+      {['bloc1', 'bloc2', 'bloc3', 'bloc4'].map((blocKey, bi) => {
+        const answers = MOCK_ANSWERS[blocKey] || []
+        return (
+          <div key={blocKey} style={{ marginBottom: 28 }}>
+            <p style={{
+              fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.56rem',
+              textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F', marginBottom: 12,
+            }}>
+              BLOC {bi + 1} — {BLOC_NAMES[bi].toUpperCase()}
+            </p>
+            {answers.map((a, j) => {
+              const isOpen = !a.score && a.a.length > 60
+              return (
+                <div key={j} style={{ marginBottom: 12 }}>
+                  <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: '0.85rem', color: '#2A2A28', marginBottom: 4 }}>
+                    {a.q}
+                    {a.score !== undefined && bi === 1 && (
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: 22, height: 22, borderRadius: '50%', marginLeft: 8, fontSize: '0.65rem', fontWeight: 600,
+                        backgroundColor: a.score >= 60 ? '#E8F0EB' : a.score >= 40 ? '#F5EDE4' : '#FEE2E2',
+                        color: a.score >= 60 ? '#1B4332' : a.score >= 40 ? '#B87333' : '#DC4A4A',
+                      }}>{Math.round(a.score / 25)}</span>
+                    )}
+                  </p>
+                  {isOpen ? (
+                    <div style={{
+                      backgroundColor: '#F7F5F0', borderRadius: 10, padding: 12,
+                      fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6,
+                    }}>{a.a}</div>
+                  ) : (
+                    <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: '#7A766D' }}>{a.a}</p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── TAB 3: SONDAGE & DG ──────────────────────────
+function TabSondageDG() {
+  const POP_COLORS = ['#1B4332', '#2D6A4F', '#B0AB9F', '#B87333', '#DC4A4A']
+  const POP_LABELS = ['Moteurs', 'Engagés', 'Indifférents', 'Sceptiques', 'Réfractaires']
+  const popReal = mockDiagnostic.section4.populationReal
+
+  const popValues = [popReal.moteurs, popReal.engages, popReal.indifferents, popReal.sceptiques, popReal.refractaires]
+  const popTotal = popValues.reduce((a, b) => a + b, 0)
+
+  const scoreColor = (v: number) => {
+    if (v >= 7) return '#E8F0EB'
+    if (v >= 5) return '#F5EDE4'
+    return '#FEE2E2'
+  }
+  const scoreTextColor = (v: number) => {
+    if (v >= 7) return '#1B4332'
+    if (v >= 5) return '#B87333'
+    return '#DC4A4A'
   }
 
-  const allValidated = sectionStatuses.every(s => s === 'validated')
-
   return (
     <div>
-      <div className="flex gap-3 mb-6">
-        <button
-          onClick={() => setShowAIModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:scale-[1.02]"
-          style={{ backgroundColor: '#1B5E3B' }}
-        >
-          <Sparkles size={16} /> Pré-remplir par IA
-        </button>
-        <button
-          className="px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:scale-[1.02]"
-          style={{ borderColor: 'var(--color-border)', color: 'var(--color-texte-secondary)' }}
-        >
-          Prévisualiser côté client
-        </button>
-      </div>
-
-      <div className="space-y-3 mb-6">
-        {SECTION_NAMES.map((name, i) => {
-          const sc = statusConfig[sectionStatuses[i]]
-          return (
-            <div key={i} className="rounded-xl p-4 flex items-center gap-4" style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}>
-              <span className="text-xs font-bold w-6 text-center" style={{ color: 'var(--color-gris-400)' }}>{i + 1}</span>
-              <span className="flex-1 text-sm font-medium">{name}</span>
-              <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: sc.bg, color: sc.color }}>{sc.label}</span>
-              <button
-                onClick={() => {
-                  const next = sectionStatuses[i] === 'empty' ? 'draft' : sectionStatuses[i] === 'draft' ? 'validated' : 'empty'
-                  setSectionStatuses(p => p.map((s, j) => j === i ? next : s))
-                }}
-                className="p-1.5 rounded-lg hover:bg-[var(--color-gris-100)]"
-                title="Modifier"
-              >
-                <Pencil size={14} style={{ color: 'var(--color-texte-secondary)' }} />
-              </button>
-            </div>
-          )
-        })}
-      </div>
-
-      <button
-        disabled={!allValidated}
-        className="w-full py-3 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.005]"
-        style={{ backgroundColor: '#1B5E3B' }}
-      >
-        Déverrouiller le diagnostic
-      </button>
-
-      {/* AI Modal */}
-      {showAIModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowAIModal(false)}>
-          <div className="rounded-xl p-6 max-w-md w-full mx-4" style={{ backgroundColor: 'var(--color-blanc)' }} onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-3">Pré-remplir par IA</h3>
-            <p className="text-sm mb-5" style={{ color: 'var(--color-texte-secondary)' }}>
-              L'IA va générer un brouillon pour les 9 sections à partir des données collectées. Vous pourrez relire et modifier chaque section avant validation.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button onClick={() => setShowAIModal(false)} className="px-4 py-2 text-sm rounded-lg" style={{ color: 'var(--color-texte-secondary)' }}>
-                Annuler
-              </button>
-              <button
-                onClick={() => {
-                  setSectionStatuses(SECTION_NAMES.map(() => 'draft'))
-                  setShowAIModal(false)
-                }}
-                className="px-4 py-2 text-sm font-semibold rounded-lg text-white"
-                style={{ backgroundColor: '#1B5E3B' }}
-              >
-                Générer
-              </button>
-            </div>
-          </div>
+      {/* Survey stats */}
+      <div style={{
+        backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14,
+        padding: 24, marginBottom: 24, boxShadow: '0 1px 3px rgba(42,42,40,.04)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16 }}>
+          <span style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontSize: '2rem', color: '#1B4332' }}>23</span>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: '#B0AB9F' }}>/30 réponses</span>
         </div>
-      )}
+
+        {/* Population stacked bar */}
+        <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.56rem', textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F', marginBottom: 8 }}>
+          DISTRIBUTION DE LA POPULATION
+        </p>
+        <div style={{ display: 'flex', height: 24, borderRadius: 6, overflow: 'hidden', marginBottom: 10 }}>
+          {popValues.map((v, i) => (
+            <div key={i} style={{ width: `${(v / popTotal) * 100}%`, backgroundColor: POP_COLORS[i] }} />
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {POP_LABELS.map((label, i) => (
+            <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontFamily: 'DM Sans, sans-serif' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: POP_COLORS[i] }} />
+              {label}: {popValues[i]}%
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Affirmation results table */}
+      <div style={{
+        backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14,
+        overflow: 'hidden', marginBottom: 24,
+      }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'DM Sans, sans-serif' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#F0EDE6' }}>
+              {['Affirmation', 'Direction', 'Managers', 'Collaborateurs', 'Moyenne'].map(h => (
+                <th key={h} style={{
+                  textAlign: 'left', padding: '10px 14px', fontSize: '0.7rem',
+                  fontWeight: 600, textTransform: 'uppercase' as const, color: '#B0AB9F',
+                  letterSpacing: '0.08em',
+                }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {SURVEY_AFFIRMATIONS.map((aff, i) => (
+              <tr key={i} style={{ borderBottom: '1px solid #EDEAE3' }}>
+                <td style={{ padding: '12px 14px', fontSize: '0.82rem', fontWeight: 500, color: '#2A2A28' }}>{aff}</td>
+                {(['direction', 'managers', 'collaborateurs', 'moyenne'] as const).map(seg => {
+                  const v = SURVEY_SCORES[seg][i]
+                  return (
+                    <td key={seg} style={{ padding: '12px 14px' }}>
+                      <span style={{
+                        display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: '0.78rem', fontWeight: 500,
+                        backgroundColor: scoreColor(v), color: scoreTextColor(v),
+                      }}>{v.toFixed(1)}</span>
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Open responses */}
+      <p style={{
+        fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.56rem',
+        textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F', marginBottom: 12,
+      }}>RÉPONSES OUVERTES (S10)</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+        {MOCK_VERBATIMS.map((v, i) => (
+          <div key={i} style={{
+            backgroundColor: '#F7F5F0', borderRadius: 10, padding: 12,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
+          }}>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: '#2A2A28', lineHeight: 1.5, flex: 1 }}>
+              « {v.text} »
+            </p>
+            <span style={{
+              padding: '2px 8px', borderRadius: 20, fontSize: '0.65rem', fontWeight: 600,
+              backgroundColor: '#F5EDE4', color: '#B87333', whiteSpace: 'nowrap', flexShrink: 0,
+            }}>{v.population}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* DG responses */}
+      <p style={{
+        fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.56rem',
+        textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F', marginBottom: 12,
+      }}>QUESTIONNAIRE DIRECTION</p>
+      <div style={{
+        backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14, padding: 20,
+      }}>
+        {MOCK_DG_ANSWERS.map((a, i) => (
+          <div key={i} style={{
+            display: 'flex', justifyContent: 'space-between', padding: '10px 0',
+            borderBottom: i < MOCK_DG_ANSWERS.length - 1 ? '1px solid #F0EDE6' : 'none',
+          }}>
+            <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', color: '#7A766D' }}>{a.q}</span>
+            <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', fontWeight: 500, color: '#2A2A28' }}>{a.a}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
-// ── TAB 5: Journal ─────────────────────────────
-function TabJournal() {
-  const [note, setNote] = useState('')
-  const [step, setStep] = useState('')
+// ── TAB 4: DIAGNOSTIC EDITOR ──────────────────────
+function TabDiagnostic() {
+  const [editMode, setEditMode] = useState(false)
+  const [editing, setEditing] = useState<number | null>(null)
+  const [validated, setValidated] = useState<boolean[]>(Array(9).fill(false))
+  const [aiLoading, setAiLoading] = useState<number | null>(null)
+  const [aiContent, setAiContent] = useState<Record<number, string>>({})
 
-  const steps = ['Démarrage', 'Questionnaire en cours', 'Analyse en cours', 'Restitution', 'Livré']
+  const allValidated = validated.every(Boolean)
+  const DATA_SECTIONS = [2, 3, 5] // sections 3, 4, 6 (0-indexed) are calculated
+
+  const handleAIFill = (idx: number) => {
+    setAiLoading(idx)
+    setTimeout(() => {
+      setAiLoading(null)
+      setAiContent(prev => ({
+        ...prev,
+        [idx]: idx === 0
+          ? mockDiagnostic.section1.paragraphs.join('\n\n')
+          : `Contenu généré par IA pour la section "${SECTION_NAMES[idx]}". Ce brouillon a été créé à partir des données collectées dans le questionnaire, le sondage et le questionnaire DG. Il doit être relu et validé par l'analyste avant publication.`,
+      }))
+    }, 2000)
+  }
 
   return (
     <div>
-      {/* Add form */}
-      <div className="rounded-xl p-5 mb-6" style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}>
-        <h3 className="text-sm font-bold mb-3">Publier une note</h3>
+      {/* Toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <button
+          onClick={() => { setEditMode(false); setEditing(null) }}
+          style={{
+            padding: '8px 16px', borderRadius: 8, border: '1px solid #EDEAE3',
+            backgroundColor: !editMode ? '#1B4332' : '#fff', color: !editMode ? '#fff' : '#7A766D',
+            fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: '0.8rem', cursor: 'pointer',
+          }}
+        >
+          <Eye size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} />
+          Mode lecture
+        </button>
+        <button
+          onClick={() => setEditMode(true)}
+          style={{
+            padding: '8px 16px', borderRadius: 8, border: '1px solid #EDEAE3',
+            backgroundColor: editMode ? '#1B4332' : '#fff', color: editMode ? '#fff' : '#7A766D',
+            fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: '0.8rem', cursor: 'pointer',
+          }}
+        >
+          <Pencil size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} />
+          Mode édition
+        </button>
+      </div>
+
+      {!editMode ? (
+        /* MODE LECTURE — simplified preview */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {SECTION_NAMES.map((name, i) => (
+            <div key={i} style={{
+              backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14, padding: '18px 22px',
+            }}>
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.56rem', textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F', marginBottom: 4 }}>
+                SECTION {i + 1}
+              </p>
+              <p style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontSize: '1rem', color: '#2A2A28', marginBottom: 8 }}>{name}</p>
+              {validated[i] ? (
+                <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', color: '#7A766D', lineHeight: 1.6 }}>
+                  {aiContent[i] ? aiContent[i].slice(0, 200) + '...' : 'Contenu validé.'}
+                </p>
+              ) : (
+                <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', color: '#B0AB9F', fontStyle: 'italic' }}>
+                  Section non validée.
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* MODE ÉDITION */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {SECTION_NAMES.map((name, i) => {
+            const isData = DATA_SECTIONS.includes(i)
+            const isEditing = editing === i
+            const hasAI = aiContent[i] !== undefined
+            const isLoading = aiLoading === i
+
+            return (
+              <div key={i} style={{
+                backgroundColor: '#fff', border: `1px solid ${isEditing ? '#E5E1D8' : '#EDEAE3'}`,
+                borderRadius: 14, padding: '18px 22px',
+                boxShadow: isEditing ? '0 2px 8px rgba(42,42,40,.04), 0 8px 32px rgba(42,42,40,.06)' : '0 1px 3px rgba(42,42,40,.04)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isEditing ? 16 : 0 }}>
+                  <div>
+                    <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.56rem', textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F', marginBottom: 4 }}>
+                      SECTION {i + 1}
+                    </p>
+                    <p style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontSize: '1rem', color: '#2A2A28' }}>{name}</p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {/* Validated checkbox */}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                      <div
+                        onClick={() => setValidated(p => p.map((v, j) => j === i ? !v : v))}
+                        style={{
+                          width: 18, height: 18, borderRadius: 4, border: '1.5px solid',
+                          borderColor: validated[i] ? '#1B4332' : '#EDEAE3',
+                          backgroundColor: validated[i] ? '#1B4332' : '#fff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                        }}
+                      >
+                        {validated[i] && <Check size={12} color="#fff" />}
+                      </div>
+                      <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: '0.82rem', color: '#1B4332' }}>
+                        Validée
+                      </span>
+                    </label>
+                    {!isData && !isEditing && (
+                      <button
+                        onClick={() => setEditing(i)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'none',
+                          cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', color: '#7A766D',
+                        }}
+                      >
+                        <Pencil size={14} /> Modifier
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Expanded editor */}
+                {isEditing && !isData && (
+                  <div>
+                    {/* AI prefill for sections 1 and 2 */}
+                    {(i === 0 || i === 1) && !hasAI && (
+                      <button
+                        onClick={() => handleAIFill(i)}
+                        disabled={isLoading}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
+                          borderRadius: 8, border: 'none', cursor: isLoading ? 'wait' : 'pointer',
+                          background: 'linear-gradient(135deg, #1B4332, #2D6A4F)', color: '#fff',
+                          fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', fontWeight: 500, marginBottom: 14,
+                        }}
+                      >
+                        {isLoading ? (
+                          <>
+                            <span style={{
+                              width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)',
+                              borderTopColor: '#fff', borderRadius: '50%',
+                              animation: 'spin 0.8s linear infinite',
+                            }} />
+                            Génération en cours...
+                          </>
+                        ) : (
+                          <><Sparkles size={16} /> Pré-remplir par IA</>
+                        )}
+                      </button>
+                    )}
+
+                    {/* AI content with accept/regenerate/cancel */}
+                    {hasAI && (
+                      <div style={{ marginBottom: 14 }}>
+                        <textarea
+                          defaultValue={aiContent[i]}
+                          style={{
+                            width: '100%', minHeight: 200, padding: 14, borderRadius: 10,
+                            border: '1px solid #EDEAE3', fontFamily: 'DM Sans, sans-serif',
+                            fontSize: '0.85rem', lineHeight: 1.7, color: '#2A2A28', resize: 'vertical',
+                          }}
+                        />
+                        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                          <button onClick={() => { setEditing(null); setValidated(p => p.map((v, j) => j === i ? true : v)) }}
+                            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', backgroundColor: '#1B4332', color: '#fff', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
+                            Accepter
+                          </button>
+                          <button onClick={() => handleAIFill(i)}
+                            style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #EDEAE3', backgroundColor: '#fff', color: '#7A766D', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', cursor: 'pointer' }}>
+                            Régénérer
+                          </button>
+                          <button onClick={() => { setAiContent(p => { const n = { ...p }; delete n[i]; return n }); setEditing(null) }}
+                            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', backgroundColor: 'transparent', color: '#B0AB9F', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', cursor: 'pointer' }}>
+                            Annuler
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Regular textarea for non-AI sections */}
+                    {!hasAI && i !== 0 && i !== 1 && (
+                      <div>
+                        <textarea
+                          placeholder={`Contenu de la section "${name}"...`}
+                          style={{
+                            width: '100%', minHeight: 200, padding: 14, borderRadius: 10,
+                            border: '1px solid #EDEAE3', fontFamily: 'DM Sans, sans-serif',
+                            fontSize: '0.85rem', lineHeight: 1.7, color: '#2A2A28', resize: 'vertical',
+                          }}
+                        />
+                        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                          <button onClick={() => setEditing(null)}
+                            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', backgroundColor: '#1B4332', color: '#fff', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
+                            Sauvegarder
+                          </button>
+                          <button onClick={() => setEditing(null)}
+                            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', backgroundColor: 'transparent', color: '#B0AB9F', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', cursor: 'pointer' }}>
+                            Annuler
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Data section note */}
+                {isData && (
+                  <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', color: '#B0AB9F', fontStyle: 'italic', marginTop: 8 }}>
+                    Les données sont calculées automatiquement à partir des réponses.
+                  </p>
+                )}
+              </div>
+            )
+          })}
+
+          {/* Unlock button */}
+          <button
+            disabled={!allValidated}
+            style={{
+              width: '100%', padding: '14px 24px', borderRadius: 8, border: 'none',
+              backgroundColor: allValidated ? '#1B4332' : '#F0EDE6',
+              color: allValidated ? '#fff' : '#B0AB9F',
+              fontFamily: 'DM Sans, sans-serif', fontSize: '0.88rem', fontWeight: 600,
+              cursor: allValidated ? 'pointer' : 'not-allowed', marginTop: 8,
+            }}
+          >
+            Déverrouiller le diagnostic
+          </button>
+        </div>
+      )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  )
+}
+
+// ── TAB 5: JOURNAL ──────────────────────────────
+function TabJournal() {
+  const [note, setNote] = useState('')
+  const [isInternal, setIsInternal] = useState(false)
+
+  return (
+    <div>
+      {/* New entry form */}
+      <div style={{
+        backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14,
+        padding: 20, marginBottom: 24, boxShadow: '0 1px 3px rgba(42,42,40,.04)',
+      }}>
         <textarea
           value={note}
           onChange={e => setNote(e.target.value)}
-          placeholder="Écrire une note visible par le client..."
-          className="w-full text-sm p-3 rounded-lg border-none resize-none focus:outline-none mb-3"
-          style={{ backgroundColor: 'var(--color-fond)', minHeight: '80px' }}
-          rows={3}
+          placeholder="Écrire une note..."
+          style={{
+            width: '100%', minHeight: 80, padding: 12, borderRadius: 10,
+            border: '1px solid #EDEAE3', fontFamily: 'DM Sans, sans-serif',
+            fontSize: '0.85rem', color: '#2A2A28', resize: 'vertical', marginBottom: 12,
+          }}
         />
-        <div className="flex items-center gap-3">
-          <select
-            value={step}
-            onChange={e => setStep(e.target.value)}
-            className="px-3 py-2 text-sm rounded-lg border focus:outline-none"
-            style={{ borderColor: 'var(--color-border)' }}
-          >
-            <option value="">Changement d'étape (optionnel)</option>
-            {steps.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <div
+              onClick={() => setIsInternal(!isInternal)}
+              style={{
+                width: 36, height: 20, borderRadius: 10, cursor: 'pointer',
+                backgroundColor: isInternal ? '#B87333' : '#EDEAE3', position: 'relative',
+                transition: 'background-color 0.2s',
+              }}
+            >
+              <div style={{
+                width: 16, height: 16, borderRadius: '50%', backgroundColor: '#fff',
+                position: 'absolute', top: 2,
+                left: isInternal ? 18 : 2, transition: 'left 0.2s',
+              }} />
+            </div>
+            <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', color: isInternal ? '#B87333' : '#7A766D' }}>
+              {isInternal ? 'Note interne' : 'Visible par le client'}
+            </span>
+          </label>
           <button
-            className="px-4 py-2 rounded-lg text-white text-sm font-semibold ml-auto"
-            style={{ backgroundColor: '#1B5E3B' }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px',
+              borderRadius: 8, border: 'none', backgroundColor: '#1B4332', color: '#fff',
+              fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', fontWeight: 500, cursor: 'pointer',
+            }}
           >
-            Publier
+            <Send size={14} /> Publier
           </button>
         </div>
       </div>
 
-      <p className="text-sm text-center py-8" style={{ color: 'var(--color-texte-secondary)' }}>
-        Les notes publiées apparaîtront ici et dans le journal de bord du client.
-      </p>
+      {/* Entries */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {MOCK_JOURNAL.map(entry => (
+          <div
+            key={entry.id}
+            style={{
+              backgroundColor: entry.internal ? '#FEF6E6' : '#fff',
+              border: entry.internal ? 'none' : '1px solid #EDEAE3',
+              borderLeft: entry.internal ? '4px solid #B87333' : undefined,
+              borderRadius: 14, padding: '18px 22px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%',
+                backgroundColor: entry.author === 'analyst' ? '#1B4332' : '#E8F0EB',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.55rem', fontWeight: 600,
+                color: entry.author === 'analyst' ? '#fff' : '#1B4332',
+              }}>{entry.initials}</div>
+              <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.85rem', color: '#2A2A28' }}>
+                {entry.name}
+              </span>
+              <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 300, fontSize: '0.75rem', color: '#B0AB9F' }}>
+                {entry.date}
+              </span>
+              {entry.internal && <Lock size={14} color="#B87333" style={{ marginLeft: 'auto' }} />}
+            </div>
+            {entry.badge && (
+              <span style={{
+                display: 'inline-block', padding: '2px 8px', borderRadius: 20, marginBottom: 8,
+                backgroundColor: '#F5EDE4', color: '#B87333', fontSize: '0.7rem', fontWeight: 500,
+              }}>{entry.badge}</span>
+            )}
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.88rem', color: '#2A2A28', lineHeight: 1.6 }}>
+              {entry.text}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
