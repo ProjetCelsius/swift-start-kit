@@ -126,9 +126,9 @@ const DIAG_A: DemoDiagnostic = {
   id: 'demo-novatech',
   status: 'questionnaire',
   organization: {
-    name: 'NovaTech Solutions',
-    sector: 'Édition de logiciels',
-    naf: '5829C',
+    name: 'République française',
+    sector: 'Administration publique',
+    naf: '8411Z',
     headcount: '251-500',
     revenue: '10-50M',
     sites: '3 (Paris, Lyon, Nantes)',
