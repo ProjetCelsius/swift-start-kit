@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Linkedin, GraduationCap, Award, Globe } from 'lucide-react'
+import { ArrowLeft, Linkedin, GraduationCap, Award, Globe, Mail, MessageSquare, Phone } from 'lucide-react'
 import guillaumePhoto from '@/assets/guillaume-photo.png'
 
 export default function AnalystProfilePage() {
@@ -16,34 +16,80 @@ export default function AnalystProfilePage() {
         <ArrowLeft size={16} /> Retour
       </button>
 
-      {/* Hero card */}
+      {/* ═══ Hero: Your dedicated analyst ═══ */}
       <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 16, overflow: 'hidden' }}>
-        {/* Gradient header */}
-        <div style={{ height: 120, background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 60%, #B87333 100%)' }} />
-        
-        {/* Profile section */}
-        <div style={{ padding: '0 32px 32px', marginTop: -48 }}>
-          <div className="flex items-end gap-5 mb-6">
+        {/* Warm intro banner */}
+        <div style={{
+          padding: '28px 32px 24px',
+          background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 50%, #3A7D5C 100%)',
+          position: 'relative',
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, right: 0, bottom: 0, width: '40%',
+            background: 'radial-gradient(circle at 80% 50%, rgba(184,115,51,0.2) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }} />
+          <div className="label-uppercase" style={{ fontSize: '0.5rem', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>
+            VOTRE ANALYSTE DÉDIÉ
+          </div>
+          <div className="flex items-center gap-5">
             <img
               src={guillaumePhoto}
               alt="Guillaume Pakula"
               style={{
-                width: 96, height: 96, borderRadius: '50%', objectFit: 'cover',
-                border: '4px solid #FFFFFF', boxShadow: '0 4px 12px rgba(42,42,40,0.1)',
+                width: 80, height: 80, borderRadius: '50%', objectFit: 'cover',
+                border: '3px solid rgba(255,255,255,0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                flexShrink: 0,
               }}
             />
-            <div style={{ paddingBottom: 4 }}>
-              <h1 className="font-display" style={{ fontSize: '1.5rem', fontWeight: 400, color: '#2A2A28', lineHeight: 1.2 }}>
+            <div>
+              <h1 className="font-display" style={{ fontSize: '1.4rem', fontWeight: 400, color: '#FFFFFF', lineHeight: 1.2 }}>
                 Guillaume Pakula
               </h1>
-              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D' }}>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
                 Analyste Climat Senior · Projet Celsius
+              </p>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', marginTop: 6, lineHeight: 1.5, maxWidth: 380 }}>
+                Guillaume s'occupe personnellement de votre dossier, de l'analyse de vos réponses à la restitution finale.
               </p>
             </div>
           </div>
+        </div>
 
-          {/* Bio */}
-          <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.88rem', color: '#2A2A28', lineHeight: 1.7, marginBottom: 28 }}>
+        {/* Contact bar */}
+        <div style={{
+          display: 'flex', gap: 0, borderBottom: '1px solid #EDEAE3',
+        }}>
+          {[
+            { icon: <Mail size={15} />, label: 'Email', value: 'guillaume@projetcelsius.fr', href: 'mailto:guillaume@projetcelsius.fr' },
+            { icon: <MessageSquare size={15} />, label: 'Message', value: 'Envoyer', href: '/client/messages' },
+            { icon: <Phone size={15} />, label: 'Téléphone', value: '06 12 34 56 78', href: 'tel:+33612345678' },
+          ].map((item, i) => (
+            <a
+              key={i}
+              href={item.href}
+              onClick={item.label === 'Message' ? (e) => { e.preventDefault(); navigate('/client/messages') } : undefined}
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', gap: 10,
+                padding: '14px 20px', textDecoration: 'none',
+                borderRight: i < 2 ? '1px solid #EDEAE3' : 'none',
+                transition: 'background-color 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F7F5F0'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <div style={{ color: '#1B4332' }}>{item.icon}</div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', color: '#B0AB9F', textTransform: 'uppercase' as const, letterSpacing: '0.08em', fontWeight: 600 }}>{item.label}</div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#2A2A28', fontWeight: 500 }}>{item.value}</div>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        {/* Bio */}
+        <div style={{ padding: '24px 32px 28px' }}>
+          <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.88rem', color: '#2A2A28', lineHeight: 1.7, marginBottom: 24 }}>
             <p>
               Docteur en physique et professeur dans l'enseignement supérieur, Guillaume vulgarise le climat et les sujets environnementaux depuis 2019 de manière simple et ludique. Spécialisé dans le <strong>calcul d'impact environnemental</strong> et de <strong>l'empreinte carbone</strong>, il accompagne les organisations dans leur compréhension des enjeux climatiques.
             </p>
