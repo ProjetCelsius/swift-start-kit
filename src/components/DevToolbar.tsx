@@ -95,7 +95,13 @@ export default function DevToolbar() {
         {/* Status */}
         <select
           value={demo.activeDiagnostic.status}
-          onChange={e => demo.setDiagnosticStatus(e.target.value as DemoStatus)}
+          onChange={e => {
+            const newStatus = e.target.value as DemoStatus
+            demo.setDiagnosticStatus(newStatus)
+            if (newStatus === 'onboarding') {
+              navigate('/client/dashboard')
+            }
+          }}
           className="text-[10px] px-2 py-1 rounded border-none focus:outline-none"
           style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white' }}
         >
