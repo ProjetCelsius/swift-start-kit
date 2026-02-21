@@ -3,39 +3,33 @@
 // ============================================
 
 export const PERCEPTION_AFFIRMATIONS = [
-  "La direction de mon entreprise considère le climat comme un sujet stratégique.",
-  "Mon entreprise met les moyens nécessaires pour avancer sur le climat.",
-  "Nos objectifs climat sont clairs et partagés en interne.",
-  "Les équipes se sentent impliquées dans la démarche climat.",
-  "Nous mesurons régulièrement nos progrès climat.",
-  "Le sujet climat est intégré dans nos décisions business courantes.",
-  "Nos parties prenantes externes reconnaissent nos efforts climat.",
-  "Je suis confiant(e) dans la capacité de mon entreprise à atteindre ses objectifs climat.",
+  "La direction considère le climat comme un sujet stratégique.",
+  "Les moyens alloués (budget, équipe, temps) sont suffisants.",
+  "Les objectifs climat sont clairs et partagés en interne.",
+  "Les équipes se sentent impliquées dans la démarche.",
+  "Nous mesurons régulièrement nos progrès.",
+  "Le climat est intégré dans nos décisions business.",
+  "Nos parties prenantes reconnaissent nos efforts.",
+  "Je suis confiant(e) dans notre capacité à atteindre nos objectifs.",
 ] as const
 
 export interface PopulationProfile {
   id: string
-  icon: string
+  iconName: string // Lucide icon name
   label: string
   description: string
   color: string
 }
 
 export const POPULATION_PROFILES: PopulationProfile[] = [
-  { id: 'moteurs', icon: '🚀', label: 'Moteurs', description: 'Portent la démarche, force de proposition', color: '#1B5E3B' },
-  { id: 'engages', icon: '✅', label: 'Engagés', description: 'Adhèrent et participent activement', color: '#2D7A50' },
-  { id: 'indifferents', icon: '😐', label: 'Indifférents', description: 'Ni pour ni contre, suivent le mouvement', color: '#F5A623' },
-  { id: 'sceptiques', icon: '🤨', label: 'Sceptiques', description: 'Doutent de l\'utilité ou de la faisabilité', color: '#E8734A' },
-  { id: 'refractaires', icon: '❌', label: 'Réfractaires', description: 'Résistent activement à la démarche', color: '#DC4A4A' },
+  { id: 'moteurs', iconName: 'Rocket', label: 'Moteurs', description: 'Portent la démarche', color: '#1B4332' },
+  { id: 'engages', iconName: 'CheckCircle', label: 'Engagés', description: 'Participent activement', color: '#2D6A4F' },
+  { id: 'indifferents', iconName: 'Minus', label: 'Indifférents', description: 'Suivent le mouvement', color: '#B0AB9F' },
+  { id: 'sceptiques', iconName: 'HelpCircle', label: 'Sceptiques', description: 'Doutent de la faisabilité', color: '#B87333' },
+  { id: 'refractaires', iconName: 'XCircle', label: 'Réfractaires', description: 'Résistent activement', color: '#DC4A4A' },
 ]
 
-export const SURVEY_TEMPLATE = `Bonjour,
-
-Dans le cadre de notre démarche climat, nous souhaitons recueillir votre perception sur notre engagement environnemental.
-
-Ce questionnaire est anonyme et prend environ 5 minutes. Vos réponses nous aideront à mieux comprendre où nous en sommes et à identifier nos axes de progression.
-
-Merci pour votre participation !`
+export const SURVEY_TEMPLATE = `Bonjour, dans le cadre de notre démarche climat, nous souhaitons recueillir votre perception. Anonyme, 5 minutes. Merci.`
 
 export function getRecommendedRespondents(effectif: string): string {
   if (['1-10', '11-50'].includes(effectif)) return 'au moins 10 répondants'
