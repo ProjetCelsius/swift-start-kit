@@ -89,7 +89,7 @@ function deriveFromStatus(status: DemoStatus | undefined): {
     questionnaire: [
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: '2/4 blocs', status: 'active' },
-      { num: 3, label: 'Sondage', detail: 'À lancer', status: 'locked' },
+      { num: 3, label: 'Sondage', detail: 'À lancer', status: 'active' },
       { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
       { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
     ],
@@ -192,7 +192,9 @@ export default function ClientHomeDashboard() {
   const doneCount = blocs.filter(b => b.status === 'done').length
 
   // Determine which cards are locked based on status
-  const isBeforeSurvey = !demoStatus || demoStatus === 'onboarding' || demoStatus === 'questionnaire'
+  // Sondage + Questionnaire run in PARALLEL — both available from 'questionnaire' onwards
+  // Only Analyse (needs everything submitted) and Restitution/Diagnostic (needs analysis done) are locked
+  const isSondageAvailable = !!demoStatus && demoStatus !== 'onboarding'
   const isAnalysisOrLater = demoStatus === 'analysis' || demoStatus === 'ready_for_restitution' || demoStatus === 'delivered'
   const isRestitutionReady = demoStatus === 'ready_for_restitution' || demoStatus === 'delivered'
 
@@ -302,14 +304,14 @@ export default function ClientHomeDashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <ActionCard
             label="SONDAGE"
-            title={isBeforeSurvey ? 'Lancer le sondage' : surveyCount >= surveyTarget ? 'Sondage complété ✓' : 'Relancer vos équipes'}
-            subtitle={`${surveyCount} réponses sur ${surveyTarget}`}
-            icon={<Users size={18} color={isBeforeSurvey ? '#7A766D' : '#B87333'} />}
-            iconBg={isBeforeSurvey ? '#F7F5F0' : '#F5EDE4'}
+            title={!isSondageAvailable ? 'Sondage interne' : surveyCount >= surveyTarget ? 'Sondage complété ✓' : surveyCount > 0 ? 'Relancer vos équipes' : 'Lancer le sondage'}
+            subtitle={isSondageAvailable ? `${surveyCount} réponses sur ${surveyTarget}` : 'Disponible après le lancement'}
+            icon={<Users size={18} color={isSondageAvailable ? '#B87333' : '#7A766D'} />}
+            iconBg={isSondageAvailable ? '#F5EDE4' : '#F7F5F0'}
             hovered={hoveredCard === 'sondage'}
             onHover={v => setHoveredCard(v ? 'sondage' : null)}
             onClick={() => navigate('/client/sondage')}
-            locked={demoStatus === 'onboarding'}
+            locked={!isSondageAvailable}
           />
           <ActionCard
             label="PLANNING"
