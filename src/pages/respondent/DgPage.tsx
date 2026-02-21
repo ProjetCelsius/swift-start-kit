@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { ChevronRight, Check } from 'lucide-react'
-import celsiusLogo from '@/assets/celsius-logo.png'
+import { ChevronRight, Check, CheckCircle } from 'lucide-react'
 
 // Mock data — fetched via token in production
 function useDgConfig(_token: string) {
@@ -26,12 +25,12 @@ const DG_QUESTIONS = [
     key: 'dg2',
     label: 'DG2. Quel budget annuel est consacré à la transition climat ?',
     options: [
-      'Aucun budget dédié',
-      'Moins de 50 000 €',
-      '50 000 € à 200 000 €',
-      '200 000 € à 500 000 €',
-      '500 000 € à 1 M€',
-      'Plus de 1 M€',
+      'Moins de 20 000 €',
+      '20 000 € à 50 000 €',
+      '50 000 € à 100 000 €',
+      '100 000 € à 300 000 €',
+      'Plus de 300 000 €',
+      'Je ne sais pas',
     ],
   },
   {
@@ -39,25 +38,74 @@ const DG_QUESTIONS = [
     label: 'DG3. Sur quel horizon attendez-vous un retour sur investissement ?',
     options: [
       'Moins de 1 an',
-      '1 à 2 ans',
-      '2 à 5 ans',
-      '5 à 10 ans',
-      'Pas de ROI attendu, c\'est un investissement de conviction',
+      '1 à 3 ans',
+      '3 à 5 ans',
+      'Plus de 5 ans',
+      'Pas une question de ROI, c\'est un investissement de conviction',
     ],
   },
   {
     key: 'dg4',
     label: 'DG4. Quel est le principal bénéfice attendu de votre démarche climat ?',
     options: [
-      'Réduction des coûts opérationnels',
       'Conformité réglementaire',
+      'Réduction des coûts opérationnels',
+      'Image et réputation',
       'Attractivité employeur',
-      'Avantage concurrentiel / image',
-      'Accès à de nouveaux marchés',
       'Conviction et responsabilité sociétale',
+      'Accès à de nouveaux marchés',
     ],
   },
 ] as const
+
+// ── Logo Block ───────────────────────────────
+function LogoBlock() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: 8, backgroundColor: '#1B4332',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: 'var(--font-display)', fontWeight: 500, color: '#fff', fontSize: '0.85rem',
+      }}>
+        BC
+      </div>
+      <div>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '1rem', color: '#2A2A28' }}>
+          Boussole Climat
+        </div>
+        <div className="label-uppercase" style={{ fontSize: '0.6rem', marginTop: 1 }}>par Celsius</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Radio Card ───────────────────────────────
+function RadioCard({ selected, label, onClick }: { selected: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: '100%', textAlign: 'left', padding: '14px 18px', borderRadius: 10,
+        border: `1px solid ${selected ? '#1B4332' : '#EDEAE3'}`,
+        backgroundColor: selected ? '#F7F5F0' : '#fff',
+        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12,
+        transition: 'all 0.15s',
+      }}
+    >
+      <div style={{
+        width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+        border: `2px solid ${selected ? '#1B4332' : '#E5E1D8'}`,
+        backgroundColor: selected ? '#1B4332' : 'transparent',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {selected && <Check size={10} color="white" />}
+      </div>
+      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', fontWeight: 400, color: '#2A2A28' }}>
+        {label}
+      </span>
+    </button>
+  )
+}
 
 export default function DgPage() {
   const { token } = useParams<{ token: string }>()
@@ -76,14 +124,30 @@ export default function DgPage() {
   const allRadiosAnswered = DG_QUESTIONS.every(q => answers[q.key])
   const canSubmit = allRadiosAnswered && sliderTouched
 
+  const shell = (children: React.ReactNode) => (
+    <div style={{ minHeight: '100vh', backgroundColor: '#F7F5F0', display: 'flex', justifyContent: 'center', padding: 24 }}>
+      <div style={{ maxWidth: 540, width: '100%' }}>{children}</div>
+      <style>{`
+        .dg-slider::-webkit-slider-thumb {
+          -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+          background: #1B4332; border: 2px solid white; box-shadow: 0 1px 3px rgba(42,42,40,.12); cursor: grab;
+        }
+        .dg-slider::-moz-range-thumb {
+          width: 16px; height: 16px; border-radius: 50%;
+          background: #1B4332; border: 2px solid white; box-shadow: 0 1px 3px rgba(42,42,40,.12); cursor: grab;
+        }
+      `}</style>
+    </div>
+  )
+
   // ── DONE ──
   if (phase === 'done') {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'white' }}>
-        <div className="max-w-md text-center animate-fade-in">
-          <div className="text-5xl mb-6">✅</div>
-          <h1 className="text-2xl font-bold mb-3">Merci.</h1>
-          <p className="text-sm" style={{ color: 'var(--color-texte-secondary)' }}>
+    return shell(
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+        <div style={{ textAlign: 'center' }} className="animate-fade-in">
+          <CheckCircle size={48} color="#1B4332" style={{ margin: '0 auto 16px' }} />
+          <h1 className="font-display" style={{ fontSize: '1.3rem', fontWeight: 500, marginBottom: 8 }}>Merci.</h1>
+          <p style={{ fontSize: '0.85rem', color: '#B0AB9F' }}>
             Vos réponses ont été transmises à l'équipe Celsius.
           </p>
         </div>
@@ -93,121 +157,100 @@ export default function DgPage() {
 
   // ── FORM ──
   if (phase === 'form') {
-    return (
-      <div className="min-h-screen p-6 flex justify-center" style={{ backgroundColor: 'white' }}>
-        <div className="max-w-lg w-full animate-fade-in">
-          <div className="flex items-center gap-3 mb-8">
-            <img src={celsiusLogo} alt="Celsius" className="h-7 object-contain" />
-            <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: 'var(--color-gris-100)', color: 'var(--color-texte-secondary)' }}>
-              ~3 min
+    return shell(
+      <div style={{ paddingTop: 16 }} className="animate-fade-in">
+        <LogoBlock />
+
+        {DG_QUESTIONS.map(q => (
+          <div key={q.key} style={{ marginBottom: 32 }}>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.9rem', fontWeight: 600, marginBottom: 10, lineHeight: 1.5, color: '#2A2A28' }}>
+              {q.label}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {q.options.map(opt => (
+                <RadioCard
+                  key={opt}
+                  selected={answers[q.key] === opt}
+                  label={opt}
+                  onClick={() => selectAnswer(q.key, opt)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* DG5 Slider */}
+        <div style={{ marginBottom: 32 }}>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.9rem', fontWeight: 600, marginBottom: 10, lineHeight: 1.5, color: '#2A2A28' }}>
+            DG5. Estimez-vous que votre entreprise met les moyens suffisants pour sa transition climat ?
+          </p>
+          <div style={{ textAlign: 'center', marginBottom: 8 }}>
+            <span
+              className="font-display"
+              style={{ fontSize: '1.5rem', fontWeight: 600, color: sliderTouched ? '#1B4332' : '#E5E1D8', transition: 'color 0.2s' }}
+            >
+              {sliderDisplay}
             </span>
           </div>
-
-          {/* DG1-DG4: Radio cards */}
-          {DG_QUESTIONS.map(q => (
-            <div key={q.key} className="mb-8">
-              <p className="text-sm font-semibold mb-3 leading-relaxed">{q.label}</p>
-              <div className="space-y-2">
-                {q.options.map(opt => {
-                  const isSelected = answers[q.key] === opt
-                  return (
-                    <button
-                      key={opt}
-                      onClick={() => selectAnswer(q.key, opt)}
-                      className="w-full text-left px-4 py-3 rounded-xl border-2 text-sm transition-all duration-200 active:scale-[0.98] flex items-center gap-3"
-                      style={{
-                        backgroundColor: isSelected ? 'var(--color-celsius-50)' : 'white',
-                        borderColor: isSelected ? '#1B5E3B' : 'var(--color-border)',
-                      }}
-                    >
-                      <div
-                        className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
-                        style={{
-                          borderColor: isSelected ? '#1B5E3B' : 'var(--color-gris-300)',
-                          backgroundColor: isSelected ? '#1B5E3B' : 'transparent',
-                        }}
-                      >
-                        {isSelected && <Check size={12} color="white" />}
-                      </div>
-                      <span>{opt}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
-
-          {/* DG5: Slider */}
-          <div className="mb-8">
-            <p className="text-sm font-semibold mb-3 leading-relaxed">
-              DG5. Estimez-vous que votre entreprise met les moyens suffisants pour sa transition climat ?
-            </p>
-            <div className="text-center mb-2">
-              <span
-                className="text-3xl font-bold transition-colors"
-                style={{ color: sliderTouched ? '#1B5E3B' : 'var(--color-gris-300)' }}
-              >
-                {sliderDisplay}
-              </span>
-            </div>
-            <div className="px-1">
-              <input
-                type="range" min={1} max={10} value={sliderDisplay}
-                onChange={e => setSlider(parseInt(e.target.value))}
-                className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                style={{
-                  background: `linear-gradient(to right, #1B5E3B 0%, #1B5E3B ${((sliderDisplay - 1) / 9) * 100}%, #E8E8E4 ${((sliderDisplay - 1) / 9) * 100}%, #E8E8E4 100%)`,
-                }}
-              />
-              <style>{`
-                input[type="range"]::-webkit-slider-thumb {
-                  -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
-                  background: #1B5E3B; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.2); cursor: grab;
-                }
-                input[type="range"]::-moz-range-thumb {
-                  width: 22px; height: 22px; border-radius: 50%;
-                  background: #1B5E3B; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.2); cursor: grab;
-                }
-              `}</style>
-            </div>
-            <div className="flex justify-between mt-1">
-              <span className="text-xs" style={{ color: 'var(--color-gris-400)' }}>Pas du tout</span>
-              <span className="text-xs" style={{ color: 'var(--color-gris-400)' }}>Tout à fait</span>
-            </div>
+          <input
+            type="range" min={1} max={10} value={sliderDisplay}
+            onChange={e => setSlider(parseInt(e.target.value))}
+            className="dg-slider"
+            style={{
+              width: '100%', height: 4, borderRadius: 2, appearance: 'none', cursor: 'pointer', outline: 'none',
+              background: `linear-gradient(to right, #1B4332 0%, #1B4332 ${((sliderDisplay - 1) / 9) * 100}%, #F0EDE6 ${((sliderDisplay - 1) / 9) * 100}%, #F0EDE6 100%)`,
+            }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+            <span style={{ fontSize: '0.7rem', color: '#B0AB9F' }}>Pas du tout</span>
+            <span style={{ fontSize: '0.7rem', color: '#B0AB9F' }}>Tout à fait</span>
           </div>
-
-          <button
-            onClick={() => setPhase('done')}
-            disabled={!canSubmit}
-            className="w-full py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-40"
-            style={{ backgroundColor: '#1B5E3B' }}
-          >
-            Envoyer mes réponses <ChevronRight size={18} />
-          </button>
         </div>
+
+        <button
+          onClick={() => setPhase('done')}
+          disabled={!canSubmit}
+          style={{
+            width: '100%', padding: '12px 0', borderRadius: 8, backgroundColor: '#1B4332',
+            color: '#fff', fontWeight: 500, fontSize: '0.9rem', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            opacity: canSubmit ? 1 : 0.4, fontFamily: 'var(--font-sans)',
+          }}
+        >
+          Envoyer mes réponses <ChevronRight size={16} />
+        </button>
       </div>
     )
   }
 
   // ── WELCOME ──
-  return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'white' }}>
-      <div className="max-w-md w-full text-center animate-fade-in">
-        <img src={celsiusLogo} alt="Celsius" className="h-10 mx-auto mb-8 object-contain" />
+  return shell(
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+      <div style={{ width: '100%', textAlign: 'center' }} className="animate-fade-in">
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <LogoBlock />
+        </div>
 
-        <h1 className="text-2xl font-bold mb-2">Questionnaire direction</h1>
-        <p className="text-lg font-semibold mb-4" style={{ color: '#1B5E3B' }}>{config.companyName}</p>
-
-        <p className="text-sm leading-relaxed mb-8" style={{ color: 'var(--color-texte-secondary)' }}>
+        <h1 className="font-display" style={{ fontSize: '1.5rem', fontWeight: 400, marginBottom: 4 }}>
+          Questionnaire direction
+        </h1>
+        <p className="font-display" style={{ fontSize: '1.2rem', fontWeight: 500, color: '#1B4332', marginBottom: 16 }}>
+          {config.companyName}
+        </p>
+        <p style={{ fontSize: '0.88rem', color: '#7A766D', lineHeight: 1.5, marginBottom: 28 }}>
           {config.clientName} vous a invité(e) à répondre à 5 questions. Durée : 3 minutes.
         </p>
 
         <button
           onClick={() => setPhase('form')}
-          className="w-full py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-          style={{ backgroundColor: '#1B5E3B' }}
+          style={{
+            width: '100%', padding: '12px 0', borderRadius: 8, backgroundColor: '#1B4332',
+            color: '#fff', fontWeight: 500, fontSize: '0.9rem', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            fontFamily: 'var(--font-sans)',
+          }}
         >
-          Démarrer <ChevronRight size={18} />
+          Démarrer <ChevronRight size={16} />
         </button>
       </div>
     </div>
