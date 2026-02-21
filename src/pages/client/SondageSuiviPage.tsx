@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { Check, Clock, Copy, RefreshCw } from 'lucide-react'
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts'
+import { Check, User, Copy, RefreshCw } from 'lucide-react'
 
 const MOCK_DATA = {
   totalResponses: 23,
@@ -21,8 +21,8 @@ const MOCK_DATA = {
 
 function getEncouragement(count: number): string {
   if (count < 10) return "Les premières réponses arrivent. N'hésitez pas à relancer vos équipes."
-  if (count < 20) return 'Bon début. Chaque réponse supplémentaire renforce la fiabilité du diagnostic.'
-  return 'Excellent taux de participation. Les résultats seront très significatifs.'
+  if (count < 20) return 'Bon début. Chaque réponse renforce la fiabilité du diagnostic.'
+  return 'Excellent taux de participation.'
 }
 
 export default function SondageSuiviPage() {
@@ -38,95 +38,79 @@ export default function SondageSuiviPage() {
   }
 
   return (
-    <div className="max-w-[640px]">
-      <h1 className="text-2xl font-bold mb-6">Suivi du sondage</h1>
+    <div style={{ maxWidth: 960 }}>
+      <p className="label-uppercase" style={{ marginBottom: 8 }}>SONDAGE INTERNE</p>
 
       {/* Big counter */}
-      <div
-        className="rounded-xl p-8 mb-6 text-center"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-      >
-        <p
-          className="text-5xl font-bold mb-1"
-          style={{ color: onTarget ? '#1B5E3B' : 'var(--color-celsius-900)' }}
-        >
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
+        <span className="font-display" style={{ fontSize: '3rem', fontWeight: 600, color: '#1B4332' }}>
           {totalResponses}
-        </p>
-        <p className="text-sm" style={{ color: 'var(--color-texte-secondary)' }}>
+        </span>
+        <span style={{ fontSize: '1rem', color: '#2A2A28' }}>
           réponses reçues
-        </p>
-
-        {/* Progress bar */}
-        <div className="max-w-xs mx-auto mt-5">
-          <div className="flex justify-between mb-1">
-            <span className="text-xs" style={{ color: 'var(--color-texte-secondary)' }}>0</span>
-            <span className="text-xs font-semibold" style={{ color: 'var(--color-celsius-900)' }}>
-              Objectif : {target}
-            </span>
-          </div>
-          <div className="h-3 rounded-full" style={{ backgroundColor: 'var(--color-gris-200)' }}>
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${progress}%`,
-                backgroundColor: onTarget ? '#1B5E3B' : '#E8734A',
-              }}
-            />
-          </div>
-        </div>
-
-        <p className="text-sm mt-4 leading-relaxed" style={{ color: 'var(--color-texte-secondary)' }}>
-          {getEncouragement(totalResponses)}
-        </p>
+          {onTarget && <Check size={18} color="#1B4332" style={{ display: 'inline', marginLeft: 8, verticalAlign: 'middle' }} />}
+        </span>
       </div>
 
-      {/* Accumulation curve */}
-      <div
-        className="rounded-xl p-6 mb-6"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-      >
-        <h3 className="text-base font-bold mb-4">Réponses cumulées</h3>
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={dailyResponses}>
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'var(--color-gris-400)' }} />
-              <YAxis tick={{ fontSize: 11, fill: 'var(--color-gris-400)' }} />
-              <Tooltip
-                contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid var(--color-border)' }}
-              />
-              <Line type="monotone" dataKey="count" stroke="#1B5E3B" strokeWidth={2} dot={{ r: 3, fill: '#1B5E3B' }} />
-            </LineChart>
-          </ResponsiveContainer>
+      {!onTarget && (
+        <p style={{ fontSize: '0.75rem', color: '#B0AB9F', marginBottom: 6 }}>
+          {totalResponses} / {target} — encore {target - totalResponses} pour atteindre l'objectif
+        </p>
+      )}
+
+      {/* Progress bar */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ height: 8, backgroundColor: '#F0EDE6', borderRadius: 4 }}>
+          <div style={{
+            height: '100%', borderRadius: 4, backgroundColor: '#1B4332',
+            width: `${progress}%`, transition: 'width 0.7s',
+          }} />
         </div>
+        <p style={{ fontSize: '0.75rem', color: '#B0AB9F', marginTop: 4 }}>Objectif : {target} réponses</p>
+      </div>
+
+      {/* Accumulation chart */}
+      <div style={{
+        backgroundColor: '#fff', borderRadius: 14, padding: 20,
+        border: '1px solid #EDEAE3', boxShadow: '0 1px 3px rgba(42,42,40,.04)',
+        marginBottom: 20, height: 240,
+      }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={dailyResponses}>
+            <defs>
+              <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1B4332" stopOpacity={0.1} />
+                <stop offset="100%" stopColor="#1B4332" stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#B0AB9F', fontFamily: 'var(--font-sans)' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#B0AB9F', fontFamily: 'var(--font-sans)' }} axisLine={false} tickLine={false} />
+            <Area type="monotone" dataKey="count" stroke="#1B4332" strokeWidth={2} fill="url(#areaFill)" dot={{ r: 3, fill: '#1B4332', strokeWidth: 0 }} />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
 
       {/* DG status */}
-      <div
-        className="rounded-xl p-5 mb-6 flex items-center justify-between"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-      >
-        <div className="flex items-center gap-3">
-          {dgReceived ? (
-            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F0F9F4' }}>
-              <Check size={16} color="#1B5E3B" />
-            </div>
-          ) : (
-            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-gold-100)' }}>
-              <Clock size={16} color="#E8734A" />
-            </div>
-          )}
+      <div style={{
+        backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14,
+        padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 20,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <User size={20} color="#7A766D" />
           <div>
-            <p className="text-sm font-semibold">Questionnaire Direction</p>
-            <p className="text-xs" style={{ color: 'var(--color-texte-secondary)' }}>
-              {dgReceived ? 'Réponse reçue ✅' : 'En attente ⏳'}
+            <p style={{ fontSize: '0.85rem', fontWeight: 600 }}>Questionnaire DG</p>
+            <p style={{ fontSize: '0.78rem', color: dgReceived ? '#1B4332' : '#B87333', fontWeight: 500 }}>
+              {dgReceived ? 'Reçu' : 'En attente'}
             </p>
           </div>
         </div>
         {!dgReceived && (
-          <button
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:scale-[1.02]"
-            style={{ backgroundColor: 'var(--color-fond)', color: 'var(--color-celsius-900)' }}
-          >
+          <button style={{
+            fontSize: '0.8rem', fontWeight: 500, color: '#7A766D', background: 'none',
+            border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+            textDecoration: 'underline',
+          }}>
             <RefreshCw size={12} /> Renvoyer
           </button>
         )}
@@ -135,12 +119,21 @@ export default function SondageSuiviPage() {
       {/* Copy link */}
       <button
         onClick={handleCopy}
-        className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 border-2 transition-all hover:scale-[1.005]"
-        style={{ borderColor: 'var(--color-celsius-900)', color: 'var(--color-celsius-900)' }}
+        style={{
+          width: '100%', padding: '12px 0', borderRadius: 8,
+          border: '1.5px solid #1B4332', backgroundColor: 'transparent',
+          color: '#1B4332', fontWeight: 500, fontSize: '0.85rem',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          fontFamily: 'var(--font-sans)', transition: 'all 0.15s',
+        }}
       >
-        <Copy size={14} />
-        {copied ? 'Lien copié !' : 'Copier le lien du sondage'}
+        <Copy size={14} /> {copied ? 'Lien copié !' : 'Copier le lien du sondage'}
       </button>
+
+      {/* Encouragement */}
+      <p style={{ fontSize: '0.88rem', color: '#7A766D', fontStyle: 'italic', marginTop: 20, lineHeight: 1.5 }}>
+        {getEncouragement(totalResponses)}
+      </p>
     </div>
   )
 }
