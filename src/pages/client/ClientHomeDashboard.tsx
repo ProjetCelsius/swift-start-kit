@@ -187,11 +187,10 @@ export default function ClientHomeDashboard() {
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
   const derived = useMemo(() => deriveFromStatus(demoStatus), [demoStatus])
 
-  const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked, dgStatus, completedSteps, isAnalysis, allSubmitted } = derived
+  const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked, dgStatus, completedSteps, isAnalysis } = derived
   const doneCount = blocs.filter(b => b.status === 'done').length
   const allBlocsDone = blocs.every(b => b.status === 'done')
   const activeBloc = blocs.find(b => b.status === 'active')
-  const isSondageAvailable = !!demoStatus && demoStatus !== 'onboarding'
 
   return (
     <div>
@@ -291,10 +290,15 @@ export default function ClientHomeDashboard() {
 
       {/* ═══════ DIAGNOSTIC TEASER ═══════ */}
       <div className="dash-fadein" style={{ animationDelay: '100ms', marginBottom: 20 }}>
-        <div style={{
-          position: 'relative', minHeight: diagnosticUnlocked ? 'auto' : 260, borderRadius: 18,
-          overflow: 'hidden', border: '1px solid #EDEAE3', backgroundColor: '#FFFFFF',
-        }}>
+        <div
+          className="diagnostic-teaser-card"
+          style={{
+            position: 'relative', minHeight: diagnosticUnlocked ? 'auto' : 260, borderRadius: 18,
+            overflow: 'hidden',
+            border: diagnosticUnlocked ? '1px solid #EDEAE3' : '1px solid #E5E1D8',
+            backgroundColor: diagnosticUnlocked ? '#FFFFFF' : '#F0EDE6',
+            transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
+          }}>
           {diagnosticUnlocked ? (
             /* UNLOCKED STATE */
             <div style={{ padding: '32px 36px' }}>
@@ -319,7 +323,7 @@ export default function ClientHomeDashboard() {
             /* LOCKED STATE with abstract blobs */
             <>
               {/* Abstract blurred visualization */}
-              <div style={{ position: 'absolute', inset: 0, filter: 'blur(12px)', opacity: 0.4, pointerEvents: 'none' }}>
+              <div style={{ position: 'absolute', inset: 0, filter: 'blur(14px)', opacity: 0.5, pointerEvents: 'none' }}>
                 <div style={{ position: 'absolute', width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(27,67,50,0.3) 0%, transparent 70%)', top: 20, left: '10%' }} />
                 <div style={{ position: 'absolute', width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(184,115,51,0.25) 0%, transparent 70%)', top: 40, right: '15%' }} />
                 <div style={{ position: 'absolute', width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,106,79,0.2) 0%, transparent 70%)', bottom: 30, left: '40%' }} />
@@ -335,7 +339,7 @@ export default function ClientHomeDashboard() {
               </div>
 
               {/* Overlay */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ backgroundColor: 'rgba(247,245,240,0.75)' }}>
+              <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ backgroundColor: 'rgba(240,237,230,0.7)' }}>
                 {isAnalysis ? (
                   /* Analysis in progress — show analyst avatar */
                   <>
@@ -383,22 +387,27 @@ export default function ClientHomeDashboard() {
                   <div style={{
                     height: '100%', borderRadius: 3,
                     background: 'linear-gradient(90deg, #B87333, #1B4332)',
-                    width: `${(completedSteps / 5) * 100}%`,
+                    width: `${(() => {
+                      const pillsDone = [allBlocsDone, surveyCount >= surveyTarget, dgStatus === 'done', completedSteps >= 4].filter(Boolean).length
+                      return (pillsDone / 4) * 100
+                    })()}%`,
                     transition: 'width 0.5s ease',
                   }} />
                 </div>
                 <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#7A766D', marginBottom: 14 }}>
-                  {completedSteps} / 5 étapes complétées
+                  {(() => {
+                    const pillsDone = [allBlocsDone, surveyCount >= surveyTarget, dgStatus === 'done', completedSteps >= 4].filter(Boolean).length
+                    return `${pillsDone} / 4 étapes complétées`
+                  })()}
                 </div>
 
                 {/* Step pills */}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
-                  {[
-                    { label: 'Appel de lancement', done: completedSteps >= 1, active: completedSteps === 0 },
-                    { label: 'Blocs 1 & 2', done: completedSteps >= 2, active: completedSteps === 1 },
-                    { label: 'Questionnaire', done: allBlocsDone, active: !allBlocsDone && completedSteps >= 2 },
-                    { label: 'Sondage interne', done: allSubmitted, active: isSondageAvailable && !allSubmitted },
-                    { label: 'Entretien DG', done: allSubmitted, active: false },
+                {[
+                    { label: 'Questionnaire', done: allBlocsDone, active: !allBlocsDone && completedSteps >= 1 },
+                    { label: 'Sondage interne', done: surveyCount >= surveyTarget, active: surveyCount > 0 && surveyCount < surveyTarget },
+                    { label: 'Entretien DG', done: dgStatus === 'done', active: dgStatus === 'pending' },
+                    { label: 'Analyse', done: completedSteps >= 4, active: isAnalysis },
                   ].map((pill, i) => (
                     <span key={i} style={{
                       display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -458,11 +467,10 @@ export default function ClientHomeDashboard() {
             style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
               borderRadius: 10, border: '1px solid #EDEAE3', backgroundColor: '#FFFFFF',
-              cursor: isSondageAvailable ? 'pointer' : 'default', marginBottom: 8,
+              cursor: 'pointer', marginBottom: 8,
               transition: 'background-color 0.15s', textAlign: 'left', width: '100%',
-              opacity: isSondageAvailable ? 1 : 0.5,
             }}
-            onMouseEnter={e => { if (isSondageAvailable) e.currentTarget.style.backgroundColor = '#F7F5F0' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#F7F5F0' }}
             onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#FFFFFF' }}
           >
             <div style={{
@@ -473,7 +481,9 @@ export default function ClientHomeDashboard() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.78rem', color: '#2A2A28' }}>Sondage interne</div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', color: '#B0AB9F' }}>{surveyCount} réponses sur {surveyTarget}</div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', color: '#B0AB9F' }}>
+                {surveyCount > 0 ? `${surveyCount} réponses sur ${surveyTarget}` : 'Pas encore de réponses'}
+              </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
               <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 600, color: surveyCount >= surveyTarget ? '#1B4332' : '#B87333' }}>
@@ -641,6 +651,10 @@ export default function ClientHomeDashboard() {
         @keyframes analysisPulse {
           0%, 100% { transform: scale(1); opacity: 1; }
           50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        .diagnostic-teaser-card:hover {
+          box-shadow: 0 4px 20px rgba(42,42,40,0.08), 0 0 0 1px rgba(184,115,51,0.12);
+          border-color: #D5CFC5 !important;
         }
       `}</style>
     </div>
