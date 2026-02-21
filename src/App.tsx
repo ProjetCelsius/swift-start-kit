@@ -4,7 +4,7 @@ import { DemoProvider, useDemoIfAvailable } from './hooks/useDemo'
 import DevToolbar from './components/DevToolbar'
 import ClientLayout from './components/layout/ClientLayout'
 import Login from './pages/Login'
-import Dashboard from './pages/client/Dashboard'
+// Dashboard is accessed via redirect to /client/questionnaire/bloc1
 import QuestionnaireBloc1 from './pages/client/QuestionnaireBloc1'
 import QuestionnaireBloc2 from './pages/client/QuestionnaireBloc2'
 import QuestionnaireBloc3 from './pages/client/QuestionnaireBloc3'
@@ -51,24 +51,31 @@ function AppRoutes() {
   return (
     <>
       <Routes>
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/client/questionnaire/bloc1" /> : <Login />} />
         
         {/* Espace Client */}
         <Route element={isAuthenticated ? <ClientLayout /> : <Navigate to="/login" />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/questionnaire" element={<QuestionnairePage />} />
-          <Route path="/questionnaire/1" element={<QuestionnaireBloc1 />} />
-          <Route path="/questionnaire/2" element={<QuestionnaireBloc2 />} />
-          <Route path="/questionnaire/3" element={<QuestionnaireBloc3 />} />
-          <Route path="/questionnaire/4" element={<QuestionnaireBloc4 />} />
-          <Route path="/questionnaire/:blockId" element={<QuestionnaireBlock />} />
-          <Route path="/sondage" element={<SondageSuiviPage />} />
-          <Route path="/attente" element={<AttentePage />} />
-          <Route path="/diagnostic" element={<DiagnosticPage />} />
-          <Route path="/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
-          <Route path="/journal" element={<JournalPage />} />
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/aide" element={<AidePage />} />
+          <Route path="/" element={<Navigate to="/client/questionnaire/bloc1" replace />} />
+          <Route path="/client" element={<Navigate to="/client/questionnaire/bloc1" replace />} />
+          <Route path="/client/questionnaire" element={<QuestionnairePage />} />
+          <Route path="/client/questionnaire/bloc1" element={<QuestionnaireBloc1 />} />
+          <Route path="/client/questionnaire/bloc2" element={<QuestionnaireBloc2 />} />
+          <Route path="/client/questionnaire/bloc3" element={<QuestionnaireBloc3 />} />
+          <Route path="/client/questionnaire/bloc4" element={<QuestionnaireBloc4 />} />
+          <Route path="/client/questionnaire/:blockId" element={<QuestionnaireBlock />} />
+          <Route path="/client/sondage" element={<SondageSuiviPage />} />
+          <Route path="/client/attente" element={<AttentePage />} />
+          <Route path="/client/diagnostic" element={<DiagnosticPage />} />
+          <Route path="/client/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
+          <Route path="/client/journal" element={<JournalPage />} />
+          <Route path="/client/messages" element={<MessagesPage />} />
+          <Route path="/client/aide" element={<AidePage />} />
+          {/* Legacy redirects */}
+          <Route path="/questionnaire/*" element={<Navigate to="/client/questionnaire/bloc1" replace />} />
+          <Route path="/sondage" element={<Navigate to="/client/sondage" replace />} />
+          <Route path="/diagnostic" element={<Navigate to="/client/diagnostic" replace />} />
+          <Route path="/journal" element={<Navigate to="/client/journal" replace />} />
+          <Route path="/messages" element={<Navigate to="/client/messages" replace />} />
         </Route>
 
         {/* Espace Répondant (public) */}
@@ -78,17 +85,20 @@ function AppRoutes() {
         {/* Espace Admin */}
         <Route element={isAuthenticated || isDemo ? <AdminLayout /> : <Navigate to="/login" />}>
           <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/diagnostics/:id" element={<AdminDiagnosticDetail />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/diagnostic/:id" element={<AdminDiagnosticDetail />} />
           <Route path="/admin/stats" element={<AdminStats />} />
-          <Route path="/admin/new" element={<NewDiagnostic />} />
+          <Route path="/admin/nouveau" element={<NewDiagnostic />} />
           <Route path="/admin/settings" element={<div className="p-8"><h1 className="text-2xl font-bold">Paramètres</h1><p className="text-sm mt-2" style={{ color: 'var(--color-texte-secondary)' }}>À implémenter.</p></div>} />
+          {/* Legacy redirects */}
+          <Route path="/admin/new" element={<Navigate to="/admin/nouveau" replace />} />
+          <Route path="/admin/diagnostics/:id" element={<Navigate to="/admin/diagnostic/:id" replace />} />
         </Route>
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
 
-      {/* Dev toolbar — always rendered, self-hides when demo off */}
       <DevToolbar />
     </>
   )

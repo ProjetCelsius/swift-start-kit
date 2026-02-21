@@ -2,10 +2,10 @@ import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, FileText, BarChart3, PlusCircle, LogOut } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { label: 'Tableau de bord', path: '/admin', icon: LayoutDashboard, end: true },
-  { label: 'Diagnostics', path: '/admin/diagnostics', icon: FileText },
+  { label: 'Tableau de bord', path: '/admin/dashboard', icon: LayoutDashboard, end: true },
+  { label: 'Diagnostics', path: '/admin/dashboard', icon: FileText },
   { label: 'Statistiques', path: '/admin/stats', icon: BarChart3 },
-  { label: 'Nouveau diagnostic', path: '/admin/new', icon: PlusCircle },
+  { label: 'Nouveau diagnostic', path: '/admin/nouveau', icon: PlusCircle },
 ]
 
 export default function AdminLayout() {

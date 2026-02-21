@@ -85,8 +85,8 @@ export default function DevToolbar() {
               key={r.value}
               onClick={() => {
                 demo.setRole(r.value)
-                if (r.value === 'admin' && !location.pathname.startsWith('/admin')) navigate('/admin')
-                if (r.value === 'client' && location.pathname.startsWith('/admin')) navigate('/')
+                if (r.value === 'admin' && !location.pathname.startsWith('/admin')) navigate('/admin/dashboard')
+                if (r.value === 'client' && location.pathname.startsWith('/admin')) navigate('/client/questionnaire/bloc1')
               }}
               className="text-[10px] font-medium px-2 py-0.5 rounded transition-colors"
               style={{
@@ -139,14 +139,13 @@ export default function DevToolbar() {
               <p className="text-[10px] font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>Navigation rapide</p>
               <div className="flex flex-wrap gap-1">
                 {[
-                  { label: 'Dashboard', path: '/' },
-                  { label: 'Bloc 1', path: '/questionnaire/1' },
-                  { label: 'Bloc 2', path: '/questionnaire/2' },
-                  { label: 'Bloc 3', path: '/questionnaire/3' },
-                  { label: 'Bloc 4', path: '/questionnaire/4' },
-                  { label: 'Sondage', path: '/sondage' },
-                  { label: 'Journal', path: '/journal' },
-                  { label: 'Messages', path: '/messages' },
+                  { label: 'Bloc 1', path: '/client/questionnaire/bloc1' },
+                  { label: 'Bloc 2', path: '/client/questionnaire/bloc2' },
+                  { label: 'Bloc 3', path: '/client/questionnaire/bloc3' },
+                  { label: 'Bloc 4', path: '/client/questionnaire/bloc4' },
+                  { label: 'Sondage', path: '/client/sondage' },
+                  { label: 'Journal', path: '/client/journal' },
+                  { label: 'Messages', path: '/client/messages' },
                 ].map(n => (
                   <button
                     key={n.path}
@@ -184,9 +183,9 @@ export default function DevToolbar() {
               <p className="text-[10px] font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>Admin</p>
               <div className="flex flex-wrap gap-1">
                 {[
-                  { label: 'Dashboard', path: '/admin' },
+                  { label: 'Dashboard', path: '/admin/dashboard' },
                   { label: 'Stats', path: '/admin/stats' },
-                  { label: 'Nouveau', path: '/admin/new' },
+                  { label: 'Nouveau', path: '/admin/nouveau' },
                 ].map(n => (
                   <button
                     key={n.path}
