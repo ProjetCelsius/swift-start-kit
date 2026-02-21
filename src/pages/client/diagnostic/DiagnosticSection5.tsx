@@ -37,7 +37,7 @@ export default function DiagnosticSection5() {
                 className="h-full rounded-full transition-all duration-700 relative"
                 style={{
                   width: `${fillPercent}%`,
-                  backgroundColor: fillPercent < 50 ? '#E8734A' : fillPercent < 75 ? '#F5A623' : '#1B5E3B',
+                  backgroundColor: fillPercent < 50 ? '#B87333' : fillPercent < 75 ? '#2D6A4F' : '#1B4332',
                   minWidth: '40px',
                 }}
               >
@@ -62,12 +62,12 @@ export default function DiagnosticSection5() {
 
         <div className="flex justify-center gap-6 mt-4">
           <div className="text-center">
-            <p className="text-2xl font-bold" style={{ color: '#E8734A' }}>{currentFTE}</p>
+            <p className="text-2xl font-bold" style={{ color: '#B87333' }}>{currentFTE}</p>
             <p className="text-xs" style={{ color: 'var(--color-texte-secondary)' }}>ETP actuel</p>
           </div>
           <div className="w-px" style={{ backgroundColor: 'var(--color-border)' }} />
           <div className="text-center">
-            <p className="text-2xl font-bold" style={{ color: '#1B5E3B' }}>{recommendedFTE}</p>
+            <p className="text-2xl font-bold" style={{ color: '#1B4332' }}>{recommendedFTE}</p>
             <p className="text-xs" style={{ color: 'var(--color-texte-secondary)' }}>ETP recommandé</p>
           </div>
         </div>

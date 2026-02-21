@@ -48,11 +48,11 @@ export default function DiagnosticSection3() {
               <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fill: 'var(--color-texte)' }} />
               <Radar
                 dataKey="score"
-                stroke="#1B5E3B"
-                fill="#1B5E3B"
+                stroke="#1B4332"
+                fill="#1B4332"
                 fillOpacity={0.15}
                 strokeWidth={2}
-                dot={{ r: 4, fill: '#1B5E3B' }}
+                dot={{ r: 4, fill: '#1B4332' }}
               />
             </RadarChart>
           </ResponsiveContainer>

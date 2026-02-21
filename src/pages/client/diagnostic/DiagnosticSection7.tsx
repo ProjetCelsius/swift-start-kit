@@ -1,8 +1,8 @@
 import { MOCK_DEADLINES } from '@/data/mockDiagnosticData'
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; dot: string }> = {
-  'Prêt': { bg: 'var(--color-celsius-100)', color: '#1B5E3B', dot: '#1B5E3B' },
-  'En cours': { bg: 'var(--color-gold-100)', color: '#E8734A', dot: '#E8734A' },
+  'Prêt': { bg: 'var(--color-celsius-100)', color: '#1B4332', dot: '#1B4332' },
+  'En cours': { bg: 'var(--color-accent-warm-light)', color: '#B87333', dot: '#B87333' },
   'Pas commencé': { bg: '#FEE2E2', color: '#DC4A4A', dot: '#DC4A4A' },
 }
 
@@ -20,7 +20,7 @@ export default function DiagnosticSection7() {
         {/* Vertical line */}
         <div
           className="absolute left-[5px] top-2 bottom-2 w-0.5"
-          style={{ backgroundColor: '#1B5E3B' }}
+          style={{ backgroundColor: '#1B4332' }}
         />
 
         <div className="space-y-5">

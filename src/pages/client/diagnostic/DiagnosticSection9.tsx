@@ -5,11 +5,11 @@ import { useNavigate } from 'react-router-dom'
 
 const EFFORT_STYLES: Record<string, { bg: string; color: string }> = {
   Rapide: { bg: 'var(--color-celsius-100)', color: 'var(--color-celsius-900)' },
-  Projet: { bg: 'var(--color-gold-100)', color: 'var(--color-gold-500)' },
+  Projet: { bg: 'var(--color-accent-warm-light)', color: 'var(--color-accent-warm)' },
   Transformation: { bg: 'var(--color-corail-100)', color: 'var(--color-corail-500)' },
 }
 
-const PRIORITY_COLORS = ['#1B5E3B', '#2D7A50', '#E8734A']
+const PRIORITY_COLORS = ['#1B4332', '#2D6A4F', '#B87333']
 
 export default function DiagnosticSection9() {
   const navigate = useNavigate()
@@ -28,7 +28,7 @@ export default function DiagnosticSection9() {
         {MOCK_PRIORITIES.map(p => (
           <button
             key={p.number}
-            onClick={() => navigate('/diagnostic/2')}
+            onClick={() => navigate('/client/diagnostic/2')}
             className="w-full text-left rounded-xl p-4 flex items-center gap-4 transition-all hover:scale-[1.005]"
             style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
           >
@@ -102,7 +102,7 @@ export default function DiagnosticSection9() {
           target="_blank"
           rel="noopener noreferrer"
           className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 border-2 transition-all hover:scale-[1.01]"
-          style={{ borderColor: '#E8734A', color: '#E8734A' }}
+          style={{ borderColor: '#B87333', color: '#B87333' }}
         >
           Découvrir les accompagnements Celsius <ExternalLink size={16} />
         </a>

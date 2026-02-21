@@ -97,7 +97,7 @@ export default function AttentePage() {
             </div>
           ))}
         </div>
-        <a href="/journal" style={{
+        <a href="/client/journal" style={{
           display: 'inline-block', marginTop: 10, fontSize: '0.82rem',
           fontWeight: 500, color: '#2D6A4F', textDecoration: 'none',
         }}>

@@ -3,7 +3,7 @@ import { MOCK_PRIORITIES, MOCK_ANTI_RECOMMENDATION } from '@/data/mockDiagnostic
 
 const EFFORT_STYLES: Record<string, { bg: string; color: string }> = {
   Rapide: { bg: 'var(--color-celsius-100)', color: 'var(--color-celsius-900)' },
-  Projet: { bg: 'var(--color-gold-100)', color: 'var(--color-gold-500)' },
+  Projet: { bg: 'var(--color-accent-warm-light)', color: 'var(--color-accent-warm)' },
   Transformation: { bg: 'var(--color-corail-100)', color: 'var(--color-corail-500)' },
 }
 
