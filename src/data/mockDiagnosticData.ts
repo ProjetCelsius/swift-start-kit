@@ -184,3 +184,125 @@ export const MOCK_FOOTPRINT = {
     { label: 'Autres', value: 1100 },
   ],
 }
+
+// ── Section 7: Key Deadlines ─────────────────────────────
+
+export interface Deadline {
+  date: string
+  title: string
+  description: string
+  status: 'Prêt' | 'En cours' | 'Pas commencé'
+  urgent: boolean
+}
+
+export const MOCK_DEADLINES: Deadline[] = [
+  {
+    date: 'Janvier 2026',
+    title: 'CSRD — Premier rapport de durabilité',
+    description: "Publication obligatoire pour les entreprises de plus de 250 salariés. Inclut les normes ESRS climat (E1).",
+    status: 'En cours',
+    urgent: true,
+  },
+  {
+    date: 'Mars 2026',
+    title: 'Taxonomie européenne — Reporting d\'éligibilité',
+    description: "Analyse d'éligibilité et d'alignement de vos activités avec la taxonomie verte européenne.",
+    status: 'Pas commencé',
+    urgent: true,
+  },
+  {
+    date: 'Juin 2026',
+    title: 'Bilan GES réglementaire — Mise à jour',
+    description: "Mise à jour obligatoire du bilan de gaz à effet de serre (scopes 1, 2 et 3 significatif).",
+    status: 'En cours',
+    urgent: false,
+  },
+  {
+    date: 'Janvier 2027',
+    title: 'Devoir de vigilance — Plan de vigilance climat',
+    description: "Intégration des risques climatiques dans le plan de vigilance si applicable.",
+    status: 'Pas commencé',
+    urgent: false,
+  },
+  {
+    date: 'Juin 2027',
+    title: 'RE2020 — Conformité bâtiments tertiaires',
+    description: "Échéance de conformité pour les bâtiments tertiaires de plus de 1 000 m².",
+    status: 'Prêt',
+    urgent: false,
+  },
+  {
+    date: 'Janvier 2028',
+    title: 'CSRD — Deuxième cycle de reporting',
+    description: "Deuxième publication avec indicateurs de progression et analyse de double matérialité mise à jour.",
+    status: 'Pas commencé',
+    urgent: false,
+  },
+]
+
+// ── Section 8: Advancement Profile ───────────────────────
+
+export interface TileEnrichment {
+  status: 'done' | 'in_progress' | 'not_started'
+  relevance: 'essential' | 'recommended' | 'optional'
+}
+
+export const MOCK_TILE_ENRICHMENTS: Record<string, TileEnrichment> = {
+  bilan_carbone: { status: 'done', relevance: 'essential' },
+  strategie_climat: { status: 'in_progress', relevance: 'essential' },
+  objectifs_reduction: { status: 'not_started', relevance: 'essential' },
+  rapport_rse: { status: 'not_started', relevance: 'essential' },
+  certification: { status: 'not_started', relevance: 'optional' },
+  formation: { status: 'in_progress', relevance: 'recommended' },
+  eco_conception: { status: 'not_started', relevance: 'recommended' },
+  achats_responsables: { status: 'not_started', relevance: 'essential' },
+  mobilite: { status: 'done', relevance: 'recommended' },
+  acv: { status: 'not_started', relevance: 'optional' },
+  compensation: { status: 'not_started', relevance: 'optional' },
+  initiatives_collectives: { status: 'in_progress', relevance: 'recommended' },
+}
+
+// ── Section 9: Next Steps / Quarterly Plan ───────────────
+
+export interface QuarterlyAction {
+  label: string
+  priority: number // 1-3 matches priority cards
+}
+
+export interface Quarter {
+  quarter: string
+  actions: QuarterlyAction[]
+}
+
+export const MOCK_QUARTERLY_PLAN: Quarter[] = [
+  {
+    quarter: 'T1 2026',
+    actions: [
+      { label: 'Constituer le comité climat', priority: 1 },
+      { label: 'Nommer les ambassadeurs internes', priority: 2 },
+    ],
+  },
+  {
+    quarter: 'T2 2026',
+    actions: [
+      { label: 'Premier comité climat', priority: 1 },
+      { label: 'Fresque du Climat managers', priority: 2 },
+      { label: 'Audit fournisseurs top 20', priority: 3 },
+    ],
+  },
+  {
+    quarter: 'T3 2026',
+    actions: [
+      { label: 'Intégrer le climat dans le budget 2027', priority: 1 },
+      { label: 'Ateliers métiers climat', priority: 2 },
+    ],
+  },
+  {
+    quarter: 'T4 2026',
+    actions: [
+      { label: 'Bilan du comité climat', priority: 1 },
+      { label: 'Critères carbone dans les appels d\'offres', priority: 3 },
+      { label: 'Mesure d\'impact sensibilisation', priority: 2 },
+    ],
+  },
+]
