@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   Check,
   BookOpen,
+  Compass,
   MessageSquare,
   HelpCircle,
   ChevronUp,
@@ -20,6 +21,7 @@ import {
 import celsiusLogo from '@/assets/celsius-logo.svg'
 import { MOCK_ANALYST } from '../../hooks/useAuth'
 import { useAuth } from '../../hooks/useAuth'
+import { useDemoIfAvailable } from '../../hooks/useDemo'
 import HelpPanel from '../questionnaire/HelpPanel'
 
 // ── Journey state ──────────────────────────────
@@ -154,7 +156,15 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
     >
       {/* Logo */}
       <div className="px-5 pt-5 pb-4">
-        <div className="font-display" style={{ fontSize: '0.95rem', color: '#1B4332' }}>Boussole Climat</div>
+        <div className="flex items-center gap-2">
+          <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#1B4332', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Compass size={14} color="#fff" strokeWidth={2} />
+          </div>
+          <div>
+            <div className="font-display" style={{ fontSize: '0.95rem', color: '#1B4332', lineHeight: 1.2 }}>Boussole Climat</div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#B0AB9F' }}>par Celsius</div>
+          </div>
+        </div>
       </div>
 
       {/* Analyst card */}
@@ -446,7 +456,7 @@ function UserProfileBlock() {
   const ref = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const { signOut } = useAuth()
-
+  const demo = useDemoIfAvailable()
   useEffect(() => {
     if (!open) return
     function handleClick(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
@@ -459,7 +469,7 @@ function UserProfileBlock() {
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(null), 2000); return () => clearTimeout(t) }, [toast])
 
   function showToast(msg: string) { setToast(msg); setOpen(false) }
-  async function handleLogout() { setOpen(false); await signOut(); navigate('/login') }
+  async function handleLogout() { setOpen(false); demo?.setEnabled(false); await signOut(); navigate('/login') }
 
   const menuItems = [
     { icon: <User size={15} />, label: 'Mon compte', action: () => showToast('Bientôt disponible') },
