@@ -8,6 +8,8 @@ import QuestionnaireBloc2 from './pages/client/QuestionnaireBloc2'
 import QuestionnaireBloc3 from './pages/client/QuestionnaireBloc3'
 import QuestionnaireBloc4 from './pages/client/QuestionnaireBloc4'
 import QuestionnaireBlock from './pages/client/QuestionnaireBlock'
+import SurveyPage from './pages/respondent/SurveyPage'
+import DgPage from './pages/respondent/DgPage'
 import {
   QuestionnairePage,
   SondagePage,
@@ -54,9 +56,9 @@ function AppRoutes() {
         <Route path="/aide" element={<AidePage />} />
       </Route>
 
-      {/* Espace Répondant (sondage public) */}
-      <Route path="/sondage/:token" element={<div>Sondage public — à implémenter</div>} />
-      <Route path="/dg/:token" element={<div>Questionnaire DG — à implémenter</div>} />
+      {/* Espace Répondant (public) */}
+      <Route path="/sondage/:token" element={<SurveyPage />} />
+      <Route path="/dg/:token" element={<DgPage />} />
 
       {/* Espace Admin (à implémenter) */}
       <Route path="/admin/*" element={<div>Admin — à implémenter</div>} />
