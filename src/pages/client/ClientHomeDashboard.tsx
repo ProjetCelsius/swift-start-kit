@@ -24,11 +24,11 @@ const BLOCS: QuestionnaireBloc[] = [
 // ── Journey steps ──────
 type StepStatus = 'done' | 'active' | 'locked'
 const STEPS: { num: number; label: string; detail: string; status: StepStatus }[] = [
-  { num: 1, label: 'Appel de lancement', detail: '10 fév.', status: 'done' },
-  { num: 2, label: 'Questionnaire', detail: '2/4 blocs', status: 'active' },
-  { num: 3, label: 'Sondage', detail: '12/30', status: 'active' },
-  { num: 4, label: 'Analyse', detail: '—', status: 'locked' },
-  { num: 5, label: 'Restitution', detail: '—', status: 'locked' },
+  { num: 1, label: 'Lancement', detail: 'Jour 1', status: 'done' },
+  { num: 2, label: 'Questionnaire', detail: '~2 jours', status: 'active' },
+  { num: 3, label: 'Sondage', detail: '~3 jours', status: 'active' },
+  { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
+  { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
 ]
 
 function getQuestionnaireState(blocs: QuestionnaireBloc[]) {

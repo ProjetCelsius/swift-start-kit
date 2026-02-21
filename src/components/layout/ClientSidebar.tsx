@@ -164,8 +164,8 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
             <Compass size={14} color="#fff" strokeWidth={2} />
           </div>
           <div>
-            <div className="font-display" style={{ fontSize: '0.95rem', color: '#1B4332', lineHeight: 1.2 }}>Boussole Climat</div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#B0AB9F' }}>par Celsius</div>
+            <div className="font-display" style={{ fontSize: '0.95rem', color: '#1B4332', lineHeight: 1.2 }}>Projet Celsius</div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.62rem', fontWeight: 500, color: '#7A766D' }}>Accédez à votre diagnostic</div>
           </div>
         </div>
       </div>

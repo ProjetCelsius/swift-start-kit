@@ -24,7 +24,7 @@ export default function ClientLayout() {
           <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: '#1B4332' }}>
             <Compass size={14} color="white" />
           </div>
-          <span className="font-display" style={{ fontSize: '0.9rem', color: '#1B4332' }}>Boussole Climat</span>
+          <span className="font-display" style={{ fontSize: '0.9rem', color: '#1B4332' }}>Projet Celsius</span>
         </div>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="p-1">
           {mobileOpen ? <X size={22} color="#2A2A28" /> : <Menu size={22} color="#2A2A28" />}
