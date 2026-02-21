@@ -17,7 +17,6 @@ import {
   BarChart3,
   Presentation,
 } from 'lucide-react'
-import boussoleLogo from '@/assets/boussole-logo.png'
 import celsiusLogo from '@/assets/celsius-logo.svg'
 import { MOCK_ANALYST } from '../../hooks/useAuth'
 import { useAuth } from '../../hooks/useAuth'
@@ -155,16 +154,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
     >
       {/* Logo */}
       <div className="px-5 pt-5 pb-4">
-        <div className="flex items-center gap-2.5">
-          <img src={boussoleLogo} alt="Boussole Climat" style={{ width: 30, height: 30 }} />
-          <div>
-            <div className="font-display" style={{ fontSize: '0.9rem', color: '#1B4332' }}>Boussole Climat</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.45rem', letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#B0AB9F' }}>PAR</span>
-              <img src={celsiusLogo} alt="Celsius" style={{ height: 10 }} />
-            </div>
-          </div>
-        </div>
+        <div className="font-display" style={{ fontSize: '0.95rem', color: '#1B4332' }}>Boussole Climat</div>
       </div>
 
       {/* Analyst card */}
@@ -370,6 +360,10 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
 
         <div style={{ height: 1, backgroundColor: '#EDEAE3', margin: '4px 0 12px' }} />
         <UserProfileBlock />
+        {/* Celsius logo */}
+        <div className="flex items-center justify-center pt-3 pb-4" style={{ opacity: 0.35 }}>
+          <img src={celsiusLogo} alt="Projet Celsius" style={{ height: 12 }} />
+        </div>
       </div>
 
       <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
