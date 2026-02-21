@@ -10,13 +10,13 @@ import QuestionnaireBloc4 from './pages/client/QuestionnaireBloc4'
 import QuestionnaireBlock from './pages/client/QuestionnaireBlock'
 import SurveyPage from './pages/respondent/SurveyPage'
 import DgPage from './pages/respondent/DgPage'
+import JournalPage from './pages/client/JournalPage'
+import MessagesPage from './pages/client/MessagesPage'
+import SondageSuiviPage from './pages/client/SondageSuiviPage'
 // Diagnostic sections are now lazy-loaded via DiagnosticSectionPage
 import {
   QuestionnairePage,
-  SondagePage,
   DiagnosticSectionPage,
-  JournalPage,
-  MessagesPage,
   AidePage,
 } from './pages/client/Placeholders'
 
@@ -50,7 +50,7 @@ function AppRoutes() {
         <Route path="/questionnaire/3" element={<QuestionnaireBloc3 />} />
         <Route path="/questionnaire/4" element={<QuestionnaireBloc4 />} />
         <Route path="/questionnaire/:blockId" element={<QuestionnaireBlock />} />
-        <Route path="/sondage" element={<SondagePage />} />
+        <Route path="/sondage" element={<SondageSuiviPage />} />
         <Route path="/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
         <Route path="/journal" element={<JournalPage />} />
         <Route path="/messages" element={<MessagesPage />} />
