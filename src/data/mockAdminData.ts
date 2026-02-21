@@ -22,11 +22,11 @@ export interface AdminDiagnostic {
 }
 
 export const STATUS_CONFIG: Record<DiagnosticStatus, { label: string; color: string; bg: string }> = {
-  onboarding: { label: 'Onboarding', color: 'var(--color-gris-400)', bg: 'var(--color-gris-100)' },
-  questionnaire: { label: 'Questionnaire', color: '#E8734A', bg: 'var(--color-corail-100)' },
-  analysis: { label: 'Analyse', color: '#2D7A50', bg: 'var(--color-celsius-100)' },
-  restitution: { label: 'Restitution', color: '#F5A623', bg: 'var(--color-gold-100)' },
-  delivered: { label: 'Livré', color: '#1B5E3B', bg: 'var(--color-celsius-100)' },
+  onboarding: { label: 'Onboarding', color: '#7A766D', bg: '#F0EDE6' },
+  questionnaire: { label: 'Questionnaire', color: '#B87333', bg: '#F5EDE4' },
+  analysis: { label: 'Analyse', color: '#1B4332', bg: '#E8F0EB' },
+  restitution: { label: 'Prêt', color: '#fff', bg: '#1B4332' },
+  delivered: { label: 'Terminé', color: '#7A766D', bg: '#F0EDE6' },
 }
 
 export const MOCK_ANALYSTS = ['Claire Lefèvre', 'Thomas Moreau', 'Julie Dupont']
