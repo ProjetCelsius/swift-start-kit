@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, RefreshCw, X, ChevronRight, ChevronDown } from 'lucide-react'
+import { Check, RefreshCw, X, ChevronRight, ChevronLeft, ChevronDown, Clock } from 'lucide-react'
 import { ADVANCEMENT_TILES, HEADCOUNT_OPTIONS, REVENUE_OPTIONS, type TileStatus } from '@/data/bloc1Tiles'
 import NafDropdown from '@/components/questionnaire/NafDropdown'
 import AdvancementTileCard from '@/components/questionnaire/AdvancementTileCard'
@@ -90,84 +90,112 @@ export default function QuestionnaireBloc1() {
   // ── Feedback view ──────────────────────────
   if (showFeedback) {
     return (
-      <div className="animate-fade-in" style={{ maxWidth: 960 }}>
-        <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, color: 'var(--color-texte)' }}>
-          Passeport Climat
-        </h1>
-        <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)', marginTop: 4, marginBottom: 32 }}>
-          Voici le profil de votre démarche. Il sera enrichi dans les prochaines sections.
-        </p>
+      <div className="animate-fade-in" style={{ maxWidth: 680 }}>
+        {/* Standardized header */}
+        <div style={{ marginBottom: 32 }}>
+          <p className="label-uppercase" style={{ marginBottom: 12 }}>QUESTIONNAIRE</p>
+          <h1 className="font-display" style={{ fontSize: '1.4rem', fontWeight: 400, color: 'var(--color-texte)', marginBottom: 8 }}>
+            Votre passeport climat
+          </h1>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-texte-secondary)', marginBottom: 16 }}>
+            Voici le profil de votre démarche. Il sera enrichi dans les prochaines sections.
+          </p>
+          <div style={{ borderBottom: '1px solid var(--color-border)' }} />
+        </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3" style={{ marginBottom: 32 }}>
-          {ADVANCEMENT_TILES.map(tile => {
-            const state = tiles[tile.id]
-            const isDone = state.status === 'done'
-            const isInProgress = state.status === 'in_progress'
-            return (
-              <div
-                key={tile.id}
-                style={{
-                  padding: '14px 10px',
-                  borderRadius: 10,
-                  border: `2px solid ${isDone ? 'var(--color-primary)' : isInProgress ? 'var(--color-accent-warm)' : 'var(--color-border)'}`,
-                  backgroundColor: isDone ? 'var(--color-primary-light)' : isInProgress ? 'var(--color-accent-warm-light)' : 'var(--color-blanc)',
-                  textAlign: 'center',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6, color: isDone ? 'var(--color-primary)' : isInProgress ? 'var(--color-accent-warm)' : 'var(--color-texte-muted)' }}>
-                  {isDone ? <Check size={16} /> : isInProgress ? <RefreshCw size={16} /> : <X size={14} />}
+        <div style={{
+          backgroundColor: 'var(--color-blanc)', border: '1px solid var(--color-border)',
+          borderRadius: 14, padding: 32, marginBottom: 24,
+        }}>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3" style={{ marginBottom: 28 }}>
+            {ADVANCEMENT_TILES.map(tile => {
+              const state = tiles[tile.id]
+              const isDone = state.status === 'done'
+              const isInProgress = state.status === 'in_progress'
+              return (
+                <div
+                  key={tile.id}
+                  style={{
+                    padding: '14px 10px',
+                    borderRadius: 12,
+                    border: `1px solid ${isDone ? 'var(--color-primary)' : isInProgress ? 'var(--color-accent-warm)' : 'var(--color-border)'}`,
+                    backgroundColor: isDone ? 'var(--color-primary-light)' : isInProgress ? 'var(--color-accent-warm-light)' : 'var(--color-blanc)',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6, color: isDone ? 'var(--color-primary)' : isInProgress ? 'var(--color-accent-warm)' : 'var(--color-texte-muted)' }}>
+                    {isDone ? <Check size={16} /> : isInProgress ? <RefreshCw size={16} /> : <X size={14} />}
+                  </div>
+                  <p style={{ fontSize: '0.75rem', fontWeight: 500, lineHeight: 1.3, color: 'var(--color-texte)' }}>{tile.label}</p>
                 </div>
-                <p style={{ fontSize: '0.75rem', fontWeight: 500, lineHeight: 1.3, color: 'var(--color-texte)' }}>{tile.label}</p>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+
+          <div style={{ display: 'flex', gap: 20, fontSize: '0.85rem', marginBottom: 0 }}>
+            <span style={{ color: 'var(--color-primary)' }}>✓ {doneCount} réalisé{doneCount > 1 ? 's' : ''}</span>
+            <span style={{ color: 'var(--color-accent-warm)' }}>↻ {inProgressCount} en cours</span>
+            <span style={{ color: 'var(--color-texte-muted)' }}>✗ {notStartedCount} pas encore</span>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 20, fontSize: '0.85rem', marginBottom: 28 }}>
-          <span style={{ color: 'var(--color-primary)' }}>✓ {doneCount} réalisé{doneCount > 1 ? 's' : ''}</span>
-          <span style={{ color: 'var(--color-accent-warm)' }}>↻ {inProgressCount} en cours</span>
-          <span style={{ color: 'var(--color-texte-muted)' }}>✗ {notStartedCount} pas encore</span>
+        {/* Navigation */}
+        <div style={{ display: 'flex', gap: 12, maxWidth: 400, margin: '0 auto' }}>
+          <button
+            onClick={() => setShowFeedback(false)}
+            style={{
+              padding: '12px 20px', borderRadius: 8,
+              border: '1px solid var(--color-border)', backgroundColor: 'transparent',
+              color: 'var(--color-texte)', fontSize: '0.875rem', fontWeight: 500,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+              transition: 'border-color 0.2s',
+            }}
+          >
+            <ChevronLeft size={16} /> Précédent
+          </button>
+          <button
+            onClick={() => navigate('/client/questionnaire/bloc2')}
+            style={{
+              flex: 1, padding: '12px 28px', borderRadius: 8,
+              backgroundColor: 'var(--color-primary)', color: '#fff',
+              fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
+          >
+            Passer au Bloc 2 <ChevronRight size={18} />
+          </button>
         </div>
-
-        <button
-          onClick={() => navigate('/client/questionnaire/bloc2')}
-          className="font-display"
-          style={{
-            width: '100%',
-            padding: '12px 28px',
-            borderRadius: 8,
-            backgroundColor: 'var(--color-primary)',
-            color: '#fff',
-            fontWeight: 500,
-            fontSize: '0.95rem',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            transition: 'background-color 0.2s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
-        >
-          Passer au Bloc 2 <ChevronRight size={18} />
-        </button>
       </div>
     )
   }
 
   // ── Main form ──────────────────────────────
   return (
-    <div style={{ maxWidth: 960 }}>
-      {/* Header */}
-      <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: 20, marginBottom: 32 }}>
-        <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, color: 'var(--color-texte)', marginBottom: 4 }}>
-          Votre démarche aujourd'hui
+    <div style={{ maxWidth: 680 }} className="animate-fade-in">
+      {/* Standardized header */}
+      <div style={{ marginBottom: 32 }}>
+        <p className="label-uppercase" style={{ marginBottom: 12 }}>QUESTIONNAIRE</p>
+        <h1 className="font-display" style={{ fontSize: '1.4rem', fontWeight: 400, color: 'var(--color-texte)', marginBottom: 8 }}>
+          Bloc 1 — Votre démarche
         </h1>
-        <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)', margin: 0 }}>
-          Bloc 1 · ~10 min · Rempli lors de l'appel de lancement
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-texte-secondary)', margin: 0 }}>
+            Décrivez l'état actuel de votre démarche RSE et climat.
+          </p>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '4px 12px', borderRadius: 20,
+            border: '1px solid var(--color-border)',
+            fontSize: '0.7rem', fontWeight: 500, color: 'var(--color-texte-secondary)',
+            whiteSpace: 'nowrap', flexShrink: 0,
+          }}>
+            <Clock size={11} /> ~10 min
+          </span>
+        </div>
+        <div style={{ borderBottom: '1px solid var(--color-border)' }} />
       </div>
 
       {/* Section 1: Company Data */}
@@ -249,30 +277,22 @@ export default function QuestionnaireBloc1() {
         </div>
       </div>
 
-      {/* Validate */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: '0.8rem', color: 'var(--color-texte-muted)' }}>Sauvegarde automatique</span>
+      {/* Navigation */}
+      <div style={{ display: 'flex', gap: 12, maxWidth: 400, margin: '0 auto', justifyContent: 'flex-end' }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--color-texte-muted)', alignSelf: 'center', marginRight: 'auto' }}>Sauvegarde auto</span>
         <button
           onClick={() => setShowFeedback(true)}
-          className="font-display"
           style={{
-            padding: '12px 28px',
-            borderRadius: 8,
-            backgroundColor: 'var(--color-primary)',
-            color: '#fff',
-            fontWeight: 500,
-            fontSize: '0.95rem',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
+            padding: '12px 28px', borderRadius: 8,
+            backgroundColor: 'var(--color-primary)', color: '#fff',
+            fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 8,
             transition: 'background-color 0.2s',
           }}
           onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
           onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
         >
-          Valider le Bloc 1 <ChevronRight size={18} />
+          Valider ce bloc <ChevronRight size={18} />
         </button>
       </div>
     </div>
@@ -283,7 +303,7 @@ export default function QuestionnaireBloc1() {
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-texte)', marginBottom: 6 }}>
+      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-texte)', marginBottom: 6, fontFamily: 'var(--font-sans)' }}>
         {label}
       </label>
       {children}
@@ -305,7 +325,7 @@ function TextInput({ value, onChange, placeholder, type = 'text', disabled, min,
       max={max}
       style={{
         width: '100%',
-        height: 44,
+        height: 48,
         padding: '0 14px',
         borderRadius: 8,
         border: '1px solid var(--color-border)',
@@ -317,7 +337,7 @@ function TextInput({ value, onChange, placeholder, type = 'text', disabled, min,
         transition: 'border-color 0.2s, box-shadow 0.2s',
         opacity: disabled ? 0.4 : 1,
       }}
-      onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.boxShadow = '0 0 0 2px rgba(27,67,50,0.08)' }}
+      onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(27,67,50,0.08)' }}
       onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
     />
   )
@@ -333,7 +353,7 @@ function SelectInput({ value, onChange, options }: {
         onChange={e => onChange(e.target.value)}
         style={{
           width: '100%',
-          height: 44,
+          height: 48,
           padding: '0 36px 0 14px',
           borderRadius: 8,
           border: '1px solid var(--color-border)',
