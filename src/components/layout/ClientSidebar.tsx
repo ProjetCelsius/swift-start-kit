@@ -31,7 +31,7 @@ const dotColor: Record<string, string> = {
   todo: '#E5E1D8',
 }
 
-export default function ClientSidebar() {
+export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation()
   const analyst = MOCK_ANALYST
 
@@ -99,6 +99,7 @@ export default function ClientSidebar() {
           icon={<LayoutDashboard size={16} />}
           label="Vue d'ensemble"
           active={isDashboard}
+          onClick={onNavigate}
         />
 
         {/* QUESTIONNAIRE section */}
@@ -111,6 +112,7 @@ export default function ClientSidebar() {
             label={item.label}
             active={isActive(item.path)}
             dotStatus={item.status}
+            onClick={onNavigate}
           />
         ))}
 
@@ -133,12 +135,14 @@ export default function ClientSidebar() {
           icon={<BookOpen size={16} />}
           label="Journal"
           active={isActive('/client/journal')}
+          onClick={onNavigate}
         />
         <SidebarItem
           to="/client/messages"
           icon={<MessageSquare size={16} />}
           label="Messages"
           active={isActive('/client/messages')}
+          onClick={onNavigate}
         />
       </nav>
 
@@ -190,16 +194,19 @@ function SidebarItem({
   label,
   active,
   dotStatus,
+  onClick,
 }: {
   to: string
   icon: React.ReactNode
   label: string
   active?: boolean
   dotStatus?: string
+  onClick?: () => void
 }) {
   return (
     <NavLink
       to={to}
+      onClick={onClick}
       className="flex items-center gap-3 px-3 py-2 rounded-md"
       style={{
         backgroundColor: active ? '#E8F0EB' : 'transparent',

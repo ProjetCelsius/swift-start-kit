@@ -63,6 +63,10 @@ function AppRoutes() {
           <Route path="/client/questionnaire/bloc2" element={<QuestionnaireBloc2 />} />
           <Route path="/client/questionnaire/bloc3" element={<QuestionnaireBloc3 />} />
           <Route path="/client/questionnaire/bloc4" element={<QuestionnaireBloc4 />} />
+          <Route path="/client/questionnaire/bloc-1" element={<QuestionnaireBloc1 />} />
+          <Route path="/client/questionnaire/bloc-2" element={<QuestionnaireBloc2 />} />
+          <Route path="/client/questionnaire/bloc-3" element={<QuestionnaireBloc3 />} />
+          <Route path="/client/questionnaire/bloc-4" element={<QuestionnaireBloc4 />} />
           <Route path="/client/questionnaire/:blockId" element={<QuestionnaireBlock />} />
           <Route path="/client/sondage" element={<SondageSuiviPage />} />
           <Route path="/client/attente" element={<AttentePage />} />
