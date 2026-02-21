@@ -6,7 +6,6 @@ import {
   MessageSquare,
   HelpCircle,
   ChevronUp,
-  ChevronDown,
   User,
   Lock,
   Download,
@@ -168,20 +167,10 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
   const analyst = MOCK_ANALYST
   const demo = useDemoIfAvailable()
   const [helpOpen, setHelpOpen] = useState(false)
-  const [expandedStep, setExpandedStep] = useState<string | null>(null)
+  
 
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
   const steps = useMemo(() => deriveSteps(demoStatus, analyst), [demoStatus, analyst])
-
-  // Auto-expand current step
-  useEffect(() => {
-    const current = steps.find(s => s.status === 'current')
-    if (current) setExpandedStep(current.id)
-  }, [demoStatus])
-
-  function toggleStep(id: string) {
-    setExpandedStep(prev => prev === id ? null : id)
-  }
 
   const isDashboard = location.pathname === '/client/dashboard'
 
@@ -266,8 +255,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
 
         <div style={{ position: 'relative', paddingLeft: 6 }}>
           {steps.map((step, i) => {
-            const isExpanded = expandedStep === step.id
-            const canExpand = step.status === 'done' || step.status === 'current' || step.status === 'parallel'
+            const showSubs = step.status === 'done' || step.status === 'current' || step.status === 'parallel'
             const isLast = i === steps.length - 1
 
             // Determine line segment style between this step and next
@@ -280,13 +268,13 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
 
             return (
               <div key={step.id} style={{ position: 'relative' }}>
-                {/* Line segment BEHIND circles */}
+                {/* Line segment BEHIND circles — centered on 20px circle: left padding 6 + circle start at padding 8px + 10px center = ~16px */}
                 {lineSegment && (
                   <div style={{
                     position: 'absolute',
-                    left: 13, // center of 20px circle at left:3 + 10
-                    top: 28,
-                    bottom: -8,
+                    left: 15.5, // 6px container padding + 8px button padding + 10px (half of 20px circle) - 0.75px (half of 1.5px line)
+                    top: 30,
+                    bottom: -6,
                     width: 1.5,
                     ...(lineSegment === 'done' ? { backgroundColor: '#1B4332' } :
                       lineSegment === 'parallel' ? {
@@ -296,17 +284,12 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                   }} />
                 )}
 
-                {/* Step header */}
-                <button
-                  onClick={() => canExpand && toggleStep(step.id)}
+                {/* Step header — NOT clickable, no hover, no chevron */}
+                <div
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                    padding: '8px 6px', borderRadius: 6, border: 'none',
-                    backgroundColor: 'transparent', cursor: canExpand ? 'pointer' : 'default',
-                    transition: 'background-color 0.15s', textAlign: 'left',
+                    padding: '8px 6px', textAlign: 'left',
                   }}
-                  onMouseEnter={e => { if (canExpand) e.currentTarget.style.backgroundColor = '#F7F5F0' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
                 >
                   {/* Circle */}
                   <JourneyCircle status={step.status} num={step.num} />
@@ -316,7 +299,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                     <div style={{
                       fontFamily: 'var(--font-sans)', fontSize: '0.76rem',
                       fontWeight: step.status === 'current' || step.status === 'parallel' ? 500 : 400,
-                      color: step.status === 'current' || step.status === 'parallel' ? '#2A2A28' : step.status === 'done' ? '#7A766D' : '#B0AB9F',
+                      color: step.status === 'current' ? '#2A2A28' : step.status === 'parallel' ? '#2A2A28' : step.status === 'done' ? '#7A766D' : '#B0AB9F',
                     }}>
                       {step.label}
                     </div>
@@ -329,18 +312,10 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                       </div>
                     )}
                   </div>
+                </div>
 
-                  {canExpand && (
-                    <ChevronDown size={12} style={{
-                      color: '#B0AB9F', flexShrink: 0,
-                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)',
-                      transition: 'transform 0.2s',
-                    }} />
-                  )}
-                </button>
-
-                {/* Sub-items */}
-                {isExpanded && step.subItems && (
+                {/* Sub-items — always visible for done/current/parallel, no toggle */}
+                {showSubs && step.subItems && (
                   <div style={{ paddingLeft: 34, paddingBottom: 4 }}>
                     {step.subItems.map((sub, si) => {
                       if (sub.info) {
