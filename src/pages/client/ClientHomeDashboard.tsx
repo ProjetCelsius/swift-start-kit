@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Check, Users, Lock, HelpCircle, BookOpen } from 'lucide-react'
+import { ChevronRight, Check, Users, Lock, BookOpen, Compass } from 'lucide-react'
 import { useAuth, MOCK_ANALYST } from '../../hooks/useAuth'
 import ProtocolModal, { useProtocolModal } from '../../components/ProtocolModal'
+import clientAvatar from '../../assets/client-avatar.jpg'
+import guillaumePhoto from '../../assets/guillaume-photo.png'
 
 // ── Journey pieces (non-sequential, "gems to unlock") ──────
 type PieceStatus = 'done' | 'active' | 'locked'
@@ -18,7 +20,7 @@ export default function ClientHomeDashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const analyst = MOCK_ANALYST
-  const firstName = user?.first_name || 'Monique'
+  const firstName = user?.first_name || 'Claire'
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const protocol = useProtocolModal()
 
@@ -30,11 +32,14 @@ export default function ClientHomeDashboard() {
       <div className="dash-fadein" style={{ animationDelay: '0ms' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div>
-            <h1 className="font-display" style={{ fontSize: '1.85rem', color: '#2A2A28', fontWeight: 400, lineHeight: 1.25 }}>
-              Bienvenue {firstName},<br />
-              <span>votre diagnostic </span>
-              <span style={{ color: '#1B4332', fontWeight: 500 }}>prend forme.</span>
-            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <img src={clientAvatar} alt={firstName} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: '2px solid #EDEAE3' }} />
+              <h1 className="font-display" style={{ fontSize: '1.85rem', color: '#2A2A28', fontWeight: 400, lineHeight: 1.25 }}>
+                Bienvenue {firstName},<br />
+                <span>votre diagnostic </span>
+                <span style={{ color: '#1B4332', fontWeight: 500 }}>prend forme.</span>
+              </h1>
+            </div>
             <p className="mt-3" style={{ fontFamily: 'var(--font-sans)', fontSize: '0.9rem', color: '#7A766D' }}>
               Vous êtes à l'étape 2. Complétez les 3 blocs restants pour avancer vers l'analyse.
             </p>
@@ -42,19 +47,22 @@ export default function ClientHomeDashboard() {
           <button
             onClick={() => protocol.setOpen(true)}
             style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px',
-              borderRadius: 12, border: '1px solid #EDEAE3', background: '#FFFFFF',
+              display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px',
+              borderRadius: 14, border: '1.5px solid #1B4332',
+              background: 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 100%)',
               fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#2A2A28',
               cursor: 'pointer', flexShrink: 0, marginTop: 4,
-              transition: 'all 0.15s', boxShadow: '0 1px 3px rgba(42,42,40,0.04)',
+              transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(27,67,50,0.08)',
             }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#E8F0EB'; e.currentTarget.style.borderColor = '#1B4332' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#FFFFFF'; e.currentTarget.style.borderColor = '#EDEAE3' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, #D4E8DB 0%, #E8F0EB 100%)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(27,67,50,0.12)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 100%)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(27,67,50,0.08)' }}
           >
-            <HelpCircle size={15} color="#1B4332" />
+            <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#1B4332', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Compass size={16} color="#FFFFFF" />
+            </div>
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontWeight: 600, fontSize: '0.78rem', color: '#2A2A28' }}>Comment ça marche ?</div>
-              <div style={{ fontSize: '0.65rem', color: '#B0AB9F' }}>Le parcours en 5 étapes</div>
+              <div style={{ fontWeight: 600, fontSize: '0.8rem', color: '#1B4332' }}>Notre méthodologie</div>
+              <div style={{ fontSize: '0.68rem', color: '#7A766D' }}>Rappel du parcours en 5 étapes</div>
             </div>
           </button>
         </div>
@@ -66,9 +74,7 @@ export default function ClientHomeDashboard() {
         borderRadius: 14, padding: '16px 20px', border: '1px solid #EDEAE3', animationDelay: '70ms',
       }}>
         <div className="flex items-center gap-3">
-          <div className="w-[38px] h-[38px] rounded-full flex items-center justify-center text-white shrink-0" style={{ backgroundColor: '#1B4332', fontFamily: 'var(--font-display)', fontSize: '0.65rem' }}>
-            {analyst.first_name[0]}{analyst.last_name[0]}
-          </div>
+          <img src={guillaumePhoto} alt={`${analyst.first_name} ${analyst.last_name}`} className="w-[38px] h-[38px] rounded-full object-cover shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-2">
               <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.8rem', color: '#2A2A28' }}>{analyst.first_name} {analyst.last_name}</span>

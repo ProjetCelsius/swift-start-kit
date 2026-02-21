@@ -504,10 +504,10 @@ function UserProfileBlock() {
           padding: 6, zIndex: 100, animation: 'popoverIn 0.15s ease-out',
         }}>
           <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src={clientAvatar} alt="MB" style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, objectFit: 'cover' }} />
+            <img src={clientAvatar} alt="CL" style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, objectFit: 'cover' }} />
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', color: '#2A2A28' }}>Monique Barbut</div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#7A766D', marginBottom: 4 }}>m.barbut@republique.gouv.fr</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', color: '#2A2A28' }}>Claire Lefèvre</div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#7A766D', marginBottom: 4 }}>c.lefevre@republique.gouv.fr</div>
               <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 12, border: '1px solid #EDEAE3', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.6rem', color: '#7A766D' }}>Directrice Générale</span>
             </div>
           </div>
@@ -538,9 +538,9 @@ function UserProfileBlock() {
         onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#F7F5F0')}
         onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
       >
-        <img src={clientAvatar} alt="MB" style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, objectFit: 'cover' }} />
+        <img src={clientAvatar} alt="CL" style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, objectFit: 'cover' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.82rem', color: '#2A2A28' }}>Monique Barbut</div>
+          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.82rem', color: '#2A2A28' }}>Claire Lefèvre</div>
           <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, fontSize: '0.7rem', color: '#B0AB9F' }}>République française</div>
         </div>
         <ChevronUp size={14} style={{ color: '#B0AB9F', flexShrink: 0, transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
