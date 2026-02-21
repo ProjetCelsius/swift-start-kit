@@ -1,4 +1,5 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   ClipboardList,
@@ -9,8 +10,14 @@ import {
   MessageSquare,
   HelpCircle,
   Compass,
+  ChevronUp,
+  User,
+  Lock,
+  Download,
+  LogOut,
 } from 'lucide-react'
 import { MOCK_ANALYST } from '../../hooks/useAuth'
+import { useAuth } from '../../hooks/useAuth'
 
 const QUESTIONNAIRE_ITEMS = [
   { key: 'bloc1', label: 'Votre démarche', path: '/client/questionnaire/bloc1', icon: <ClipboardList size={16} />, status: 'done' },
@@ -92,62 +99,28 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
 
       {/* Nav */}
       <nav className="flex-1 px-3 space-y-1">
-        {/* NAVIGATION section */}
         <SectionLabel>NAVIGATION</SectionLabel>
-        <SidebarItem
-          to="/client/dashboard"
-          icon={<LayoutDashboard size={16} />}
-          label="Vue d'ensemble"
-          active={isDashboard}
-          onClick={onNavigate}
-        />
+        <SidebarItem to="/client/dashboard" icon={<LayoutDashboard size={16} />} label="Vue d'ensemble" active={isDashboard} onClick={onNavigate} />
 
-        {/* QUESTIONNAIRE section */}
         <SectionLabel className="mt-5">QUESTIONNAIRE</SectionLabel>
         {QUESTIONNAIRE_ITEMS.map(item => (
-          <SidebarItem
-            key={item.key}
-            to={item.path}
-            icon={item.icon}
-            label={item.label}
-            active={isActive(item.path)}
-            dotStatus={item.status}
-            onClick={onNavigate}
-          />
+          <SidebarItem key={item.key} to={item.path} icon={item.icon} label={item.label} active={isActive(item.path)} dotStatus={item.status} onClick={onNavigate} />
         ))}
 
-        {/* DIAGNOSTIC section */}
         <SectionLabel className="mt-5">DIAGNOSTIC</SectionLabel>
         {DIAGNOSTIC_ITEMS.map(item => (
-          <div
-            key={item.key}
-            className="flex items-center gap-3 px-3 py-2 text-sm"
-            style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#B0AB9F', opacity: 0.35 }}
-          >
+          <div key={item.key} className="flex items-center gap-3 px-3 py-2 text-sm" style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#B0AB9F', opacity: 0.35 }}>
             {item.label}
           </div>
         ))}
 
-        {/* SUIVI section */}
         <SectionLabel className="mt-5">SUIVI</SectionLabel>
-        <SidebarItem
-          to="/client/journal"
-          icon={<BookOpen size={16} />}
-          label="Journal"
-          active={isActive('/client/journal')}
-          onClick={onNavigate}
-        />
-        <SidebarItem
-          to="/client/messages"
-          icon={<MessageSquare size={16} />}
-          label="Messages"
-          active={isActive('/client/messages')}
-          onClick={onNavigate}
-        />
+        <SidebarItem to="/client/journal" icon={<BookOpen size={16} />} label="Journal" active={isActive('/client/journal')} onClick={onNavigate} />
+        <SidebarItem to="/client/messages" icon={<MessageSquare size={16} />} label="Messages" active={isActive('/client/messages')} onClick={onNavigate} />
       </nav>
 
-      {/* Bottom */}
-      <div className="px-3 pb-5">
+      {/* Bottom: Aide + User Profile */}
+      <div className="px-3">
         <NavLink
           to="/client/aide"
           className="flex items-center gap-2 px-3 py-2"
@@ -156,6 +129,12 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
           <HelpCircle size={14} />
           Aide
         </NavLink>
+
+        {/* Separator */}
+        <div style={{ height: 1, backgroundColor: '#EDEAE3', margin: '4px 0 12px' }} />
+
+        {/* User profile block */}
+        <UserProfileBlock />
       </div>
 
       {/* Pulse animation for in-progress dots */}
@@ -170,6 +149,210 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
   )
 }
 
+// ── User Profile Block + Popover ─────────────
+function UserProfileBlock() {
+  const [open, setOpen] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+  const { signOut } = useAuth()
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => { document.removeEventListener('mousedown', handleClick); document.removeEventListener('keydown', handleKey) }
+  }, [open])
+
+  // Toast auto-dismiss
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 2000)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  function showToast(msg: string) {
+    setToast(msg)
+    setOpen(false)
+  }
+
+  async function handleLogout() {
+    setOpen(false)
+    await signOut()
+    navigate('/login')
+  }
+
+  const menuItems = [
+    { icon: <User size={15} />, label: 'Mon compte', action: () => showToast('Bientôt disponible') },
+    { icon: <Lock size={15} />, label: 'Changer le mot de passe', action: () => showToast('Bientôt disponible') },
+    { icon: <Download size={15} />, label: 'Exporter mes données', action: () => showToast('Bientôt disponible') },
+    { icon: <HelpCircle size={15} />, label: 'Aide & support', action: () => showToast('Bientôt disponible') },
+  ]
+
+  return (
+    <div ref={ref} style={{ position: 'relative', paddingBottom: 16 }}>
+      {/* Toast */}
+      {toast && (
+        <div
+          style={{
+            position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 9999,
+            backgroundColor: '#2A2A28', color: '#fff', padding: '10px 20px', borderRadius: 8,
+            fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.8rem',
+            animation: 'toastFade 0.15s ease-out',
+          }}
+        >
+          {toast}
+        </div>
+      )}
+
+      {/* Popover */}
+      {open && (
+        <div
+          style={{
+            position: 'absolute', bottom: '100%', left: 0, right: 0,
+            marginBottom: 6, width: 232,
+            backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12,
+            boxShadow: '0 4px 20px rgba(42,42,40,0.08), 0 1px 3px rgba(42,42,40,0.04)',
+            padding: 6, zIndex: 100,
+            animation: 'popoverIn 0.15s ease-out',
+          }}
+        >
+          {/* User info header */}
+          <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                backgroundColor: '#1B4332', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-display)', fontSize: '0.7rem',
+              }}
+            >
+              MD
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', color: '#2A2A28' }}>
+                Marie Dupont
+              </div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#7A766D', marginBottom: 4 }}>
+                marie.dupont@novatech.fr
+              </div>
+              <span style={{
+                display: 'inline-block', padding: '2px 10px', borderRadius: 12,
+                border: '1px solid #EDEAE3', fontFamily: 'var(--font-sans)',
+                fontWeight: 500, fontSize: '0.6rem', color: '#7A766D',
+              }}>
+                Responsable RSE
+              </span>
+            </div>
+          </div>
+
+          {/* Separator */}
+          <div style={{ height: 1, backgroundColor: '#EDEAE3', margin: '4px 6px' }} />
+
+          {/* Menu items */}
+          <div style={{ padding: '2px 0' }}>
+            {menuItems.map((item, i) => (
+              <button
+                key={i}
+                onClick={item.action}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 14px', borderRadius: 8, border: 'none', backgroundColor: 'transparent',
+                  fontFamily: 'var(--font-sans)', fontSize: '0.8rem', color: '#2A2A28',
+                  cursor: 'pointer', transition: 'background-color 0.15s', textAlign: 'left',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#F7F5F0')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <span style={{ color: '#7A766D', flexShrink: 0, display: 'flex' }}>{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Separator */}
+          <div style={{ height: 1, backgroundColor: '#EDEAE3', margin: '4px 6px' }} />
+
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+              padding: '9px 14px', borderRadius: 8, border: 'none', backgroundColor: 'transparent',
+              fontFamily: 'var(--font-sans)', fontSize: '0.8rem', color: '#DC4A4A',
+              cursor: 'pointer', transition: 'background-color 0.15s', textAlign: 'left',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#FEF2F2')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <span style={{ color: '#DC4A4A', flexShrink: 0, display: 'flex' }}><LogOut size={15} /></span>
+            Se déconnecter
+          </button>
+        </div>
+      )}
+
+      {/* Profile row trigger */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 10px', borderRadius: 8, border: 'none',
+          backgroundColor: 'transparent', cursor: 'pointer',
+          transition: 'background-color 0.15s', textAlign: 'left',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#F7F5F0')}
+        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+      >
+        <div
+          style={{
+            width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+            backgroundColor: '#1B4332', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--font-display)', fontSize: '0.65rem',
+          }}
+        >
+          MD
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.82rem', color: '#2A2A28' }}>
+            Marie Dupont
+          </div>
+          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, fontSize: '0.7rem', color: '#B0AB9F' }}>
+            NovaTech Solutions
+          </div>
+        </div>
+        <ChevronUp
+          size={14}
+          style={{
+            color: '#B0AB9F', flexShrink: 0,
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease',
+          }}
+        />
+      </button>
+
+      <style>{`
+        @keyframes popoverIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes toastFade {
+          from { opacity: 0; transform: translate(-50%, -6px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// ── Sub-components ───────────────────────────
 function SectionLabel({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
@@ -189,19 +372,9 @@ function SectionLabel({ children, className = '' }: { children: React.ReactNode;
 }
 
 function SidebarItem({
-  to,
-  icon,
-  label,
-  active,
-  dotStatus,
-  onClick,
+  to, icon, label, active, dotStatus, onClick,
 }: {
-  to: string
-  icon: React.ReactNode
-  label: string
-  active?: boolean
-  dotStatus?: string
-  onClick?: () => void
+  to: string; icon: React.ReactNode; label: string; active?: boolean; dotStatus?: string; onClick?: () => void
 }) {
   return (
     <NavLink
