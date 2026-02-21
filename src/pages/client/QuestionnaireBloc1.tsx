@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Clock, Check, RotateCw, X, ChevronRight, Search } from 'lucide-react'
+import { Check, RefreshCw, X, ChevronRight, ChevronDown } from 'lucide-react'
 import { ADVANCEMENT_TILES, HEADCOUNT_OPTIONS, REVENUE_OPTIONS, type TileStatus } from '@/data/bloc1Tiles'
-import { NAF_CODES_LEVEL2 } from '@/data/nafCodes'
+import NafDropdown from '@/components/questionnaire/NafDropdown'
+import AdvancementTileCard from '@/components/questionnaire/AdvancementTileCard'
 
+// ── Types ────────────────────────────────────
 interface TileState {
   status: TileStatus
   comment: string
@@ -30,84 +32,7 @@ function loadState() {
   } catch { return null }
 }
 
-// ── Searchable NAF Dropdown ──────────────────────────────
-function NafDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
-  const filtered = NAF_CODES_LEVEL2.filter(n =>
-    `${n.code} ${n.label}`.toLowerCase().includes(search.toLowerCase())
-  )
-
-  const selected = NAF_CODES_LEVEL2.find(n => n.code === value)
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full px-3 py-2.5 rounded-lg border text-sm text-left flex items-center gap-2 focus:outline-none transition-colors"
-        style={{ borderColor: open ? 'var(--color-celsius-900)' : 'var(--color-border)', backgroundColor: 'var(--color-blanc)' }}
-      >
-        <span className="flex-1 truncate" style={{ color: selected ? 'var(--color-texte)' : 'var(--color-gris-400)' }}>
-          {selected ? `${selected.code} — ${selected.label}` : 'Rechercher un secteur NAF...'}
-        </span>
-        <Search size={14} style={{ color: 'var(--color-gris-400)' }} />
-      </button>
-
-      {open && (
-        <div
-          className="absolute z-50 mt-1 w-full rounded-lg border overflow-hidden"
-          style={{ backgroundColor: 'var(--color-blanc)', borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card-hover)' }}
-        >
-          <div className="p-2 border-b" style={{ borderColor: 'var(--color-border-light)' }}>
-            <input
-              autoFocus
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Tapez pour filtrer..."
-              className="w-full px-2 py-1.5 rounded text-sm focus:outline-none"
-              style={{ backgroundColor: 'var(--color-gris-100)' }}
-            />
-          </div>
-          <ul className="max-h-52 overflow-y-auto">
-            {filtered.length === 0 && (
-              <li className="px-3 py-2 text-xs" style={{ color: 'var(--color-gris-400)' }}>Aucun résultat</li>
-            )}
-            {filtered.map(n => (
-              <li
-                key={n.code}
-                onClick={() => { onChange(n.code); setOpen(false); setSearch('') }}
-                className="px-3 py-2 text-sm cursor-pointer transition-colors"
-                style={{
-                  backgroundColor: n.code === value ? 'var(--color-celsius-50)' : undefined,
-                  color: 'var(--color-texte)',
-                }}
-                onMouseEnter={e => { if (n.code !== value) (e.target as HTMLElement).style.backgroundColor = 'var(--color-gris-100)' }}
-                onMouseLeave={e => { if (n.code !== value) (e.target as HTMLElement).style.backgroundColor = '' }}
-              >
-                <span className="font-medium" style={{ color: 'var(--color-celsius-900)' }}>{n.code}</span>
-                {' — '}{n.label}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Main Component ───────────────────────────────────────
+// ── Main Component ───────────────────────────
 export default function QuestionnaireBloc1() {
   const navigate = useNavigate()
   const saved = loadState()
@@ -127,7 +52,7 @@ export default function QuestionnaireBloc1() {
   const [showFeedback, setShowFeedback] = useState(false)
   const [expandedTile, setExpandedTile] = useState<string | null>(null)
 
-  // Auto-save with debounce
+  // Auto-save
   const save = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ company, tiles }))
   }, [company, tiles])
@@ -144,11 +69,8 @@ export default function QuestionnaireBloc1() {
         current === 'not_started' ? 'done' :
         current === 'done' ? 'in_progress' :
         'not_started'
-      if (next !== 'not_started') {
-        setExpandedTile(id)
-      } else {
-        setExpandedTile(cur => cur === id ? null : cur)
-      }
+      if (next !== 'not_started') setExpandedTile(id)
+      else setExpandedTile(cur => cur === id ? null : cur)
       return { ...prev, [id]: { ...prev[id], status: next } }
     })
   }
@@ -161,71 +83,73 @@ export default function QuestionnaireBloc1() {
     setCompany(prev => ({ ...prev, [field]: value }))
   }
 
-  const statusIcon = (status: TileStatus) => {
-    switch (status) {
-      case 'done': return <Check size={16} />
-      case 'in_progress': return <RotateCw size={16} />
-      default: return <X size={14} />
-    }
-  }
-
-  const statusColor = (status: TileStatus) => {
-    switch (status) {
-      case 'done': return { bg: 'var(--color-celsius-100)', border: 'var(--color-celsius-900)', text: 'var(--color-celsius-900)' }
-      case 'in_progress': return { bg: 'var(--color-corail-100)', border: 'var(--color-corail-500)', text: 'var(--color-corail-500)' }
-      default: return { bg: 'var(--color-fond)', border: 'var(--color-border)', text: 'var(--color-gris-400)' }
-    }
-  }
-
-  const statusLabel = (status: TileStatus) => {
-    switch (status) {
-      case 'done': return 'Réalisé'
-      case 'in_progress': return 'En cours'
-      default: return 'Pas encore'
-    }
-  }
-
   const doneCount = Object.values(tiles).filter(t => t.status === 'done').length
   const inProgressCount = Object.values(tiles).filter(t => t.status === 'in_progress').length
+  const notStartedCount = 12 - doneCount - inProgressCount
 
-  // ── Feedback view ──────────────────────────────────────
+  // ── Feedback view ──────────────────────────
   if (showFeedback) {
     return (
-      <div className="max-w-[640px]">
-        <h1 className="text-2xl font-bold mb-2">Passeport Climat</h1>
-        <p className="text-sm mb-6" style={{ color: 'var(--color-texte-secondary)' }}>
+      <div className="animate-fade-in" style={{ maxWidth: 960 }}>
+        <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, color: 'var(--color-texte)' }}>
+          Passeport Climat
+        </h1>
+        <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)', marginTop: 4, marginBottom: 32 }}>
           Voici le profil de votre démarche. Il sera enrichi dans les prochaines sections.
         </p>
 
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3" style={{ marginBottom: 32 }}>
           {ADVANCEMENT_TILES.map(tile => {
             const state = tiles[tile.id]
-            const colors = statusColor(state.status)
+            const isDone = state.status === 'done'
+            const isInProgress = state.status === 'in_progress'
             return (
               <div
                 key={tile.id}
-                className="p-3 rounded-lg border-2 text-center"
-                style={{ backgroundColor: colors.bg, borderColor: colors.border }}
+                style={{
+                  padding: '14px 10px',
+                  borderRadius: 10,
+                  border: `2px solid ${isDone ? 'var(--color-primary)' : isInProgress ? 'var(--color-accent-warm)' : 'var(--color-border)'}`,
+                  backgroundColor: isDone ? 'var(--color-primary-light)' : isInProgress ? 'var(--color-accent-warm-light)' : 'var(--color-blanc)',
+                  textAlign: 'center',
+                }}
               >
-                <div className="flex justify-center mb-1" style={{ color: colors.text }}>
-                  {statusIcon(state.status)}
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6, color: isDone ? 'var(--color-primary)' : isInProgress ? 'var(--color-accent-warm)' : 'var(--color-texte-muted)' }}>
+                  {isDone ? <Check size={16} /> : isInProgress ? <RefreshCw size={16} /> : <X size={14} />}
                 </div>
-                <p className="text-xs font-medium leading-tight">{tile.label}</p>
+                <p style={{ fontSize: '0.75rem', fontWeight: 500, lineHeight: 1.3, color: 'var(--color-texte)' }}>{tile.label}</p>
               </div>
             )
           })}
         </div>
 
-        <div className="flex gap-4 mb-6 text-sm">
-          <span style={{ color: 'var(--color-celsius-900)' }}>✓ {doneCount} réalisé{doneCount > 1 ? 's' : ''}</span>
-          <span style={{ color: 'var(--color-corail-500)' }}>↻ {inProgressCount} en cours</span>
-          <span style={{ color: 'var(--color-gris-400)' }}>✗ {12 - doneCount - inProgressCount} pas encore</span>
+        <div style={{ display: 'flex', gap: 20, fontSize: '0.85rem', marginBottom: 28 }}>
+          <span style={{ color: 'var(--color-primary)' }}>✓ {doneCount} réalisé{doneCount > 1 ? 's' : ''}</span>
+          <span style={{ color: 'var(--color-accent-warm)' }}>↻ {inProgressCount} en cours</span>
+          <span style={{ color: 'var(--color-texte-muted)' }}>✗ {notStartedCount} pas encore</span>
         </div>
 
         <button
           onClick={() => navigate('/questionnaire/2')}
-          className="w-full py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-          style={{ backgroundColor: 'var(--color-celsius-900)', boxShadow: 'var(--shadow-card)' }}
+          className="font-display"
+          style={{
+            width: '100%',
+            padding: '12px 28px',
+            borderRadius: 8,
+            backgroundColor: 'var(--color-primary)',
+            color: '#fff',
+            fontWeight: 500,
+            fontSize: '0.95rem',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            transition: 'background-color 0.2s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
         >
           Passer au Bloc 2 <ChevronRight size={18} />
         </button>
@@ -233,202 +157,202 @@ export default function QuestionnaireBloc1() {
     )
   }
 
-  // ── Main form ──────────────────────────────────────────
+  // ── Main form ──────────────────────────────
   return (
-    <div className="max-w-[640px]">
+    <div style={{ maxWidth: 960 }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold">Bloc 1 : Votre démarche aujourd'hui</h1>
-        <span
-          className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full"
-          style={{ backgroundColor: 'var(--color-celsius-50)', color: 'var(--color-celsius-900)' }}
-        >
-          <Clock size={12} /> ~10 min
-        </span>
+      <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: 20, marginBottom: 32 }}>
+        <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, color: 'var(--color-texte)', marginBottom: 4 }}>
+          Votre démarche aujourd'hui
+        </h1>
+        <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)', margin: 0 }}>
+          Bloc 1 · ~10 min · Rempli lors de l'appel de lancement
+        </p>
       </div>
-      <p className="text-sm mb-8" style={{ color: 'var(--color-texte-secondary)' }}>
-        Commençons par faire connaissance avec votre organisation et votre démarche climat actuelle.
-      </p>
 
       {/* Section 1: Company Data */}
-      <div
-        className="rounded-xl p-6 mb-8"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-      >
-        <h2 className="text-sm font-semibold uppercase tracking-wider mb-5" style={{ color: 'var(--color-celsius-900)', letterSpacing: '0.05em' }}>
-          Votre organisation
-        </h2>
+      <div style={{ marginBottom: 40 }}>
+        <p className="label-uppercase" style={{ marginBottom: 20 }}>Votre organisation</p>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Raison sociale</label>
-            <input
-              type="text" value={company.raison_sociale}
-              onChange={e => updateCompany('raison_sociale', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none transition-colors"
-              style={{ borderColor: 'var(--color-border)' }}
-              onFocus={e => e.target.style.borderColor = 'var(--color-celsius-900)'}
-              onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
-              placeholder="Nom de votre entreprise"
-            />
-          </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <FormField label="Raison sociale">
+            <TextInput value={company.raison_sociale} onChange={v => updateCompany('raison_sociale', v)} placeholder="Nom de votre entreprise" />
+          </FormField>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Secteur d'activité (code NAF)</label>
+          <FormField label="Secteur d'activité (code NAF)">
             <NafDropdown value={company.secteur} onChange={v => updateCompany('secteur', v)} />
+          </FormField>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <FormField label="Effectif total">
+              <SelectInput value={company.effectif} onChange={v => updateCompany('effectif', v)} options={HEADCOUNT_OPTIONS} />
+            </FormField>
+            <FormField label="Chiffre d'affaires">
+              <SelectInput value={company.chiffre_affaires} onChange={v => updateCompany('chiffre_affaires', v)} options={REVENUE_OPTIONS} />
+            </FormField>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Effectif total</label>
-              <select
-                value={company.effectif}
-                onChange={e => updateCompany('effectif', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
-                style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-blanc)' }}
-              >
-                <option value="">Sélectionner</option>
-                {HEADCOUNT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Chiffre d'affaires</label>
-              <select
-                value={company.chiffre_affaires}
-                onChange={e => updateCompany('chiffre_affaires', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
-                style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-blanc)' }}
-              >
-                <option value="">Sélectionner</option>
-                {REVENUE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Nombre de sites</label>
-              <input
-                type="number" min="1" value={company.nb_sites}
-                onChange={e => updateCompany('nb_sites', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
-                style={{ borderColor: 'var(--color-border)' }}
-                placeholder="1"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Démarche RSE depuis</label>
-              <input
-                type="number" min="1990" max="2026" value={company.annee_rse}
-                onChange={e => updateCompany('annee_rse', e.target.value)}
-                disabled={company.pas_de_demarche}
-                className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none disabled:opacity-40"
-                style={{ borderColor: 'var(--color-border)' }}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <FormField label="Nombre de sites">
+              <TextInput type="number" value={company.nb_sites} onChange={v => updateCompany('nb_sites', v)} placeholder="1" min="1" />
+            </FormField>
+            <FormField label="Démarche RSE depuis">
+              <TextInput
+                type="number"
+                value={company.annee_rse}
+                onChange={v => updateCompany('annee_rse', v)}
                 placeholder="2020"
+                min="1990" max="2026"
+                disabled={company.pas_de_demarche}
               />
-              <label className="flex items-center gap-2 mt-2 text-xs cursor-pointer" style={{ color: 'var(--color-texte-secondary)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: '0.8rem', color: 'var(--color-texte-secondary)', cursor: 'pointer' }}>
                 <input
-                  type="checkbox" checked={company.pas_de_demarche}
+                  type="checkbox"
+                  checked={company.pas_de_demarche}
                   onChange={e => updateCompany('pas_de_demarche', e.target.checked)}
-                  className="rounded"
+                  style={{ borderRadius: 4 }}
                 />
                 Pas de démarche formalisée
               </label>
-            </div>
+            </FormField>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Votre nom</label>
-              <input
-                type="text" value={company.nom_repondant}
-                onChange={e => updateCompany('nom_repondant', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
-                style={{ borderColor: 'var(--color-border)' }}
-                placeholder="Prénom Nom"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Votre fonction</label>
-              <input
-                type="text" value={company.fonction_repondant}
-                onChange={e => updateCompany('fonction_repondant', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
-                style={{ borderColor: 'var(--color-border)' }}
-                placeholder="Ex: Responsable RSE"
-              />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <FormField label="Votre nom">
+              <TextInput value={company.nom_repondant} onChange={v => updateCompany('nom_repondant', v)} placeholder="Prénom Nom" />
+            </FormField>
+            <FormField label="Votre fonction">
+              <TextInput value={company.fonction_repondant} onChange={v => updateCompany('fonction_repondant', v)} placeholder="Ex : Responsable RSE" />
+            </FormField>
           </div>
         </div>
       </div>
 
       {/* Section 2: Advancement Tiles */}
-      <div
-        className="rounded-xl p-6 mb-8"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-      >
-        <h2 className="text-sm font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-celsius-900)', letterSpacing: '0.05em' }}>
-          État de votre démarche
-        </h2>
-        <p className="text-sm mb-5" style={{ color: 'var(--color-texte-secondary)' }}>
+      <div style={{ marginBottom: 40 }}>
+        <p className="label-uppercase" style={{ marginBottom: 8 }}>État de votre démarche</p>
+        <p style={{ fontSize: '0.85rem', color: 'var(--color-texte-secondary)', marginBottom: 20 }}>
           Pour chaque initiative, indiquez si elle est réalisée, en cours, ou pas encore lancée.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {ADVANCEMENT_TILES.map(tile => {
-            const state = tiles[tile.id]
-            const colors = statusColor(state.status)
-            const isExpanded = expandedTile === tile.id && state.status !== 'not_started'
-
-            return (
-              <div key={tile.id}>
-                <button
-                  onClick={() => cycleTileStatus(tile.id)}
-                  className="w-full text-left p-4 rounded-xl border-2 transition-all duration-200 active:scale-[0.98]"
-                  style={{
-                    backgroundColor: colors.bg,
-                    borderColor: colors.border,
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium leading-snug">{tile.label}</p>
-                    <div
-                      className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: state.status === 'not_started' ? 'var(--color-gris-200)' : colors.border, color: 'white' }}
-                    >
-                      {statusIcon(state.status)}
-                    </div>
-                  </div>
-                  <span className="text-xs mt-1 inline-block" style={{ color: colors.text }}>
-                    {statusLabel(state.status)}
-                  </span>
-                </button>
-
-                {isExpanded && (
-                  <textarea
-                    value={state.comment}
-                    onChange={e => updateTileComment(tile.id, e.target.value)}
-                    className="w-full mt-1 px-3 py-2 rounded-lg border text-xs resize-none focus:outline-none transition-all"
-                    style={{ borderColor: 'var(--color-border)', minHeight: '60px' }}
-                    onFocus={e => e.target.style.borderColor = 'var(--color-celsius-900)'}
-                    onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
-                    placeholder="Précisez : date, prestataire, périmètre..."
-                  />
-                )}
-              </div>
-            )
-          })}
+          {ADVANCEMENT_TILES.map(tile => (
+            <AdvancementTileCard
+              key={tile.id}
+              tile={tile}
+              state={tiles[tile.id]}
+              isExpanded={expandedTile === tile.id && tiles[tile.id].status !== 'not_started'}
+              onCycle={() => cycleTileStatus(tile.id)}
+              onCommentChange={comment => updateTileComment(tile.id, comment)}
+            />
+          ))}
         </div>
       </div>
 
       {/* Validate */}
-      <button
-        onClick={() => setShowFeedback(true)}
-        className="w-full py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-        style={{ backgroundColor: 'var(--color-celsius-900)', boxShadow: 'var(--shadow-card)' }}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--color-texte-muted)' }}>Sauvegarde automatique</span>
+        <button
+          onClick={() => setShowFeedback(true)}
+          className="font-display"
+          style={{
+            padding: '12px 28px',
+            borderRadius: 8,
+            backgroundColor: 'var(--color-primary)',
+            color: '#fff',
+            fontWeight: 500,
+            fontSize: '0.95rem',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            transition: 'background-color 0.2s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
+        >
+          Valider le Bloc 1 <ChevronRight size={18} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Reusable form primitives ─────────────────
+function FormField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-texte)', marginBottom: 6 }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+function TextInput({ value, onChange, placeholder, type = 'text', disabled, min, max }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; type?: string; disabled?: boolean; min?: string; max?: string
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      disabled={disabled}
+      min={min}
+      max={max}
+      style={{
+        width: '100%',
+        height: 44,
+        padding: '0 14px',
+        borderRadius: 8,
+        border: '1px solid var(--color-border)',
+        fontSize: '0.875rem',
+        fontFamily: 'var(--font-sans)',
+        color: 'var(--color-texte)',
+        backgroundColor: 'var(--color-blanc)',
+        outline: 'none',
+        transition: 'border-color 0.2s, box-shadow 0.2s',
+        opacity: disabled ? 0.4 : 1,
+      }}
+      onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.boxShadow = '0 0 0 2px rgba(27,67,50,0.08)' }}
+      onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
+    />
+  )
+}
+
+function SelectInput({ value, onChange, options }: {
+  value: string; onChange: (v: string) => void; options: { value: string; label: string }[]
+}) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{
+          width: '100%',
+          height: 44,
+          padding: '0 36px 0 14px',
+          borderRadius: 8,
+          border: '1px solid var(--color-border)',
+          fontSize: '0.875rem',
+          fontFamily: 'var(--font-sans)',
+          color: value ? 'var(--color-texte)' : 'var(--color-texte-muted)',
+          backgroundColor: 'var(--color-blanc)',
+          outline: 'none',
+          appearance: 'none',
+          cursor: 'pointer',
+          transition: 'border-color 0.2s',
+        }}
+        onFocus={e => (e.target.style.borderColor = 'var(--color-primary)')}
+        onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
       >
-        Valider et voir mon Passeport Climat <ChevronRight size={18} />
-      </button>
+        <option value="">Sélectionner</option>
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+      <ChevronDown size={14} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-texte-muted)', pointerEvents: 'none' }} />
     </div>
   )
 }

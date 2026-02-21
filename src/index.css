@@ -1,53 +1,68 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
 @import "tailwindcss";
 
 /* ============================================
-   BOUSSOLE CLIMAT — Design System Celsius
+   BOUSSOLE CLIMAT — Design System "Clinique Suisse"
    ============================================ */
 
 @theme {
-  --color-celsius-900: #1B5E3B;
-  --color-celsius-800: #2D7A50;
-  --color-celsius-700: #3D9465;
-  --color-celsius-600: #4DAE7A;
-  --color-celsius-100: #E8F5EE;
-  --color-celsius-50: #F0FAF4;
+  /* ── Primary ─────────────────────── */
+  --color-primary: #1B4332;
+  --color-primary-hover: #153728;
+  --color-primary-medium: #2D6A4F;
+  --color-primary-light: #E8F0EB;
 
-  --color-corail-500: #E8734A;
-  --color-corail-600: #D4623B;
-  --color-corail-400: #EE8D6A;
-  --color-corail-100: #FDF0EB;
+  /* ── Accent (cuivre) ─────────────── */
+  --color-accent-warm: #B87333;
+  --color-accent-warm-light: #F5EDE4;
 
-  --color-gold-500: #F5A623;
-  --color-gold-100: #FEF6E6;
-
-  --color-rouge-500: #DC4A4A;
-  --color-rouge-100: #FDE8E8;
-  --color-rouge-50: #FEF2F2;
-
-  --color-fond: #FAFAF8;
+  /* ── Surfaces ────────────────────── */
+  --color-fond: #F7F5F0;
   --color-blanc: #FFFFFF;
-  --color-texte: #1A1A1A;
-  --color-texte-secondary: #6B7280;
-  --color-border: #E8E8E4;
-  --color-border-light: #F0F0EC;
-  --color-gris-100: #F3F4F6;
-  --color-gris-200: #E5E7EB;
-  --color-gris-300: #D1D5DB;
-  --color-gris-400: #9CA3AF;
+  --color-subtle: #F0EDE6;
 
-  --font-sans: 'Barlow', system-ui, -apple-system, sans-serif;
+  /* ── Borders ─────────────────────── */
+  --color-border: #EDEAE3;
+  --color-border-active: #E5E1D8;
 
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.12);
-  --shadow-sidebar: 1px 0 0 var(--color-border);
+  /* ── Text ────────────────────────── */
+  --color-texte: #2A2A28;
+  --color-texte-secondary: #7A766D;
+  --color-texte-muted: #B0AB9F;
 
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  /* ── Status ──────────────────────── */
+  --color-rouge-500: #DC4A4A;
+  --color-rouge-100: #FEE2E2;
 
-  --sidebar-width: 240px;
+  /* ── Legacy aliases (for existing components) ── */
+  --color-celsius-900: #1B4332;
+  --color-celsius-800: #2D6A4F;
+  --color-celsius-100: #E8F0EB;
+  --color-celsius-50: #F0FAF4;
+  --color-corail-500: #B87333;
+  --color-corail-100: #F5EDE4;
+  --color-gris-100: #F0EDE6;
+  --color-gris-200: #EDEAE3;
+  --color-gris-300: #E5E1D8;
+  --color-gris-400: #B0AB9F;
+  --color-border-light: #F0EDE6;
+
+  /* ── Typography ──────────────────── */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+
+  /* ── Shadows ─────────────────────── */
+  --shadow-card: 0 1px 3px rgba(42, 42, 40, 0.04);
+  --shadow-card-hover: 0 2px 8px rgba(42, 42, 40, 0.04), 0 8px 32px rgba(42, 42, 40, 0.06);
+
+  /* ── Radii ───────────────────────── */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 14px;
+
+  /* ── Layout ──────────────────────── */
+  --sidebar-width: 264px;
 }
 
 body {
@@ -60,13 +75,17 @@ body {
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-gris-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--color-border-active); border-radius: 3px; }
 
 .label-uppercase {
   font-family: var(--font-sans);
   font-weight: 600;
-  font-size: 12px;
-  letter-spacing: 0.05em;
+  font-size: 0.57rem;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--color-texte-secondary);
+  color: var(--color-texte-muted);
+}
+
+.font-display {
+  font-family: var(--font-display);
 }
