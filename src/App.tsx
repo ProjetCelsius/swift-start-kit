@@ -14,6 +14,11 @@ import JournalPage from './pages/client/JournalPage'
 import MessagesPage from './pages/client/MessagesPage'
 import SondageSuiviPage from './pages/client/SondageSuiviPage'
 // Diagnostic sections are now lazy-loaded via DiagnosticSectionPage
+import AdminLayout from './components/layout/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminDiagnosticDetail from './pages/admin/AdminDiagnosticDetail'
+import AdminStats from './pages/admin/AdminStats'
+import NewDiagnostic from './pages/admin/NewDiagnostic'
 import {
   QuestionnairePage,
   DiagnosticSectionPage,
@@ -61,8 +66,14 @@ function AppRoutes() {
       <Route path="/sondage/:token" element={<SurveyPage />} />
       <Route path="/dg/:token" element={<DgPage />} />
 
-      {/* Espace Admin (à implémenter) */}
-      <Route path="/admin/*" element={<div>Admin — à implémenter</div>} />
+      {/* Espace Admin */}
+      <Route element={<AdminLayout />}>
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/diagnostics/:id" element={<AdminDiagnosticDetail />} />
+        <Route path="/admin/stats" element={<AdminStats />} />
+        <Route path="/admin/new" element={<NewDiagnostic />} />
+        <Route path="/admin/settings" element={<div className="p-8"><h1 className="text-2xl font-bold">Paramètres</h1><p className="text-sm mt-2" style={{ color: 'var(--color-texte-secondary)' }}>À implémenter.</p></div>} />
+      </Route>
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" />} />
