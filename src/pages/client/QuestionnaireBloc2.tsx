@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Clock, Check, ChevronRight, ChevronLeft } from 'lucide-react'
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts'
 import { MATURITY_DIMENSIONS, getAllQuestions } from '@/data/maturityQuestions'
+import { gradeInfo } from '@/types'
 
 const STORAGE_KEY = 'boussole_bloc2'
 
@@ -11,14 +12,6 @@ function loadState(): Record<string, number> {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : {}
   } catch { return {} }
-}
-
-// Grade helpers
-function scoreToGrade(score: number) {
-  if (score >= 75) return { letter: 'A', label: 'Avancé', color: '#1B5E3B' }
-  if (score >= 50) return { letter: 'B', label: 'Structuré', color: '#2D7A50' }
-  if (score >= 25) return { letter: 'C', label: 'En construction', color: '#E8734A' }
-  return { letter: 'D', label: 'Émergent', color: '#DC4A4A' }
 }
 
 function computeDimensionScore(answers: Record<string, number>, dimIndex: number) {
@@ -66,7 +59,7 @@ function FeedbackView({ answers }: { answers: Record<string, number> }) {
 
   const dimensionScores = MATURITY_DIMENSIONS.map((dim, i) => {
     const score = computeDimensionScore(answers, i)
-    const grade = scoreToGrade(score)
+    const grade = gradeInfo(score)
     return { dim, score, grade, label: dim.label }
   })
 
@@ -77,7 +70,7 @@ function FeedbackView({ answers }: { answers: Record<string, number> }) {
   }))
 
   const globalScore = dimensionScores.reduce((a, d) => a + d.score, 0) / 4
-  const globalGrade = scoreToGrade(globalScore)
+  const globalGrade = gradeInfo(globalScore)
 
   const best = dimensionScores.reduce((a, b) => a.score > b.score ? a : b)
   const worst = dimensionScores.reduce((a, b) => a.score < b.score ? a : b)

@@ -260,3 +260,12 @@ export function gradeColor(grade: MaturityGrade): string {
   }
   return colors[grade]
 }
+
+export function gradeInfo(score: number): { letter: MaturityGrade; label: string; color: string } {
+  const grade = scoreToGrade(score)
+  return {
+    letter: grade,
+    label: gradeLabel(grade),
+    color: { A: '#1B5E3B', B: '#2D7A50', C: '#E8734A', D: '#DC4A4A' }[grade],
+  }
+}
