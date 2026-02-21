@@ -4,6 +4,7 @@ import ClientLayout from './components/layout/ClientLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/client/Dashboard'
 import QuestionnaireBloc1 from './pages/client/QuestionnaireBloc1'
+import QuestionnaireBloc2 from './pages/client/QuestionnaireBloc2'
 import QuestionnaireBlock from './pages/client/QuestionnaireBlock'
 import {
   QuestionnairePage,
@@ -40,6 +41,7 @@ function AppRoutes() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/questionnaire" element={<QuestionnairePage />} />
         <Route path="/questionnaire/1" element={<QuestionnaireBloc1 />} />
+        <Route path="/questionnaire/2" element={<QuestionnaireBloc2 />} />
         <Route path="/questionnaire/:blockId" element={<QuestionnaireBlock />} />
         <Route path="/sondage" element={<SondagePage />} />
         <Route path="/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
