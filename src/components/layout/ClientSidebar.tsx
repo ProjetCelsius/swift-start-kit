@@ -24,6 +24,7 @@ import { MOCK_ANALYST } from '../../hooks/useAuth'
 import { useAuth } from '../../hooks/useAuth'
 import { useDemoIfAvailable } from '../../hooks/useDemo'
 import HelpPanel from '../questionnaire/HelpPanel'
+import { MonComptePanel, ChangePasswordPanel, ExportDataPanel, AideSupportPanel } from './AccountPanels'
 
 // ── Journey state ──────────────────────────────
 type StepStatus = 'done' | 'current' | 'upcoming'
@@ -460,6 +461,7 @@ function SecondaryNavItem({ to, icon, label, badge, active, onClick }: {
 function UserProfileBlock() {
   const [open, setOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [activePanel, setActivePanel] = useState<'compte' | 'password' | 'export' | 'aide' | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const { signOut } = useAuth()
@@ -475,17 +477,18 @@ function UserProfileBlock() {
 
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(null), 2000); return () => clearTimeout(t) }, [toast])
 
-  function showToast(msg: string) { setToast(msg); setOpen(false) }
+  function openPanel(panel: 'compte' | 'password' | 'export' | 'aide') { setOpen(false); setActivePanel(panel) }
   async function handleLogout() { setOpen(false); demo?.setEnabled(false); await signOut(); navigate('/login') }
 
   const menuItems = [
-    { icon: <User size={15} />, label: 'Mon compte', action: () => showToast('Bientôt disponible') },
-    { icon: <Lock size={15} />, label: 'Changer le mot de passe', action: () => showToast('Bientôt disponible') },
-    { icon: <Download size={15} />, label: 'Exporter mes données', action: () => showToast('Bientôt disponible') },
-    { icon: <HelpCircle size={15} />, label: 'Aide & support', action: () => showToast('Bientôt disponible') },
+    { icon: <User size={15} />, label: 'Mon compte', action: () => openPanel('compte') },
+    { icon: <Lock size={15} />, label: 'Changer le mot de passe', action: () => openPanel('password') },
+    { icon: <Download size={15} />, label: 'Exporter mes données', action: () => openPanel('export') },
+    { icon: <HelpCircle size={15} />, label: 'Aide & support', action: () => openPanel('aide') },
   ]
 
   return (
+    <>
     <div ref={ref} style={{ position: 'relative', paddingBottom: 16 }}>
       {toast && (
         <div style={{
@@ -551,5 +554,12 @@ function UserProfileBlock() {
         @keyframes toastFade { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
       `}</style>
     </div>
+
+    {/* Account panels */}
+    <MonComptePanel open={activePanel === 'compte'} onClose={() => setActivePanel(null)} />
+    <ChangePasswordPanel open={activePanel === 'password'} onClose={() => setActivePanel(null)} />
+    <ExportDataPanel open={activePanel === 'export'} onClose={() => setActivePanel(null)} />
+    <AideSupportPanel open={activePanel === 'aide'} onClose={() => setActivePanel(null)} />
+    </>
   )
 }
