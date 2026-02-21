@@ -74,6 +74,43 @@ export const mockDiagnostic = {
     perRevenue: 0.25,
     sectorAverage: 18.2,
     sectorAverageRevenue: 0.31
+  },
+
+  section7: {
+    deadlines: [
+      { date: "Janvier 2026", obligation: "Reporting CSRD", description: "Premier reporting pour les entreprises de +500 salariés cotées", status: "En cours" as const },
+      { date: "Juin 2026", obligation: "Bilan GES réglementaire", description: "Mise à jour obligatoire tous les 4 ans pour +500 salariés", status: "Pas commence" as const },
+      { date: "Janvier 2027", obligation: "Taxonomie européenne", description: "Alignement des activités sur les critères techniques", status: "Pas commence" as const },
+      { date: "Janvier 2027", obligation: "Devoir de vigilance", description: "Plan de vigilance incluant les risques climatiques", status: "En cours" as const },
+      { date: "2027-2028", obligation: "Exigences donneurs d'ordre", description: "Scope 3 fournisseurs exigé par vos clients grands comptes", status: "Pas commence" as const },
+      { date: "2028", obligation: "Affichage environnemental", description: "Score environnemental obligatoire sur certains produits", status: "Pas commence" as const }
+    ]
+  },
+
+  section8: {
+    tiles: [
+      { name: "Bilan Carbone", status: "Realise" as const, relevance: null },
+      { name: "BEGES réglementaire", status: "Realise" as const, relevance: null },
+      { name: "Stratégie climat", status: "En cours" as const, relevance: null },
+      { name: "Trajectoire SBTi", status: "Pas fait" as const, relevance: "Essentiel" as const },
+      { name: "Reporting CSRD", status: "En cours" as const, relevance: null },
+      { name: "Plan de mobilité", status: "Pas fait" as const, relevance: "Recommande" as const },
+      { name: "Achats responsables", status: "Pas fait" as const, relevance: "Essentiel" as const },
+      { name: "Formation collaborateurs", status: "Realise" as const, relevance: null },
+      { name: "Éco-conception", status: "Pas fait" as const, relevance: "Recommande" as const },
+      { name: "Certification environnementale", status: "Pas fait" as const, relevance: "Optionnel" as const },
+      { name: "Budget climat dédié", status: "Realise" as const, relevance: null },
+      { name: "Poste dédié RSE", status: "En cours" as const, relevance: null }
+    ]
+  },
+
+  section9: {
+    quarters: [
+      { label: "T1 2026", actions: ["Gouvernance : reporting trimestriel COMEX", "Lancer l'audit SBTi"] },
+      { label: "T2 2026", actions: ["Programme sensibilisation managers", "Politique achats responsables"] },
+      { label: "T3 2026", actions: ["Validation trajectoire SBTi", "Plan de mobilité"] },
+      { label: "T4 2026", actions: ["Premier reporting CSRD", "Bilan annuel et ajustement"] }
+    ]
   }
 }
 
