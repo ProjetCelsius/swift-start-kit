@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Zap, Coins, AlertTriangle, Info, TrendingDown, TrendingUp } from 'lucide-react'
+import { Zap, Coins, AlertTriangle, Info, TrendingDown, TrendingUp, Check, RefreshCw, ChevronRight } from 'lucide-react'
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Legend, CartesianGrid,
@@ -8,8 +8,8 @@ import {
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
 
 const d = mockDiagnostic
-const SECTION_IDS = ['synthese', 'priorites', 'maturite', 'perception', 'dimensionnement', 'empreinte']
-const SECTION_LABELS = ['Synthèse', 'Priorités', 'Maturité', 'Perception', 'Dimensionnement', 'Empreinte']
+const SECTION_IDS = ['synthese', 'priorites', 'maturite', 'perception', 'dimensionnement', 'empreinte', 'echeances', 'cartographie', 'feuille']
+const SECTION_LABELS = ['Synthèse', 'Priorités', 'Maturité', 'Perception', 'Dimensionnement', 'Empreinte', 'Échéances', 'Cartographie', 'Feuille de route']
 
 const GRADE_COLOR: Record<string, string> = { A: '#1B4332', B: '#2D6A4F', C: '#B87333', D: '#DC4A4A' }
 const POP_COLORS = ['#1B4332', '#2D6A4F', '#B0AB9F', '#B87333', '#DC4A4A']
@@ -480,6 +480,148 @@ export default function DiagnosticPage() {
             </div>
           </>
         )}
+      </div>
+
+      {/* SECTION 7 — ECHEANCES */}
+      <div ref={el => { sectionRefs.current[6] = el }} style={{ marginBottom: 56 }}>
+        <SectionLabel num={7} title="Vos échéances réglementaires" />
+        <div style={{ position: 'relative', paddingLeft: 32 }}>
+          {/* Vertical line */}
+          <div style={{ position: 'absolute', left: 5, top: 6, bottom: 6, width: 2, backgroundColor: '#EDEAE3' }} />
+          {d.section7.deadlines.map((dl, i) => {
+            const year = parseInt(dl.date)
+            const isPast = dl.date.includes('2026') && dl.date.includes('Janvier')
+            const isUpcoming = dl.date.includes('2026') || (year >= 2026 && year <= 2027)
+            const dateBg = isPast ? '#FEE2E2' : isUpcoming ? '#F5EDE4' : '#E8F0EB'
+            const dateColor = isPast ? '#DC4A4A' : isUpcoming ? '#B87333' : '#1B4332'
+            return (
+              <div key={i} style={{ position: 'relative', marginBottom: 16 }}>
+                {/* Dot on line */}
+                <div style={{
+                  position: 'absolute', left: -32 + 0, top: 20, width: 12, height: 12,
+                  borderRadius: '50%', backgroundColor: '#fff', border: '2px solid #EDEAE3',
+                }} />
+                <div style={{
+                  backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14,
+                  padding: '18px 22px', boxShadow: '0 1px 3px rgba(42,42,40,.04)',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
+                }}>
+                  <div>
+                    <span style={{
+                      display: 'inline-block', padding: '3px 10px', borderRadius: 20,
+                      backgroundColor: dateBg, color: dateColor, fontSize: '0.7rem', fontWeight: 600,
+                      marginBottom: 8,
+                    }}>{dl.date}</span>
+                    <p style={{ fontSize: '0.88rem', fontWeight: 600, color: '#2A2A28', marginBottom: 4 }}>{dl.obligation}</p>
+                    <p style={{ fontSize: '0.8rem', color: '#7A766D' }}>{dl.description}</p>
+                  </div>
+                  <span style={{
+                    flexShrink: 0, padding: '3px 10px', borderRadius: 20, fontSize: '0.7rem', fontWeight: 500, whiteSpace: 'nowrap',
+                    backgroundColor: dl.status === 'En cours' ? '#F5EDE4' : '#F0EDE6',
+                    color: dl.status === 'En cours' ? '#B87333' : '#7A766D',
+                  }}>{dl.status === 'Pas commence' ? 'Pas commencé' : dl.status}</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* SECTION 8 — CARTOGRAPHIE */}
+      <div ref={el => { sectionRefs.current[7] = el }} style={{ marginBottom: 56 }}>
+        <SectionLabel num={8} title="Cartographie de vos démarches" />
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20,
+        }}>
+          {d.section8.tiles.map((tile, i) => {
+            const statusBg = tile.status === 'Realise' ? '#E8F0EB' : tile.status === 'En cours' ? '#F5EDE4' : '#F0EDE6'
+            const statusColor = tile.status === 'Realise' ? '#1B4332' : tile.status === 'En cours' ? '#B87333' : '#7A766D'
+            const statusLabel = tile.status === 'Realise' ? 'Réalisé' : tile.status === 'En cours' ? 'En cours' : 'Pas fait'
+            const relBg = tile.relevance === 'Essentiel' ? '#FEE2E2' : tile.relevance === 'Recommande' ? '#F5EDE4' : '#F0EDE6'
+            const relColor = tile.relevance === 'Essentiel' ? '#DC4A4A' : tile.relevance === 'Recommande' ? '#B87333' : '#7A766D'
+            return (
+              <div key={i} style={{
+                backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14, padding: 16,
+                display: 'flex', flexDirection: 'column', gap: 8, minHeight: 90,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px',
+                    borderRadius: 20, backgroundColor: statusBg, color: statusColor,
+                    fontSize: '0.65rem', fontWeight: 600,
+                  }}>
+                    {tile.status === 'Realise' && <Check size={12} />}
+                    {tile.status === 'En cours' && <RefreshCw size={12} />}
+                    {statusLabel}
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.85rem', fontWeight: 500, flex: 1 }}>{tile.name}</p>
+                {tile.status === 'Pas fait' && tile.relevance && (
+                  <span style={{
+                    display: 'inline-block', padding: '2px 8px', borderRadius: 20,
+                    backgroundColor: relBg, color: relColor, fontSize: '0.65rem', fontWeight: 600,
+                    alignSelf: 'flex-start',
+                  }}>{tile.relevance === 'Recommande' ? 'Recommandé' : tile.relevance}</span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        {/* Summary */}
+        <div style={{ display: 'flex', gap: 16 }}>
+          {[
+            { label: 'Réalisé', count: d.section8.tiles.filter(t => t.status === 'Realise').length, color: '#1B4332', bg: '#E8F0EB' },
+            { label: 'En cours', count: d.section8.tiles.filter(t => t.status === 'En cours').length, color: '#B87333', bg: '#F5EDE4' },
+            { label: 'Pas fait', count: d.section8.tiles.filter(t => t.status === 'Pas fait').length, color: '#7A766D', bg: '#F0EDE6' },
+          ].map(s => (
+            <span key={s.label} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 14px', borderRadius: 20, backgroundColor: s.bg,
+              color: s.color, fontSize: '0.8rem', fontWeight: 600,
+            }}>{s.count} {s.label}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* SECTION 9 — FEUILLE DE ROUTE */}
+      <div ref={el => { sectionRefs.current[8] = el }} style={{ marginBottom: 56 }}>
+        <SectionLabel num={9} title="Feuille de route" />
+        <div style={{ display: 'flex', gap: 0, overflowX: 'auto', marginBottom: 20 }}>
+          {d.section9.quarters.map((q, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'stretch' }}>
+              <div style={{ minWidth: 200, flex: 1 }}>
+                <div style={{
+                  backgroundColor: '#1B4332', color: '#fff', textAlign: 'center',
+                  padding: 10, borderRadius: i === 0 ? '10px 0 0 0' : i === 3 ? '0 10px 0 0' : 0,
+                  fontSize: '0.85rem', fontWeight: 600,
+                }}>{q.label}</div>
+                <div style={{
+                  backgroundColor: '#fff', border: '1px solid #EDEAE3',
+                  borderRadius: i === 0 ? '0 0 0 10px' : i === 3 ? '0 0 10px 0' : 0,
+                  padding: 16, minHeight: 120,
+                }}>
+                  {q.actions.map((a, j) => (
+                    <div key={j} style={{
+                      backgroundColor: '#F7F5F0', borderRadius: 8, padding: '8px 12px',
+                      fontSize: '0.8rem', marginBottom: 8, display: 'flex', alignItems: 'flex-start', gap: 8,
+                    }}>
+                      <span style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: '#1B4332', marginTop: 6, flexShrink: 0 }} />
+                      {a}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {i < 3 && (
+                <div style={{ display: 'flex', alignItems: 'center', padding: '0 2px' }}>
+                  <ChevronRight size={16} color="#B0AB9F" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <p style={{ fontSize: '0.85rem', fontStyle: 'italic', color: '#7A766D' }}>
+          Cette feuille de route est indicative. Elle sera ajustée lors de la restitution.
+        </p>
       </div>
     </div>
   )
