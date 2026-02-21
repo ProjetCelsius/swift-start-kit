@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Edit3, Users } from 'lucide-react'
+import { ChevronRight, Edit3, Users, Lock } from 'lucide-react'
 import { useAuth, MOCK_ANALYST } from '../../hooks/useAuth'
 
 const BLOCS = [
@@ -234,7 +234,6 @@ export default function ClientHomeDashboard() {
       <div className="mt-8 dash-fadein" style={{ animationDelay: '280ms' }}>
         <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>EN UN COUP D'ŒIL</div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Sondage interne */}
           <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12, padding: 20 }}>
             <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em' }}>SONDAGE INTERNE</div>
             <div>
@@ -242,36 +241,93 @@ export default function ClientHomeDashboard() {
               <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#B0AB9F' }}> / 30</span>
             </div>
             <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>réponses collectées</div>
-            {/* Mini progress dots */}
             <div className="flex gap-[3px] mt-2">
               {Array.from({ length: 30 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-[4px] rounded-full"
-                  style={{
-                    width: 6,
-                    backgroundColor: i < 12 ? '#1B4332' : '#E5E1D8',
-                  }}
-                />
+                <div key={i} className="h-[4px] rounded-full" style={{ width: 6, backgroundColor: i < 12 ? '#1B4332' : '#E5E1D8' }} />
               ))}
             </div>
           </div>
-
-          {/* Analyse en cours */}
           <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12, padding: 20 }}>
             <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em' }}>ANALYSE EN COURS</div>
             <div className="font-display" style={{ fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>Phase 1</div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>
-              {analyst.first_name} étudie vos réponses
-            </div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>{analyst.first_name} étudie vos réponses</div>
           </div>
-
-          {/* Prochaine étape */}
           <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12, padding: 20 }}>
             <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em' }}>PROCHAINE ÉTAPE</div>
             <div className="font-display" style={{ fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>Restitution</div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>Visio planifiée après finalisation</div>
+          </div>
+        </div>
+      </div>
+
+      {/* VOTRE FUTUR DIAGNOSTIC — Blurred preview */}
+      <div className="mt-8 dash-fadein" style={{ animationDelay: '350ms' }}>
+        <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>VOTRE FUTUR DIAGNOSTIC</div>
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #EDEAE3',
+            borderRadius: 14,
+            overflow: 'hidden',
+            position: 'relative',
+            height: 280,
+          }}
+        >
+          {/* Fake blurred diagnostic content */}
+          <div style={{ padding: '28px 32px', filter: 'blur(6px)', opacity: 0.6 }}>
+            <div className="font-display" style={{ fontSize: '1.3rem', color: '#2A2A28', fontWeight: 400, marginBottom: 16 }}>
+              Synthèse éditoriale
+            </div>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 12 }}>
+              Votre organisation présente un profil de maturité climat de niveau intermédiaire, avec des fondations solides sur le volet réglementaire mais des lacunes identifiées sur l'intégration opérationnelle des enjeux carbone.
+            </p>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 12 }}>
+              Les résultats du sondage interne révèlent un écart significatif entre la perception de la direction et celle des équipes terrain, notamment sur les axes « gouvernance » et « formation ».
+            </p>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 20 }}>
+              Nous recommandons de prioriser trois chantiers structurants au cours des 12 prochains mois, détaillés dans la section Priorités ci-après.
+            </p>
+            <div className="flex items-center gap-6">
+              {/* Fake radar chart */}
+              <svg width={120} height={120} viewBox="0 0 120 120">
+                <polygon points="60,15 105,40 105,80 60,105 15,80 15,40" fill="none" stroke="#EDEAE3" strokeWidth={1} />
+                <polygon points="60,30 90,45 90,75 60,90 30,75 30,45" fill="none" stroke="#EDEAE3" strokeWidth={1} />
+                <line x1={60} y1={15} x2={60} y2={105} stroke="#EDEAE3" strokeWidth={0.5} />
+                <line x1={15} y1={40} x2={105} y2={80} stroke="#EDEAE3" strokeWidth={0.5} />
+                <line x1={105} y1={40} x2={15} y2={80} stroke="#EDEAE3" strokeWidth={0.5} />
+                <polygon points="60,28 88,48 82,78 60,92 38,78 32,48" fill="rgba(27,67,50,0.15)" stroke="#1B4332" strokeWidth={1.5} />
+              </svg>
+              <div>
+                <div className="label-uppercase mb-1">SCORE DE MATURITÉ</div>
+                <span
+                  className="font-display inline-block"
+                  style={{
+                    fontSize: '1.8rem',
+                    fontWeight: 600,
+                    color: '#1B4332',
+                    backgroundColor: '#E8F0EB',
+                    padding: '4px 16px',
+                    borderRadius: 8,
+                  }}
+                >
+                  B
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Lock overlay */}
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center"
+            style={{ backgroundColor: 'rgba(247,245,240,0.7)' }}
+          >
+            <Lock size={32} color="#B0AB9F" strokeWidth={1.5} />
+            <div className="mt-3" style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.9rem', color: '#7A766D' }}>
+              Déverrouillé après votre restitution
+            </div>
+            <div style={{ width: 40, height: 1, backgroundColor: '#EDEAE3', margin: '12px 0' }} />
             <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>
-              Visio planifiée après finalisation
+              9 sections d'analyse sur mesure
             </div>
           </div>
         </div>
