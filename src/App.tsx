@@ -16,6 +16,7 @@ import JournalPage from './pages/client/JournalPage'
 import MessagesPage from './pages/client/MessagesPage'
 import SondageSuiviPage from './pages/client/SondageSuiviPage'
 import AttentePage from './pages/client/AttentePage'
+import DiagnosticPage from './pages/client/DiagnosticPage'
 import AdminLayout from './components/layout/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminDiagnosticDetail from './pages/admin/AdminDiagnosticDetail'
@@ -63,6 +64,7 @@ function AppRoutes() {
           <Route path="/questionnaire/:blockId" element={<QuestionnaireBlock />} />
           <Route path="/sondage" element={<SondageSuiviPage />} />
           <Route path="/attente" element={<AttentePage />} />
+          <Route path="/diagnostic" element={<DiagnosticPage />} />
           <Route path="/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
           <Route path="/journal" element={<JournalPage />} />
           <Route path="/messages" element={<MessagesPage />} />

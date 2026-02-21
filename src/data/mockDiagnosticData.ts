@@ -2,16 +2,88 @@
 // BOUSSOLE CLIMAT — Mock diagnostic data
 // ============================================
 
+// Mock client: ETI industrielle, 800 salaries, ~50M€ CA, profil SMFD, score B (62/100)
+
+export const mockDiagnostic = {
+  client: {
+    name: "Groupe Méridien",
+    sector: "Industrie manufacturière",
+    employees: 800,
+    revenue: "50-200M",
+    analyst: { name: "Claire Dubois", initials: "CD", title: "Analyste climat senior" },
+    profilClimat: { code: "SMFD", name: "Les fondations sont là", phrase: "On fait les choses dans les règles, et on les fait bien.", family: "Les Méthodiques", entrepriseType: "Saint-Gobain" }
+  },
+
+  section1: {
+    paragraphs: [
+      "Groupe Méridien a posé des bases solides : un Bilan Carbone récent, un référent climat identifié, une direction qui reconnaît le sujet. Mais ces fondations restent fragiles. La démarche repose largement sur une personne — votre responsable RSE — qui cumule ce rôle avec d'autres missions. C'est à la fois votre force (son engagement est réel) et votre vulnérabilité : si elle part, tout s'arrête.",
+      "Le point d'alerte principal concerne l'écart entre votre perception et celle de vos équipes. Vous estimiez que 60% de vos collaborateurs étaient engagés ou moteurs. La réalité mesurée est de 38%. Ce n'est pas un problème d'adhésion — la plupart ne sont pas opposés. C'est un problème de communication et de traduction concrète : vos équipes ne savent pas quoi faire de leur bonne volonté.",
+      "La bonne nouvelle : votre scope 3 est déjà cartographié, votre trajectoire est amorcée, et la CSRD vous pousse dans la bonne direction. Vous avez 18 mois pour transformer cette conformité subie en avantage concurrentiel. Les 3 priorités qui suivent sont conçues pour ça."
+    ],
+    date: "15 février 2026"
+  },
+
+  section2: {
+    priorities: [
+      { title: "Structurer la gouvernance climat avec un reporting trimestriel au COMEX", why: "Votre DG alloue du budget mais ne voit pas les résultats. Un tableau de bord trimestriel crée la boucle de feedback nécessaire.", effort: "Rapide" as const, budget: "~5k" },
+      { title: "Déployer un programme de sensibilisation ciblé managers", why: "L'écart de perception vient du middle management. Les managers sont le goulot d'étranglement entre la stratégie et le terrain.", effort: "Projet" as const, budget: "15-25k" },
+      { title: "Lancer la trajectoire SBTi avant l'obligation CSRD", why: "Vous avez les données. Formaliser maintenant vous donne 12 mois d'avance sur vos concurrents et crédibilise votre démarche.", effort: "Projet" as const, budget: "20-40k" }
+    ],
+    antiRecommendation: "Ne lancez pas de certification B Corp à ce stade. Le coût (50-80k) et l'effort ne sont pas justifiés par votre positionnement marché B2B. Concentrez ces ressources sur la trajectoire SBTi qui a un impact business direct."
+  },
+
+  section3: {
+    globalScore: 62,
+    globalGrade: "B",
+    dimensions: [
+      { name: "Gouvernance climat", score: 73, grade: "B" },
+      { name: "Mesure et données", score: 67, grade: "B" },
+      { name: "Stratégie et trajectoire", score: 53, grade: "B" },
+      { name: "Culture et engagement", score: 47, grade: "C" }
+    ]
+  },
+
+  section4: {
+    perceptionData: [
+      { label: "Direction engagée", rse: 8.2, prediction: 6.5, terrain: 5.1 },
+      { label: "Moyens suffisants", rse: 5.5, prediction: 4.0, terrain: 3.8 },
+      { label: "Objectifs clairs", rse: 7.0, prediction: 5.5, terrain: 3.2 },
+      { label: "Équipes impliquées", rse: 6.8, prediction: 5.0, terrain: 5.5 },
+      { label: "Progrès réels", rse: 6.5, prediction: 5.8, terrain: 4.9 },
+      { label: "Climat = opportunité", rse: 7.5, prediction: 4.5, terrain: 5.2 },
+      { label: "Managers relaient", rse: 5.0, prediction: 3.5, terrain: 2.8 },
+      { label: "Communication honnête", rse: 7.2, prediction: 5.0, terrain: 4.1 }
+    ],
+    populationEstimated: { moteurs: 15, engages: 45, indifferents: 25, sceptiques: 10, refractaires: 5 },
+    populationReal: { moteurs: 12, engages: 26, indifferents: 38, sceptiques: 18, refractaires: 6 }
+  },
+
+  section5: {
+    currentFTE: 0.5,
+    recommendedFTE: 2.0,
+    analysisText: "Avec 800 collaborateurs et un scope 3 significatif, votre démarche nécessite au minimum 1.5 à 2 ETP dédiés. Actuellement, votre responsable RSE y consacre environ 50% de son temps, le reste étant absorbé par la qualité et la conformité réglementaire."
+  },
+
+  section6: {
+    hasFootprint: true,
+    total: 12500,
+    scope1: 1800,
+    scope2: 950,
+    scope3: 9750,
+    perEmployee: 15.6,
+    perRevenue: 0.25,
+    sectorAverage: 18.2,
+    sectorAverageRevenue: 0.31
+  }
+}
+
+// Legacy exports for backward compatibility
 export const MOCK_SYNTHESIS = {
-  paragraphs: [
-    "Votre organisation a amorcé une démarche climat avec une réelle volonté de structuration. Le bilan carbone réalisé en 2023 constitue une première étape solide, et la nomination d'un référent RSE témoigne d'un engagement naissant. Cependant, la démarche reste encore largement portée par quelques personnes convaincues, sans ancrage systématique dans les processus de décision. Le sujet climat n'est pas encore perçu comme un levier stratégique par l'ensemble du comité de direction.",
-    "L'analyse croisée de vos réponses et de celles de vos collaborateurs révèle un écart de perception significatif : là où vous estimez la démarche « bien engagée », vos équipes la perçoivent comme « en construction ». Ce décalage, fréquent dans les organisations de votre taille, n'est pas un problème en soi — c'est un signal. Il indique que la communication interne sur les actions menées et les ambitions climatiques doit être renforcée pour créer une dynamique collective.",
-    "Votre secteur connaît une accélération réglementaire majeure avec la CSRD qui vous concernera dès 2026. Les entreprises de votre secteur les plus avancées ont déjà intégré le climat dans leur stratégie d'investissement et leur politique achats. Vous avez une fenêtre d'opportunité de 12 à 18 mois pour transformer votre démarche actuelle en avantage concurrentiel, avant que la conformité réglementaire ne devienne une simple obligation subie.",
-  ],
+  paragraphs: mockDiagnostic.section1.paragraphs,
   analyst: {
-    name: 'Claire Lefèvre',
-    title: 'Analyste climat senior — Celsius',
-    date: '15 janvier 2026',
+    name: mockDiagnostic.client.analyst.name,
+    title: mockDiagnostic.client.analyst.title,
+    date: mockDiagnostic.section1.date,
     photoUrl: '',
   },
 }
@@ -24,33 +96,17 @@ export interface Priority {
   budget: '<10k€' | '10-50k€' | '>50k€'
 }
 
-export const MOCK_PRIORITIES: Priority[] = [
-  {
-    number: 1,
-    title: 'Structurer la gouvernance climat avec un comité dédié',
-    why: "Votre démarche manque d'un ancrage décisionnel clair. Un comité climat trimestriel avec la DG, la DAF et les opérations permettrait de transformer les intentions en décisions budgétaires concrètes. C'est le prérequis à toute accélération.",
-    effort: 'Rapide',
-    budget: '<10k€',
-  },
-  {
-    number: 2,
-    title: 'Lancer un programme de sensibilisation interne structuré',
-    why: "L'écart de perception entre direction et terrain est votre principal frein. Une Fresque du Climat pour 100% des managers, suivie d'ateliers métiers, réduirait ce fossé en 6 mois et créerait les relais internes indispensables.",
-    effort: 'Projet',
-    budget: '10-50k€',
-  },
-  {
-    number: 3,
-    title: 'Intégrer un critère carbone dans la politique achats',
-    why: "Votre scope 3 représente 78% de vos émissions. Sans levier sur vos fournisseurs, vos objectifs de réduction resteront théoriques. Commencez par les 20 fournisseurs qui représentent 80% de vos achats.",
-    effort: 'Transformation',
-    budget: '>50k€',
-  },
-]
+export const MOCK_PRIORITIES: Priority[] = mockDiagnostic.section2.priorities.map((p, i) => ({
+  number: i + 1,
+  title: p.title,
+  why: p.why,
+  effort: p.effort === 'Rapide' ? 'Rapide' : 'Projet',
+  budget: '<10k€',
+}))
 
 export const MOCK_ANTI_RECOMMENDATION = {
-  title: 'Ce que nous ne ferions PAS',
-  text: "Nous ne recommandons pas de vous engager dans une certification ISO 14001 à ce stade. Votre maturité organisationnelle ne permettrait pas d'en tirer pleinement parti, et le coût (40-80k€) serait disproportionné par rapport aux bénéfices. Concentrez-vous d'abord sur les fondamentaux : gouvernance, données et culture. La certification viendra naturellement dans 18 à 24 mois.",
+  title: 'Ce que nous ne recommandons PAS',
+  text: mockDiagnostic.section2.antiRecommendation,
 }
 
 export interface DimensionScore {
@@ -65,76 +121,45 @@ export interface DimensionScore {
 }
 
 export const MOCK_MATURITY = {
-  globalScore: 52,
-  globalLetter: 'B',
+  globalScore: mockDiagnostic.section3.globalScore,
+  globalLetter: mockDiagnostic.section3.globalGrade,
   globalLabel: 'Structuré',
-  globalColor: '#2D7A50',
-  dimensions: [
-    {
-      id: 'gouvernance',
-      label: 'Gouvernance climat',
-      score: 62,
-      letter: 'B',
-      color: '#2D7A50',
-      analysis: "Votre gouvernance climat est en cours de structuration. Le portage par la direction existe mais reste informel. L'intégration du climat dans les décisions d'investissement est le prochain palier à franchir.",
-      sectorPosition: 'Top 30% de votre secteur',
-      sectorPositive: true,
-    },
-    {
-      id: 'mesure',
-      label: 'Mesure et données',
-      score: 45,
-      letter: 'C',
-      color: '#E8734A',
-      analysis: "Le bilan carbone initial est une bonne base, mais la couverture du scope 3 reste partielle. La qualité des données et la fréquence de mise à jour sont vos principaux axes d'amélioration.",
-      sectorPosition: 'Dans la moyenne sectorielle',
-      sectorPositive: false,
-    },
-    {
-      id: 'action',
-      label: 'Stratégie et objectifs',
-      score: 38,
-      letter: 'C',
-      color: '#E8734A',
-      analysis: "Des actions existent mais sans feuille de route structurée. Les objectifs de réduction ne sont pas encore alignés sur une trajectoire scientifique. L'absence de jalons intermédiaires rend le suivi difficile.",
-      sectorPosition: 'En dessous de la moyenne sectorielle',
-      sectorPositive: false,
-    },
-    {
-      id: 'culture',
-      label: 'Culture et engagement',
-      score: 65,
-      letter: 'B',
-      color: '#2D7A50',
-      analysis: "Point fort de votre organisation. La sensibilité des équipes est réelle et constitue un levier puissant. Le défi est de transformer cette sensibilité en compétences opérationnelles et en actions mesurables.",
-      sectorPosition: 'Top 20% de votre secteur',
-      sectorPositive: true,
-    },
-  ] as DimensionScore[],
+  globalColor: '#2D6A4F',
+  dimensions: mockDiagnostic.section3.dimensions.map(d => ({
+    id: d.name.toLowerCase().replace(/ /g, '_'),
+    label: d.name,
+    score: d.score,
+    letter: d.grade,
+    color: d.grade === 'A' ? '#1B4332' : d.grade === 'B' ? '#2D6A4F' : d.grade === 'C' ? '#B87333' : '#DC4A4A',
+    analysis: '',
+    sectorPosition: '',
+    sectorPositive: true,
+  })) as DimensionScore[],
 }
 
-// ── Section 4: Perception Gaps ───────────────────────────
-
-export const PERCEPTION_LABELS = [
-  'Sujet stratégique',
-  'Moyens suffisants',
-  'Objectifs clairs',
-  'Équipes impliquées',
-  'Mesure des progrès',
-  'Intégration business',
-  'Reconnaissance externe',
-  'Confiance objectifs',
-]
+export const PERCEPTION_LABELS = mockDiagnostic.section4.perceptionData.map(d => d.label)
 
 export const MOCK_PERCEPTION_GAPS = {
-  rseScores:       [8.2, 7.5, 6.8, 7.8, 6.0, 5.5, 7.0, 7.2],
-  rsePredictions:  [6.5, 5.8, 5.2, 5.0, 4.5, 4.8, 5.5, 5.0],
-  employeeScores:  [5.8, 4.3, 4.0, 4.6, 3.8, 3.5, 5.2, 4.1],
+  rseScores: mockDiagnostic.section4.perceptionData.map(d => d.rse),
+  rsePredictions: mockDiagnostic.section4.perceptionData.map(d => d.prediction),
+  employeeScores: mockDiagnostic.section4.perceptionData.map(d => d.terrain),
 }
 
 export const MOCK_POPULATION_COMPARISON = {
-  rseEstimate:  [15, 30, 30, 20, 5],
-  employeeReal: [8, 22, 35, 25, 10],
+  rseEstimate: [
+    mockDiagnostic.section4.populationEstimated.moteurs,
+    mockDiagnostic.section4.populationEstimated.engages,
+    mockDiagnostic.section4.populationEstimated.indifferents,
+    mockDiagnostic.section4.populationEstimated.sceptiques,
+    mockDiagnostic.section4.populationEstimated.refractaires,
+  ],
+  employeeReal: [
+    mockDiagnostic.section4.populationReal.moteurs,
+    mockDiagnostic.section4.populationReal.engages,
+    mockDiagnostic.section4.populationReal.indifferents,
+    mockDiagnostic.section4.populationReal.sceptiques,
+    mockDiagnostic.section4.populationReal.refractaires,
+  ],
 }
 
 export const MOCK_DG_COMPARISON = {
@@ -145,32 +170,25 @@ export const MOCK_DG_COMPARISON = {
   rseMeansScore: 5.8,
 }
 
-// ── Section 5: Human Capital ─────────────────────────────
-
 export const MOCK_HUMAN_CAPITAL = {
-  currentFTE: 0.5,
-  recommendedFTE: 2.0,
+  currentFTE: mockDiagnostic.section5.currentFTE,
+  recommendedFTE: mockDiagnostic.section5.recommendedFTE,
   population: [8, 22, 35, 25, 10],
-  analysis: [
-    "Avec 0,5 ETP dédié à la démarche climat, votre organisation est en dessous du seuil critique pour une entreprise de votre taille et de votre secteur. Les benchmarks sectoriels montrent qu'une entreprise de 250 à 500 salariés engagée dans une démarche structurée mobilise en moyenne 1,5 à 2,5 ETP dédiés.",
-    "Le sous-dimensionnement de l'équipe climat explique en partie l'écart de perception observé entre la direction et les collaborateurs. Sans relais opérationnels formés et mandatés, la stratégie peine à se traduire en actions concrètes au quotidien.",
-    "Nous recommandons un renforcement progressif : un premier recrutement d'un chargé de mission climat à plein temps dans les 6 prochains mois, complété par la formation de 5 à 8 ambassadeurs climat dans les fonctions clés (achats, RH, production, communication).",
-  ],
+  analysis: [mockDiagnostic.section5.analysisText],
 }
 
-// ── Section 6: Carbon Footprint ──────────────────────────
-
 export const MOCK_FOOTPRINT = {
-  hasFootprint: true,
-  total: 12500,
-  scope1: 1800,
-  scope2: 950,
-  scope3: 9750,
-  employees: 320,
-  revenue: 45000, // k€
-  intensityPerEmployee: 39.1,
-  intensityPerRevenue: 0.278,
-  sectorAvgIntensity: 32.5,
+  hasFootprint: mockDiagnostic.section6.hasFootprint,
+  total: mockDiagnostic.section6.total,
+  scope1: mockDiagnostic.section6.scope1,
+  scope2: mockDiagnostic.section6.scope2,
+  scope3: mockDiagnostic.section6.scope3,
+  employees: 800,
+  revenue: 50000,
+  intensityPerEmployee: mockDiagnostic.section6.perEmployee,
+  intensityPerRevenue: mockDiagnostic.section6.perRevenue,
+  sectorAvgIntensity: mockDiagnostic.section6.sectorAverage,
+  sectorAverageRevenue: mockDiagnostic.section6.sectorAverageRevenue,
   trajectoryYears: [2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030],
   trajectoryBau: [12500, 12800, 13100, 13500, 13900, 14300, 14800, 15200],
   trajectoryParis: [12500, 11250, 10000, 8750, 7500, 6250, 5000, 3750],
@@ -185,8 +203,6 @@ export const MOCK_FOOTPRINT = {
   ],
 }
 
-// ── Section 7: Key Deadlines ─────────────────────────────
-
 export interface Deadline {
   date: string
   title: string
@@ -196,51 +212,13 @@ export interface Deadline {
 }
 
 export const MOCK_DEADLINES: Deadline[] = [
-  {
-    date: 'Janvier 2026',
-    title: 'CSRD — Premier rapport de durabilité',
-    description: "Publication obligatoire pour les entreprises de plus de 250 salariés. Inclut les normes ESRS climat (E1).",
-    status: 'En cours',
-    urgent: true,
-  },
-  {
-    date: 'Mars 2026',
-    title: 'Taxonomie européenne — Reporting d\'éligibilité',
-    description: "Analyse d'éligibilité et d'alignement de vos activités avec la taxonomie verte européenne.",
-    status: 'Pas commencé',
-    urgent: true,
-  },
-  {
-    date: 'Juin 2026',
-    title: 'Bilan GES réglementaire — Mise à jour',
-    description: "Mise à jour obligatoire du bilan de gaz à effet de serre (scopes 1, 2 et 3 significatif).",
-    status: 'En cours',
-    urgent: false,
-  },
-  {
-    date: 'Janvier 2027',
-    title: 'Devoir de vigilance — Plan de vigilance climat',
-    description: "Intégration des risques climatiques dans le plan de vigilance si applicable.",
-    status: 'Pas commencé',
-    urgent: false,
-  },
-  {
-    date: 'Juin 2027',
-    title: 'RE2020 — Conformité bâtiments tertiaires',
-    description: "Échéance de conformité pour les bâtiments tertiaires de plus de 1 000 m².",
-    status: 'Prêt',
-    urgent: false,
-  },
-  {
-    date: 'Janvier 2028',
-    title: 'CSRD — Deuxième cycle de reporting',
-    description: "Deuxième publication avec indicateurs de progression et analyse de double matérialité mise à jour.",
-    status: 'Pas commencé',
-    urgent: false,
-  },
+  { date: 'Janvier 2026', title: 'CSRD — Premier rapport de durabilité', description: "Publication obligatoire pour les entreprises de plus de 250 salariés.", status: 'En cours', urgent: true },
+  { date: 'Mars 2026', title: 'Taxonomie européenne — Reporting', description: "Analyse d'éligibilité et d'alignement.", status: 'Pas commencé', urgent: true },
+  { date: 'Juin 2026', title: 'Bilan GES réglementaire', description: "Mise à jour obligatoire du bilan GES.", status: 'En cours', urgent: false },
+  { date: 'Janvier 2027', title: 'Devoir de vigilance', description: "Intégration des risques climatiques.", status: 'Pas commencé', urgent: false },
+  { date: 'Juin 2027', title: 'RE2020 — Conformité bâtiments', description: "Échéance pour les bâtiments tertiaires.", status: 'Prêt', urgent: false },
+  { date: 'Janvier 2028', title: 'CSRD — Deuxième cycle', description: "Deuxième publication avec indicateurs de progression.", status: 'Pas commencé', urgent: false },
 ]
-
-// ── Section 8: Advancement Profile ───────────────────────
 
 export interface TileEnrichment {
   status: 'done' | 'in_progress' | 'not_started'
@@ -262,11 +240,9 @@ export const MOCK_TILE_ENRICHMENTS: Record<string, TileEnrichment> = {
   initiatives_collectives: { status: 'in_progress', relevance: 'recommended' },
 }
 
-// ── Section 9: Next Steps / Quarterly Plan ───────────────
-
 export interface QuarterlyAction {
   label: string
-  priority: number // 1-3 matches priority cards
+  priority: number
 }
 
 export interface Quarter {
@@ -275,34 +251,8 @@ export interface Quarter {
 }
 
 export const MOCK_QUARTERLY_PLAN: Quarter[] = [
-  {
-    quarter: 'T1 2026',
-    actions: [
-      { label: 'Constituer le comité climat', priority: 1 },
-      { label: 'Nommer les ambassadeurs internes', priority: 2 },
-    ],
-  },
-  {
-    quarter: 'T2 2026',
-    actions: [
-      { label: 'Premier comité climat', priority: 1 },
-      { label: 'Fresque du Climat managers', priority: 2 },
-      { label: 'Audit fournisseurs top 20', priority: 3 },
-    ],
-  },
-  {
-    quarter: 'T3 2026',
-    actions: [
-      { label: 'Intégrer le climat dans le budget 2027', priority: 1 },
-      { label: 'Ateliers métiers climat', priority: 2 },
-    ],
-  },
-  {
-    quarter: 'T4 2026',
-    actions: [
-      { label: 'Bilan du comité climat', priority: 1 },
-      { label: 'Critères carbone dans les appels d\'offres', priority: 3 },
-      { label: 'Mesure d\'impact sensibilisation', priority: 2 },
-    ],
-  },
+  { quarter: 'T1 2026', actions: [{ label: 'Constituer le comité climat', priority: 1 }, { label: 'Nommer les ambassadeurs internes', priority: 2 }] },
+  { quarter: 'T2 2026', actions: [{ label: 'Premier comité climat', priority: 1 }, { label: 'Fresque du Climat managers', priority: 2 }, { label: 'Audit fournisseurs top 20', priority: 3 }] },
+  { quarter: 'T3 2026', actions: [{ label: 'Intégrer le climat dans le budget 2027', priority: 1 }, { label: 'Ateliers métiers climat', priority: 2 }] },
+  { quarter: 'T4 2026', actions: [{ label: 'Bilan du comité climat', priority: 1 }, { label: 'Critères carbone dans les appels d\'offres', priority: 3 }, { label: 'Mesure d\'impact sensibilisation', priority: 2 }] },
 ]
