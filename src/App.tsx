@@ -13,6 +13,9 @@ import DgPage from './pages/respondent/DgPage'
 import DiagnosticSection1 from './pages/client/diagnostic/DiagnosticSection1'
 import DiagnosticSection2 from './pages/client/diagnostic/DiagnosticSection2'
 import DiagnosticSection3 from './pages/client/diagnostic/DiagnosticSection3'
+import DiagnosticSection4 from './pages/client/diagnostic/DiagnosticSection4'
+import DiagnosticSection5 from './pages/client/diagnostic/DiagnosticSection5'
+import DiagnosticSection6 from './pages/client/diagnostic/DiagnosticSection6'
 import {
   QuestionnairePage,
   SondagePage,
@@ -55,6 +58,9 @@ function AppRoutes() {
         <Route path="/diagnostic/1" element={<DiagnosticSection1 />} />
         <Route path="/diagnostic/2" element={<DiagnosticSection2 />} />
         <Route path="/diagnostic/3" element={<DiagnosticSection3 />} />
+        <Route path="/diagnostic/4" element={<DiagnosticSection4 />} />
+        <Route path="/diagnostic/5" element={<DiagnosticSection5 />} />
+        <Route path="/diagnostic/6" element={<DiagnosticSection6 />} />
         <Route path="/journal" element={<JournalPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/aide" element={<AidePage />} />
