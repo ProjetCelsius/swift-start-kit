@@ -295,9 +295,9 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Celsius logo at bottom right */}
-        <div style={{ position: 'absolute', bottom: 24, right: 28, opacity: 0.5 }}>
-          <img src={celsiusLogo} alt="Projet Celsius" style={{ height: 16, filter: 'brightness(10)' }} />
+        {/* Celsius logo centered below steps */}
+        <div className="mt-12">
+          <img src={celsiusLogo} alt="Projet Celsius" style={{ height: 22 }} />
         </div>
       </div>
     </div>
