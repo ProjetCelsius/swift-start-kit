@@ -5,13 +5,6 @@ import DevToolbar from './components/DevToolbar'
 import ClientLayout from './components/layout/ClientLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/client/Dashboard'
-import QuestionnaireBloc1 from './pages/client/QuestionnaireBloc1'
-import QuestionnaireBloc2 from './pages/client/QuestionnaireBloc2'
-import QuestionnaireBloc3 from './pages/client/QuestionnaireBloc3'
-import QuestionnaireBloc4 from './pages/client/QuestionnaireBloc4'
-import QuestionnaireBlock from './pages/client/QuestionnaireBlock'
-import SurveyPage from './pages/respondent/SurveyPage'
-import DgPage from './pages/respondent/DgPage'
 import JournalPage from './pages/client/JournalPage'
 import MessagesPage from './pages/client/MessagesPage'
 import SondageSuiviPage from './pages/client/SondageSuiviPage'
@@ -25,6 +18,24 @@ import {
   DiagnosticSectionPage,
   AidePage,
 } from './pages/client/Placeholders'
+
+// Lazy load heavy questionnaire pages
+import { lazy, Suspense } from 'react'
+const QuestionnaireBloc1 = lazy(() => import('./pages/client/QuestionnaireBloc1'))
+const QuestionnaireBloc2 = lazy(() => import('./pages/client/QuestionnaireBloc2'))
+const QuestionnaireBloc3 = lazy(() => import('./pages/client/QuestionnaireBloc3'))
+const QuestionnaireBloc4 = lazy(() => import('./pages/client/QuestionnaireBloc4'))
+const QuestionnaireBlock = lazy(() => import('./pages/client/QuestionnaireBlock'))
+const SurveyPage = lazy(() => import('./pages/respondent/SurveyPage'))
+const DgPage = lazy(() => import('./pages/respondent/DgPage'))
+
+function LazyFallback() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-6 h-6 rounded-lg animate-pulse" style={{ backgroundColor: 'var(--color-celsius-900)' }} />
+    </div>
+  )
+}
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -55,11 +66,11 @@ function AppRoutes() {
         <Route element={isAuthenticated ? <ClientLayout /> : <Navigate to="/login" />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/questionnaire" element={<QuestionnairePage />} />
-          <Route path="/questionnaire/1" element={<QuestionnaireBloc1 />} />
-          <Route path="/questionnaire/2" element={<QuestionnaireBloc2 />} />
-          <Route path="/questionnaire/3" element={<QuestionnaireBloc3 />} />
-          <Route path="/questionnaire/4" element={<QuestionnaireBloc4 />} />
-          <Route path="/questionnaire/:blockId" element={<QuestionnaireBlock />} />
+          <Route path="/questionnaire/1" element={<Suspense fallback={<LazyFallback />}><QuestionnaireBloc1 /></Suspense>} />
+          <Route path="/questionnaire/2" element={<Suspense fallback={<LazyFallback />}><QuestionnaireBloc2 /></Suspense>} />
+          <Route path="/questionnaire/3" element={<Suspense fallback={<LazyFallback />}><QuestionnaireBloc3 /></Suspense>} />
+          <Route path="/questionnaire/4" element={<Suspense fallback={<LazyFallback />}><QuestionnaireBloc4 /></Suspense>} />
+          <Route path="/questionnaire/:blockId" element={<Suspense fallback={<LazyFallback />}><QuestionnaireBlock /></Suspense>} />
           <Route path="/sondage" element={<SondageSuiviPage />} />
           <Route path="/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
           <Route path="/journal" element={<JournalPage />} />
@@ -68,23 +79,22 @@ function AppRoutes() {
         </Route>
 
         {/* Espace Répondant (public) */}
-        <Route path="/sondage/:token" element={<SurveyPage />} />
-        <Route path="/dg/:token" element={<DgPage />} />
+        <Route path="/sondage/:token" element={<Suspense fallback={<LazyFallback />}><SurveyPage /></Suspense>} />
+        <Route path="/dg/:token" element={<Suspense fallback={<LazyFallback />}><DgPage /></Suspense>} />
 
         {/* Espace Admin */}
-        <Route element={isAuthenticated || isDemo ? <AdminLayout /> : <Navigate to="/login" />}>
+        <Route element={isAuthenticated ? <AdminLayout /> : <Navigate to="/login" />}>
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/diagnostics/:id" element={<AdminDiagnosticDetail />} />
           <Route path="/admin/stats" element={<AdminStats />} />
           <Route path="/admin/new" element={<NewDiagnostic />} />
-          <Route path="/admin/settings" element={<div className="p-8"><h1 className="text-2xl font-bold">Paramètres</h1><p className="text-sm mt-2" style={{ color: 'var(--color-texte-secondary)' }}>À implémenter.</p></div>} />
+          <Route path="/admin/settings" element={<div className="p-8"><h1 className="text-2xl font-bold">Paramètres</h1></div>} />
         </Route>
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
 
-      {/* Dev toolbar — always rendered, self-hides when demo off */}
       <DevToolbar />
     </>
   )
