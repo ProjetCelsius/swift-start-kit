@@ -18,9 +18,10 @@ const MOCK_CLIENT: AppUser = {
   id: 'mock-client-001',
   role: 'client',
   organization_id: 'mock-org-001',
-  first_name: 'Marie',
-  last_name: 'Dupont',
-  title: 'Responsable RSE',
+  first_name: 'Monique',
+  last_name: 'Barbut',
+  title: 'Directrice Générale',
+  photo_url: undefined,
   created_at: new Date().toISOString(),
 }
 

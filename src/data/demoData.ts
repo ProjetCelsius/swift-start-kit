@@ -363,7 +363,7 @@ const DIAG_C: DemoDiagnostic = {
     sites: '2 (Épernay + bureau commercial Paris)',
     rseStartYear: 2021,
     contact: { name: 'Camille Duval', title: 'DG & fondatrice', email: 'camille@maison-duval.fr' },
-    analyst: { name: 'Thomas Renaud', title: 'Analyste climat senior', initials: 'TR' },
+    analyst: { name: 'Guillaume Pakula', title: 'Analyste climat senior', initials: 'GP' },
   },
   bloc1: {
     tiles: {
@@ -525,17 +525,101 @@ const DIAG_C: DemoDiagnostic = {
   ],
 }
 
+// ────────────────────────────────────────────────
+// DIAGNOSTIC D — Maison Duval VIERGE (onboarding)
+// ────────────────────────────────────────────────
+const DUVAL_BASE_ORG: DemoOrganization = {
+  name: 'Maison Duval',
+  sector: 'Production de boissons alcooliques',
+  naf: '1102B',
+  headcount: '51-250',
+  revenue: '10-50M',
+  sites: '2 (Épernay + bureau commercial Paris)',
+  rseStartYear: 2021,
+  contact: { name: 'Camille Duval', title: 'DG & fondatrice', email: 'camille@maison-duval.fr' },
+  analyst: { name: 'Guillaume Pakula', title: 'Analyste climat senior', initials: 'GP' },
+}
+
+const mkDuvalOrg = (suffix: string): DemoOrganization => ({ ...DUVAL_BASE_ORG, name: `Maison Duval — ${suffix}` })
+
+const DIAG_D: DemoDiagnostic = {
+  id: 'demo-duval-vierge',
+  status: 'onboarding',
+  organization: mkDuvalOrg('Vierge'),
+  bloc1: { tiles: {}, headcount: '', revenue: '', naf: '' },
+  bloc2: { responses: [], scores: { gouvernance: 0, mesure: 0, strategie: 0, culture: 0, global: 0 }, letters: { gouvernance: 'D', mesure: 'D', strategie: 'D', culture: 'D', global: 'D' } },
+  bloc3: { q21_drivers: [], q22_barrier: '', q23_regulatory: {}, q24_lost_tender: false, completed: false },
+  bloc4: { partA: [], partB: [], partC: [], completed: false },
+  survey: { respondents: 0, target: 20, averages: [], profiles: [], verbatims: [], dailyResponses: [] },
+  dg: { received: false },
+  journal: [{ id: 'jd1', author: 'analyst', authorName: 'Guillaume', date: new Date(Date.now() - 1 * 86400_000), text: "Bienvenue Camille ! Votre espace est prêt. On se retrouve jeudi pour l'appel de lancement.", badge: 'Étape : Démarrage', badgeColor: '#2D7A50' }],
+  messages: [],
+  diagnosticUnlocked: false,
+  diagnosticSections: Array(9).fill({ status: 'empty' as const }),
+  checklist: { appel_lancement: false, bloc1: false, bloc2: false, bloc3: false, bloc4: false, sondage: false, dg: false, ia_generated: false, validated: false, restitution_planned: false, unlocked: false },
+}
+
+// ────────────────────────────────────────────────
+// DIAGNOSTIC E — Maison Duval APPEL FAIT
+// ────────────────────────────────────────────────
+const DIAG_E: DemoDiagnostic = {
+  ...DIAG_D,
+  organization: mkDuvalOrg('Appel fait'),
+  id: 'demo-duval-appel',
+  status: 'questionnaire',
+  bloc1: { ...DIAG_C.bloc1 },
+  journal: [
+    { id: 'je1', author: 'analyst', authorName: 'Guillaume', date: new Date(Date.now() - 5 * 86400_000), text: "Bienvenue Camille ! Votre espace est prêt.", badge: 'Étape : Démarrage', badgeColor: '#2D7A50' },
+    { id: 'je2', author: 'analyst', authorName: 'Guillaume', date: new Date(Date.now() - 2 * 86400_000), text: "Appel de lancement réalisé. Bloc 1 rempli ensemble. Bonne base de départ !", badge: 'Étape : Questionnaire', badgeColor: '#E8734A' },
+  ],
+  checklist: { appel_lancement: true, bloc1: true, bloc2: false, bloc3: false, bloc4: false, sondage: false, dg: false, ia_generated: false, validated: false, restitution_planned: false, unlocked: false },
+}
+
+// ────────────────────────────────────────────────
+// DIAGNOSTIC F — Maison Duval APPEL + SONDAGE (pas questionnaire)
+// ────────────────────────────────────────────────
+const DIAG_F: DemoDiagnostic = {
+  ...DIAG_E,
+  organization: mkDuvalOrg('Sondage fait'),
+  id: 'demo-duval-sondage',
+  status: 'survey_pending',
+  survey: { ...DIAG_C.survey },
+  dg: { ...DIAG_C.dg },
+  journal: [
+    ...DIAG_E.journal,
+    { id: 'jf3', author: 'analyst', authorName: 'Guillaume', date: new Date(Date.now() - 1 * 86400_000), text: "Le sondage a été lancé en parallèle du questionnaire. 28 réponses déjà ! Pensez à finaliser les blocs 2, 3 et 4.", badge: 'Sondage en cours', badgeColor: '#E8734A' },
+  ],
+  checklist: { appel_lancement: true, bloc1: true, bloc2: false, bloc3: false, bloc4: false, sondage: true, dg: true, ia_generated: false, validated: false, restitution_planned: false, unlocked: false },
+}
+
+// ────────────────────────────────────────────────
+// DIAGNOSTIC G — Maison Duval TOUT REMPLI → prêt pour analyse
+// ────────────────────────────────────────────────
+const DIAG_G: DemoDiagnostic = {
+  ...DIAG_C,
+  id: 'demo-duval-complet',
+  status: 'ready_for_restitution',
+  organization: mkDuvalOrg('Complet'),
+  diagnosticUnlocked: false,
+  diagnosticSections: Array(9).fill({ status: 'draft' as const }),
+  journal: [
+    ...DIAG_C.journal.slice(0, -1),
+    { id: 'jg5', author: 'analyst', authorName: 'Guillaume', date: new Date(Date.now() - 2 * 86400_000), text: "L'analyse est terminée. Votre restitution est planifiée pour la semaine prochaine !", badge: 'Étape : Prêt pour restitution', badgeColor: '#F5A623' },
+  ],
+  checklist: { appel_lancement: true, bloc1: true, bloc2: true, bloc3: true, bloc4: true, sondage: true, dg: true, ia_generated: true, validated: true, restitution_planned: true, unlocked: false },
+}
+
 // ── Exports ──────────────────────────────────────
 
-export const DEMO_DIAGNOSTICS: DemoDiagnostic[] = [DIAG_A, DIAG_B, DIAG_C]
+export const DEMO_DIAGNOSTICS: DemoDiagnostic[] = [DIAG_A, DIAG_B, DIAG_C, DIAG_D, DIAG_E, DIAG_F, DIAG_G]
 
 export function getDemoDiagnostic(id: string): DemoDiagnostic | undefined {
   return DEMO_DIAGNOSTICS.find(d => d.id === id)
 }
 
 export const DEMO_ADMIN_KPIS = {
-  activeDiagnostics: 3,
-  awaitingRestitution: 1,
+  activeDiagnostics: 7,
+  awaitingRestitution: 2,
   avgSurveyRate: 76,
   avgDaysPerDiagnostic: 12,
 }
