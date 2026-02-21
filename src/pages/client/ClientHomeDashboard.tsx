@@ -248,6 +248,7 @@ export default function ClientHomeDashboard() {
         <div style={{ height: 1, backgroundColor: '#F0EDE6', marginBottom: 16 }} />
 
         {/* ── HORIZONTAL STEPPER ── */}
+        <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em', fontSize: '0.5rem' }}>VOTRE PARCOURS</div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '8px 0 4px' }}>
           {steps.map((step, i) => {
             const isDone = step.status === 'done'
@@ -381,7 +382,7 @@ export default function ClientHomeDashboard() {
                 <div style={{ width: 200, height: 6, borderRadius: 3, backgroundColor: '#E5E1D8', overflow: 'hidden', marginBottom: 8 }}>
                   <div style={{
                     height: '100%', borderRadius: 3,
-                    background: 'linear-gradient(90deg, #1B4332, #B87333)',
+                    background: 'linear-gradient(90deg, #B87333, #1B4332)',
                     width: `${(completedSteps / 5) * 100}%`,
                     transition: 'width 0.5s ease',
                   }} />
@@ -547,7 +548,7 @@ export default function ClientHomeDashboard() {
             <div style={{ height: 4, borderRadius: 2, backgroundColor: '#E5E1D8', overflow: 'hidden', marginBottom: 14 }}>
               <div style={{
                 height: '100%', borderRadius: 2,
-                background: 'linear-gradient(90deg, #1B4332, #B87333)',
+                background: 'linear-gradient(90deg, #B87333, #1B4332)',
                 width: `${(doneCount / blocs.length) * 100}%`,
                 transition: 'width 0.3s ease',
               }} />
