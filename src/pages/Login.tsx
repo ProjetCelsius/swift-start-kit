@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-// Demo mode accessible via Ctrl+Shift+D
-import { Mail } from 'lucide-react'
+import { useDemoIfAvailable } from '../hooks/useDemo'
+import { Mail, Eye } from 'lucide-react'
 import celsiusLogo from '@/assets/celsius-logo.svg'
 
 export default function Login() {
@@ -11,8 +11,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [magicSent, setMagicSent] = useState(false)
   const { signIn, signInWithMagicLink } = useAuth()
-  
   const navigate = useNavigate()
+  const demo = useDemoIfAvailable()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -204,6 +204,28 @@ export default function Login() {
               >
                 <Mail size={16} />
                 Recevoir un lien par email
+              </button>
+
+              {/* Demo access */}
+              <button
+                onClick={() => {
+                  if (demo) { demo.setEnabled(true); navigate('/client/dashboard') }
+                }}
+                className="w-full flex items-center justify-center gap-2 transition-colors mt-3"
+                style={{
+                  height: 48,
+                  border: '1px solid #EDEAE3',
+                  borderRadius: 8,
+                  backgroundColor: 'transparent',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '0.85rem',
+                  color: '#7A766D',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#F0EDE6')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <Eye size={16} />
+                Accéder à la démo
               </button>
 
               {/* Footer */}
