@@ -18,7 +18,7 @@ export default function ClientHomeDashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const analyst = MOCK_ANALYST
-  const firstName = user?.first_name || 'Marie'
+  const firstName = user?.first_name || 'Monique'
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const protocol = useProtocolModal()
 
