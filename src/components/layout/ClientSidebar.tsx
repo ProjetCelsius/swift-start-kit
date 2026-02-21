@@ -122,7 +122,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
       status: 'current', statusText: '12/30 réponses',
       subItems: [
         { label: 'Sondage interne', path: '/client/sondage', status: 'in_progress', statusText: '12/30 réponses' },
-        { label: 'Questionnaire DG', path: '/dg/demo', status: 'todo', statusText: 'En attente' },
+        { label: 'Entretiens direction', path: '/client/entretiens', status: 'todo', statusText: 'À compléter' },
       ],
     },
     {
