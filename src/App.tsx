@@ -3,9 +3,9 @@ import { AuthProvider, useAuth } from './hooks/useAuth'
 import ClientLayout from './components/layout/ClientLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/client/Dashboard'
+import QuestionnaireBlock from './pages/client/QuestionnaireBlock'
 import {
   QuestionnairePage,
-  QuestionnaireBlockPage,
   SondagePage,
   DiagnosticSectionPage,
   JournalPage,
@@ -38,7 +38,7 @@ function AppRoutes() {
       <Route element={user ? <ClientLayout /> : <Navigate to="/login" />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/questionnaire" element={<QuestionnairePage />} />
-        <Route path="/questionnaire/:blockId" element={<QuestionnaireBlockPage />} />
+        <Route path="/questionnaire/:blockId" element={<QuestionnaireBlock />} />
         <Route path="/sondage" element={<SondagePage />} />
         <Route path="/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
         <Route path="/journal" element={<JournalPage />} />
