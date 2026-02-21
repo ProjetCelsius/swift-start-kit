@@ -11,16 +11,6 @@ export function QuestionnairePage() {
   )
 }
 
-export function QuestionnaireBlockPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Bloc en cours</h1>
-      <p style={{ color: 'var(--color-texte-secondary)' }}>
-        Les questions apparaîtront ici.
-      </p>
-    </div>
-  )
-}
 
 export function SondagePage() {
   return (
