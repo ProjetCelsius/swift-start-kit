@@ -206,9 +206,9 @@ export default function ClientHomeDashboard() {
         backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
         padding: '28px 32px 20px', marginBottom: 20,
       }}>
-        {/* Top row: title + méthodologie */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20 }}>
-          <div>
+        {/* Top row: title + analyst message */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, marginBottom: 20 }}>
+          <div style={{ flex: 1 }}>
             <h1 className="font-display" style={{ fontSize: '1.65rem', color: '#2A2A28', fontWeight: 400, lineHeight: 1.3 }}>
               Bonjour {firstName},<br />
               <span>votre diagnostic </span>
@@ -217,28 +217,38 @@ export default function ClientHomeDashboard() {
             <p className="mt-2" style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D' }}>
               {headerSubtitle}
             </p>
+            {/* Méthodologie — small inline link */}
+            <button
+              onClick={() => protocol.setOpen(true)}
+              className="mt-3 flex items-center gap-1.5"
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                fontFamily: 'var(--font-sans)', fontSize: '0.75rem', fontWeight: 500, color: '#2D6A4F',
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = '#1B4332'}
+              onMouseLeave={e => e.currentTarget.style.color = '#2D6A4F'}
+            >
+              <Compass size={13} /> Notre méthodologie →
+            </button>
           </div>
-          <button
-            onClick={() => protocol.setOpen(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
-              borderRadius: 12, border: '1.5px solid #1B4332',
-              background: 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 100%)',
-              fontFamily: 'var(--font-sans)', color: '#2A2A28',
-              cursor: 'pointer', flexShrink: 0, marginTop: 4,
-              transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(27,67,50,0.08)',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, #D4E8DB 0%, #E8F0EB 100%)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(27,67,50,0.12)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 100%)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(27,67,50,0.08)' }}
-          >
-            <div style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: '#1B4332', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Compass size={14} color="#FFFFFF" />
+
+          {/* Analyst message — top right */}
+          <div style={{
+            maxWidth: 280, flexShrink: 0, padding: '14px 16px', borderRadius: 12,
+            background: 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 50%, #F5EDE4 100%)',
+            border: '1px solid #EDEAE3',
+          }}>
+            <div className="flex items-center gap-2.5 mb-2">
+              <img src={guillaumePhoto} alt={`${analyst.first_name} ${analyst.last_name}`} className="w-[30px] h-[30px] rounded-full object-cover shrink-0" />
+              <div>
+                <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.75rem', color: '#2A2A28' }}>{analyst.first_name} {analyst.last_name}</span>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', color: '#B0AB9F', marginLeft: 6 }}>il y a 2h</span>
+              </div>
             </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontWeight: 600, fontSize: '0.78rem', color: '#1B4332' }}>Notre méthodologie</div>
-              <div style={{ fontSize: '0.65rem', color: '#7A766D' }}>Rappel du parcours en 5 étapes</div>
-            </div>
-          </button>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D', fontStyle: 'italic', lineHeight: 1.5, margin: 0 }}>
+              {analystMessage}
+            </p>
+          </div>
         </div>
 
         {/* Separator */}
@@ -246,7 +256,7 @@ export default function ClientHomeDashboard() {
 
         {/* Stepper */}
         <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em', fontSize: '0.5rem' }}>VOTRE PARCOURS</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, padding: '8px 0 4px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '8px 0 4px' }}>
           {steps.map((step, i) => {
             const isDone = step.status === 'done'
             const isActive = step.status === 'active'
@@ -255,15 +265,15 @@ export default function ClientHomeDashboard() {
               <React.Fragment key={i}>
                 {i > 0 && (
                   <div style={{
-                    flex: 1, height: 2, maxWidth: 56,
+                    flex: 1, height: 2, maxWidth: 64, marginTop: 17, /* Aligns to center of 34px circles */
                     backgroundColor: isDone || (isActive && steps[i - 1].status === 'done') ? '#1B4332' : '#E5E1D8',
                   }} />
                 )}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 72 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 80 }}>
                   <div style={{
                     width: 34, height: 34, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: isDone ? '#1B4332' : '#FFFFFF',
+                    backgroundColor: isDone ? '#1B4332' : isActive ? '#FFFFFF' : '#FFFFFF',
                     border: `2px solid ${isDone ? '#1B4332' : isActive ? '#1B4332' : '#E5E1D8'}`,
                     color: isDone ? '#FFFFFF' : isActive ? '#1B4332' : '#B0AB9F',
                     fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.78rem',
@@ -356,26 +366,20 @@ export default function ClientHomeDashboard() {
             </div>
           ) : qState === 'in_progress' ? (
             <div style={{ padding: '20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-              {/* Header with progress ring */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-                <div style={{ position: 'relative', width: 54, height: 54, flexShrink: 0 }}>
-                  <svg width="54" height="54" viewBox="0 0 54 54">
-                    <circle cx="27" cy="27" r="23" fill="none" stroke="#E5E1D8" strokeWidth="3" />
-                    <circle cx="27" cy="27" r="23" fill="none" stroke="#1B4332" strokeWidth="3"
-                      strokeDasharray={`${(doneCount / blocs.length) * 144.5} 144.5`}
-                      strokeLinecap="round" transform="rotate(-90 27 27)" />
-                  </svg>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.45rem', color: '#7A766D', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ÉTAPE</div>
-                    <div className="font-display" style={{ fontSize: '1.05rem', fontWeight: 500, color: '#1B4332', lineHeight: 1 }}>2</div>
-                    <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.45rem', color: '#B0AB9F' }}>sur 5</div>
+              {/* Header — simple title + progress bar */}
+              <div style={{ marginBottom: 16 }}>
+                <div className="font-display" style={{ fontSize: '1rem', fontWeight: 500, color: '#2A2A28', marginBottom: 4 }}>Questionnaire</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: '#E5E1D8', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: 3, backgroundColor: '#1B4332',
+                      width: `${(doneCount / blocs.length) * 100}%`,
+                      transition: 'width 0.3s ease',
+                    }} />
                   </div>
-                </div>
-                <div>
-                  <div className="font-display" style={{ fontSize: '1rem', fontWeight: 500, color: '#2A2A28' }}>Questionnaire</div>
-                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#7A766D' }}>
-                    4 blocs thématiques · sauvegarde auto
-                  </div>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', fontWeight: 600, color: '#1B4332', flexShrink: 0 }}>
+                    {doneCount}/{blocs.length}
+                  </span>
                 </div>
               </div>
               {/* Bloc list */}
@@ -452,27 +456,8 @@ export default function ClientHomeDashboard() {
         </div>
       </div>
 
-      {/* ═══════ ANALYST MESSAGE ═══════ */}
-      <div className="mt-5 dash-fadein" style={{
-        background: 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 50%, #F5EDE4 100%)',
-        borderRadius: 14, padding: '16px 20px', border: '1px solid #EDEAE3', animationDelay: '170ms',
-      }}>
-        <div className="flex items-center gap-3">
-          <img src={guillaumePhoto} alt={`${analyst.first_name} ${analyst.last_name}`} className="w-[38px] h-[38px] rounded-full object-cover shrink-0" />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline gap-2">
-              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.8rem', color: '#2A2A28' }}>{analyst.first_name} {analyst.last_name}</span>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: '#B0AB9F' }}>il y a 2h</span>
-            </div>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#7A766D', fontStyle: 'italic', lineHeight: 1.5 }}>
-              {analystMessage}
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* ═══════ EN UN COUP D'ŒIL ═══════ */}
-      <div className="mt-7 dash-fadein" style={{ animationDelay: '240ms' }}>
+      <div className="mt-7 dash-fadein" style={{ animationDelay: '200ms' }}>
         <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>EN UN COUP D'ŒIL</div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12, padding: 20 }}>
