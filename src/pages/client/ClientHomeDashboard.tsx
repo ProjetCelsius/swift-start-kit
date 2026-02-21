@@ -262,7 +262,26 @@ export default function ClientHomeDashboard() {
                     backgroundColor: isDone || (isActive && steps[i - 1].status === 'done') ? '#1B4332' : '#E5E1D8',
                   }} />
                 )}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 80 }}>
+                <button
+                  onClick={() => {
+                    if (isLocked) return
+                    const routes: Record<number, string> = {
+                      1: '/client/questionnaire/bloc1',
+                      2: '/client/questionnaire/bloc1',
+                      3: '/client/sondage',
+                      4: '/client/dashboard',
+                      5: '/client/diagnostic/1',
+                    }
+                    navigate(routes[step.num] || '/client/dashboard')
+                  }}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 80,
+                    background: 'none', border: 'none', padding: 0,
+                    cursor: isLocked ? 'default' : 'pointer',
+                    opacity: isLocked ? 1 : 1,
+                    transition: 'opacity 0.15s',
+                  }}
+                >
                   <div style={{
                     width: 30, height: 30, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -281,7 +300,7 @@ export default function ClientHomeDashboard() {
                       {step.detail}
                     </div>
                   </div>
-                </div>
+                </button>
               </React.Fragment>
             )
           })}
@@ -388,38 +407,42 @@ export default function ClientHomeDashboard() {
                     height: '100%', borderRadius: 3,
                     background: 'linear-gradient(90deg, #B87333, #1B4332)',
                     width: `${(() => {
-                      const pillsDone = [allBlocsDone, surveyCount >= surveyTarget, dgStatus === 'done', completedSteps >= 4].filter(Boolean).length
-                      return (pillsDone / 4) * 100
+                      const pillsDone = [allBlocsDone, surveyCount >= surveyTarget, dgStatus === 'done'].filter(Boolean).length
+                      return (pillsDone / 3) * 100
                     })()}%`,
                     transition: 'width 0.5s ease',
                   }} />
                 </div>
                 <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#7A766D', marginBottom: 14 }}>
                   {(() => {
-                    const pillsDone = [allBlocsDone, surveyCount >= surveyTarget, dgStatus === 'done', completedSteps >= 4].filter(Boolean).length
-                    return `${pillsDone} / 4 étapes complétées`
+                    const pillsDone = [allBlocsDone, surveyCount >= surveyTarget, dgStatus === 'done'].filter(Boolean).length
+                    return `${pillsDone} / 3 étapes complétées`
                   })()}
                 </div>
 
                 {/* Step pills */}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {[
-                    { label: 'Questionnaire', done: allBlocsDone, active: !allBlocsDone && completedSteps >= 1 },
-                    { label: 'Sondage interne', done: surveyCount >= surveyTarget, active: surveyCount > 0 && surveyCount < surveyTarget },
-                    { label: 'Entretien DG', done: dgStatus === 'done', active: dgStatus === 'pending' },
-                    { label: 'Analyse', done: completedSteps >= 4, active: isAnalysis },
+                    { label: 'Questionnaire', done: allBlocsDone, active: !allBlocsDone && completedSteps >= 1, route: '/client/questionnaire/bloc1' },
+                    { label: 'Sondage interne', done: surveyCount >= surveyTarget, active: surveyCount > 0 && surveyCount < surveyTarget, route: '/client/sondage' },
+                    { label: 'Entretien DG', done: dgStatus === 'done', active: dgStatus === 'pending', route: '/client/entretiens' },
                   ].map((pill, i) => (
-                    <span key={i} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 4,
-                      padding: '4px 12px', borderRadius: 20,
-                      backgroundColor: pill.done ? '#E8F0EB' : pill.active ? '#F5EDE4' : '#F7F5F0',
-                      border: `1px solid ${pill.done ? '#2D6A4F33' : pill.active ? '#B8733333' : '#EDEAE3'}`,
-                      fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 500,
-                      color: pill.done ? '#1B4332' : pill.active ? '#B87333' : '#B0AB9F',
-                    }}>
+                    <button
+                      key={i}
+                      onClick={() => navigate(pill.route)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        padding: '4px 12px', borderRadius: 20,
+                        backgroundColor: pill.done ? '#E8F0EB' : pill.active ? '#F5EDE4' : '#F7F5F0',
+                        border: `1px solid ${pill.done ? '#2D6A4F33' : pill.active ? '#B8733333' : '#EDEAE3'}`,
+                        fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 500,
+                        color: pill.done ? '#1B4332' : pill.active ? '#B87333' : '#B0AB9F',
+                        cursor: 'pointer', transition: 'opacity 0.15s',
+                      }}
+                    >
                       {pill.done && <Check size={10} />}
                       {pill.label}
-                    </span>
+                    </button>
                   ))}
                 </div>
               </div>

@@ -284,35 +284,57 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                   }} />
                 )}
 
-                {/* Step header — NOT clickable, no hover, no chevron */}
-                <div
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                    padding: '8px 6px', textAlign: 'left',
-                  }}
-                >
-                  {/* Circle */}
-                  <JourneyCircle status={step.status} num={step.num} />
+                {/* Step header — clickable for done/current steps */}
+                {(() => {
+                  const stepRoutes: Record<string, string> = {
+                    appel: '/client/questionnaire/bloc1',
+                    questionnaire: '/client/questionnaire/bloc1',
+                    sondage: '/client/sondage',
+                    analyse: '/client/dashboard',
+                    restitution: '/client/diagnostic/1',
+                  }
+                  const isClickable = step.status === 'done' || step.status === 'current' || step.status === 'parallel'
+                  return (
+                    <button
+                      onClick={() => {
+                        if (!isClickable) return
+                        navigate(stepRoutes[step.id] || '/client/dashboard')
+                        onNavigate?.()
+                      }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                        padding: '8px 6px', textAlign: 'left',
+                        background: 'none', border: 'none',
+                        cursor: isClickable ? 'pointer' : 'default',
+                        borderRadius: 6, transition: 'background-color 0.15s',
+                      }}
+                      onMouseEnter={e => { if (isClickable) e.currentTarget.style.backgroundColor = '#F0EDE6' }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                    >
+                      {/* Circle */}
+                      <JourneyCircle status={step.status} num={step.num} />
 
-                  {/* Text */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontFamily: 'var(--font-sans)', fontSize: '0.76rem',
-                      fontWeight: step.status === 'current' || step.status === 'parallel' ? 500 : 400,
-                      color: step.status === 'current' ? '#2A2A28' : step.status === 'parallel' ? '#2A2A28' : step.status === 'done' ? '#7A766D' : '#B0AB9F',
-                    }}>
-                      {step.label}
-                    </div>
-                    {step.meta && (
-                      <div style={{
-                        fontFamily: 'var(--font-sans)', fontSize: '0.6rem',
-                        color: step.status === 'current' || step.status === 'parallel' ? '#B87333' : '#B0AB9F',
-                      }}>
-                        {step.meta}
+                      {/* Text */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontFamily: 'var(--font-sans)', fontSize: '0.76rem',
+                          fontWeight: step.status === 'current' || step.status === 'parallel' ? 500 : 400,
+                          color: step.status === 'current' ? '#2A2A28' : step.status === 'parallel' ? '#2A2A28' : step.status === 'done' ? '#7A766D' : '#B0AB9F',
+                        }}>
+                          {step.label}
+                        </div>
+                        {step.meta && (
+                          <div style={{
+                            fontFamily: 'var(--font-sans)', fontSize: '0.6rem',
+                            color: step.status === 'current' || step.status === 'parallel' ? '#B87333' : '#B0AB9F',
+                          }}>
+                            {step.meta}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
+                    </button>
+                  )
+                })()}
 
                 {/* Sub-items — always visible for done/current/parallel, no toggle */}
                 {showSubs && step.subItems && (
