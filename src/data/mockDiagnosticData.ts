@@ -112,3 +112,75 @@ export const MOCK_MATURITY = {
     },
   ] as DimensionScore[],
 }
+
+// ── Section 4: Perception Gaps ───────────────────────────
+
+export const PERCEPTION_LABELS = [
+  'Sujet stratégique',
+  'Moyens suffisants',
+  'Objectifs clairs',
+  'Équipes impliquées',
+  'Mesure des progrès',
+  'Intégration business',
+  'Reconnaissance externe',
+  'Confiance objectifs',
+]
+
+export const MOCK_PERCEPTION_GAPS = {
+  rseScores:       [8.2, 7.5, 6.8, 7.8, 6.0, 5.5, 7.0, 7.2],
+  rsePredictions:  [6.5, 5.8, 5.2, 5.0, 4.5, 4.8, 5.5, 5.0],
+  employeeScores:  [5.8, 4.3, 4.0, 4.6, 3.8, 3.5, 5.2, 4.1],
+}
+
+export const MOCK_POPULATION_COMPARISON = {
+  rseEstimate:  [15, 30, 30, 20, 5],
+  employeeReal: [8, 22, 35, 25, 10],
+}
+
+export const MOCK_DG_COMPARISON = {
+  hasResponded: true,
+  budgetDeclared: '200 000 € à 500 000 €',
+  budgetPerceived: '50 000 € à 200 000 €',
+  dgMeansScore: 7.5,
+  rseMeansScore: 5.8,
+}
+
+// ── Section 5: Human Capital ─────────────────────────────
+
+export const MOCK_HUMAN_CAPITAL = {
+  currentFTE: 0.5,
+  recommendedFTE: 2.0,
+  population: [8, 22, 35, 25, 10],
+  analysis: [
+    "Avec 0,5 ETP dédié à la démarche climat, votre organisation est en dessous du seuil critique pour une entreprise de votre taille et de votre secteur. Les benchmarks sectoriels montrent qu'une entreprise de 250 à 500 salariés engagée dans une démarche structurée mobilise en moyenne 1,5 à 2,5 ETP dédiés.",
+    "Le sous-dimensionnement de l'équipe climat explique en partie l'écart de perception observé entre la direction et les collaborateurs. Sans relais opérationnels formés et mandatés, la stratégie peine à se traduire en actions concrètes au quotidien.",
+    "Nous recommandons un renforcement progressif : un premier recrutement d'un chargé de mission climat à plein temps dans les 6 prochains mois, complété par la formation de 5 à 8 ambassadeurs climat dans les fonctions clés (achats, RH, production, communication).",
+  ],
+}
+
+// ── Section 6: Carbon Footprint ──────────────────────────
+
+export const MOCK_FOOTPRINT = {
+  hasFootprint: true,
+  total: 12500,
+  scope1: 1800,
+  scope2: 950,
+  scope3: 9750,
+  employees: 320,
+  revenue: 45000, // k€
+  intensityPerEmployee: 39.1,
+  intensityPerRevenue: 0.278,
+  sectorAvgIntensity: 32.5,
+  trajectoryYears: [2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030],
+  trajectoryBau: [12500, 12800, 13100, 13500, 13900, 14300, 14800, 15200],
+  trajectoryParis: [12500, 11250, 10000, 8750, 7500, 6250, 5000, 3750],
+  estimatedCategories: [
+    { label: 'Achats de biens et services', value: 4200 },
+    { label: 'Transport de marchandises', value: 2100 },
+    { label: 'Déplacements professionnels', value: 1500 },
+    { label: 'Énergie (bâtiments)', value: 1800 },
+    { label: 'Immobilisations', value: 950 },
+    { label: 'Déplacements domicile-travail', value: 850 },
+    { label: 'Autres', value: 1100 },
+  ],
+}
