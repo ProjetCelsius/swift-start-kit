@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Clock, Check, RotateCw, X, ChevronRight, Lock } from 'lucide-react'
+import { Clock, Check, RotateCw, X, ChevronRight, Search } from 'lucide-react'
 import { ADVANCEMENT_TILES, HEADCOUNT_OPTIONS, REVENUE_OPTIONS, type TileStatus } from '@/data/bloc1Tiles'
+import { NAF_CODES_LEVEL2 } from '@/data/nafCodes'
 
 interface TileState {
   status: TileStatus
@@ -29,6 +30,84 @@ function loadState() {
   } catch { return null }
 }
 
+// ── Searchable NAF Dropdown ──────────────────────────────
+function NafDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const filtered = NAF_CODES_LEVEL2.filter(n =>
+    `${n.code} ${n.label}`.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const selected = NAF_CODES_LEVEL2.find(n => n.code === value)
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full px-3 py-2.5 rounded-lg border text-sm text-left flex items-center gap-2 focus:outline-none transition-colors"
+        style={{ borderColor: open ? 'var(--color-celsius-900)' : 'var(--color-border)', backgroundColor: 'var(--color-blanc)' }}
+      >
+        <span className="flex-1 truncate" style={{ color: selected ? 'var(--color-texte)' : 'var(--color-gris-400)' }}>
+          {selected ? `${selected.code} — ${selected.label}` : 'Rechercher un secteur NAF...'}
+        </span>
+        <Search size={14} style={{ color: 'var(--color-gris-400)' }} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute z-50 mt-1 w-full rounded-lg border overflow-hidden"
+          style={{ backgroundColor: 'var(--color-blanc)', borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card-hover)' }}
+        >
+          <div className="p-2 border-b" style={{ borderColor: 'var(--color-border-light)' }}>
+            <input
+              autoFocus
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Tapez pour filtrer..."
+              className="w-full px-2 py-1.5 rounded text-sm focus:outline-none"
+              style={{ backgroundColor: 'var(--color-gris-100)' }}
+            />
+          </div>
+          <ul className="max-h-52 overflow-y-auto">
+            {filtered.length === 0 && (
+              <li className="px-3 py-2 text-xs" style={{ color: 'var(--color-gris-400)' }}>Aucun résultat</li>
+            )}
+            {filtered.map(n => (
+              <li
+                key={n.code}
+                onClick={() => { onChange(n.code); setOpen(false); setSearch('') }}
+                className="px-3 py-2 text-sm cursor-pointer transition-colors"
+                style={{
+                  backgroundColor: n.code === value ? 'var(--color-celsius-50)' : undefined,
+                  color: 'var(--color-texte)',
+                }}
+                onMouseEnter={e => { if (n.code !== value) (e.target as HTMLElement).style.backgroundColor = 'var(--color-gris-100)' }}
+                onMouseLeave={e => { if (n.code !== value) (e.target as HTMLElement).style.backgroundColor = '' }}
+              >
+                <span className="font-medium" style={{ color: 'var(--color-celsius-900)' }}>{n.code}</span>
+                {' — '}{n.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main Component ───────────────────────────────────────
 export default function QuestionnaireBloc1() {
   const navigate = useNavigate()
   const saved = loadState()
@@ -65,14 +144,12 @@ export default function QuestionnaireBloc1() {
         current === 'not_started' ? 'done' :
         current === 'done' ? 'in_progress' :
         'not_started'
-      const newTiles = { ...prev, [id]: { ...prev[id], status: next } }
-      // Open comment area if done or in_progress
       if (next !== 'not_started') {
         setExpandedTile(id)
       } else {
-        setExpandedTile(prev => prev === id ? null : prev as any)
+        setExpandedTile(cur => cur === id ? null : cur)
       }
-      return newTiles
+      return { ...prev, [id]: { ...prev[id], status: next } }
     })
   }
 
@@ -111,6 +188,7 @@ export default function QuestionnaireBloc1() {
   const doneCount = Object.values(tiles).filter(t => t.status === 'done').length
   const inProgressCount = Object.values(tiles).filter(t => t.status === 'in_progress').length
 
+  // ── Feedback view ──────────────────────────────────────
   if (showFeedback) {
     return (
       <div className="max-w-[640px]">
@@ -155,6 +233,7 @@ export default function QuestionnaireBloc1() {
     )
   }
 
+  // ── Main form ──────────────────────────────────────────
   return (
     <div className="max-w-[640px]">
       {/* Header */}
@@ -195,16 +274,8 @@ export default function QuestionnaireBloc1() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Secteur d'activité</label>
-            <input
-              type="text" value={company.secteur}
-              onChange={e => updateCompany('secteur', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none transition-colors"
-              style={{ borderColor: 'var(--color-border)' }}
-              onFocus={e => e.target.style.borderColor = 'var(--color-celsius-900)'}
-              onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
-              placeholder="Ex: Industrie manufacturière, Services, Commerce..."
-            />
+            <label className="block text-sm font-medium mb-1">Secteur d'activité (code NAF)</label>
+            <NafDropdown value={company.secteur} onChange={v => updateCompany('secteur', v)} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -214,7 +285,7 @@ export default function QuestionnaireBloc1() {
                 value={company.effectif}
                 onChange={e => updateCompany('effectif', e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
-                style={{ borderColor: 'var(--color-border)' }}
+                style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-blanc)' }}
               >
                 <option value="">Sélectionner</option>
                 {HEADCOUNT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -226,7 +297,7 @@ export default function QuestionnaireBloc1() {
                 value={company.chiffre_affaires}
                 onChange={e => updateCompany('chiffre_affaires', e.target.value)}
                 className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
-                style={{ borderColor: 'var(--color-border)' }}
+                style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-blanc)' }}
               >
                 <option value="">Sélectionner</option>
                 {REVENUE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -247,16 +318,14 @@ export default function QuestionnaireBloc1() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Démarche RSE depuis</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number" min="1990" max="2026" value={company.annee_rse}
-                  onChange={e => updateCompany('annee_rse', e.target.value)}
-                  disabled={company.pas_de_demarche}
-                  className="flex-1 px-3 py-2.5 rounded-lg border text-sm focus:outline-none disabled:opacity-40"
-                  style={{ borderColor: 'var(--color-border)' }}
-                  placeholder="2020"
-                />
-              </div>
+              <input
+                type="number" min="1990" max="2026" value={company.annee_rse}
+                onChange={e => updateCompany('annee_rse', e.target.value)}
+                disabled={company.pas_de_demarche}
+                className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none disabled:opacity-40"
+                style={{ borderColor: 'var(--color-border)' }}
+                placeholder="2020"
+              />
               <label className="flex items-center gap-2 mt-2 text-xs cursor-pointer" style={{ color: 'var(--color-texte-secondary)' }}>
                 <input
                   type="checkbox" checked={company.pas_de_demarche}
