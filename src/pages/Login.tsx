@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useDemoIfAvailable } from '../hooks/useDemo'
-import { Mail, Bug, Compass } from 'lucide-react'
+// Demo mode accessible via Ctrl+Shift+D
+import { Mail } from 'lucide-react'
 import celsiusLogo from '@/assets/celsius-logo.svg'
 
 export default function Login() {
@@ -11,7 +11,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [magicSent, setMagicSent] = useState(false)
   const { signIn, signInWithMagicLink } = useAuth()
-  const demo = useDemoIfAvailable()
+  
   const navigate = useNavigate()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -64,18 +64,9 @@ export default function Login() {
         style={{ backgroundColor: '#F7F5F0' }}
       >
         <div className="w-full" style={{ maxWidth: 480 }}>
-          {/* Celsius + Boussole logos */}
+          {/* Celsius logo */}
           <div className="mb-8">
-            <img src={celsiusLogo} alt="Projet Celsius" style={{ height: 20, marginBottom: 16 }} />
-            <div className="flex items-center gap-2">
-              <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1B4332', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Compass size={16} color="#fff" strokeWidth={2} />
-              </div>
-              <div>
-                <div className="font-display" style={{ fontSize: '1.05rem', color: '#1B4332', lineHeight: 1.2 }}>Boussole Climat</div>
-                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#B0AB9F' }}>par Celsius</div>
-              </div>
-            </div>
+            <img src={celsiusLogo} alt="Projet Celsius" style={{ height: 30 }} />
           </div>
 
           {/* Title */}
@@ -168,45 +159,24 @@ export default function Login() {
                   />
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 transition-colors disabled:opacity-50"
-                    style={{
-                      height: 50,
-                      backgroundColor: '#1B4332',
-                      color: 'white',
-                      borderRadius: 8,
-                      fontFamily: 'var(--font-sans)',
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#153728')}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1B4332')}
-                  >
-                    {loading ? 'Connexion...' : 'Se connecter'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (demo) demo.setEnabled(true)
-                      navigate('/client/dashboard')
-                    }}
-                    title="Mode debug — bypass login"
-                    className="transition-colors"
-                    style={{
-                      width: 50, height: 50, borderRadius: 8,
-                      border: '1px solid #EDEAE3', backgroundColor: 'transparent',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#B0AB9F', cursor: 'pointer', flexShrink: 0,
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#F7F5F0'; e.currentTarget.style.color = '#7A766D' }}
-                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#B0AB9F' }}
-                  >
-                    <Bug size={18} />
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full transition-colors disabled:opacity-50"
+                  style={{
+                    height: 50,
+                    backgroundColor: '#1B4332',
+                    color: 'white',
+                    borderRadius: 8,
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#153728')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1B4332')}
+                >
+                  {loading ? 'Connexion...' : 'Se connecter'}
+                </button>
               </form>
 
               {/* Divider */}
