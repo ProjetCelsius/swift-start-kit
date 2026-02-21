@@ -167,9 +167,15 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
         </div>
       </div>
 
-      {/* Analyst card */}
+      {/* Analyst card — clickable */}
       <div className="px-4 pb-4">
-        <div className="flex items-center gap-3 rounded-[10px] p-3" style={{ background: 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 50%, #F5EDE4 100%)' }}>
+        <button
+          onClick={() => { navigate('/client/analyste'); onNavigate?.() }}
+          className="w-full flex items-center gap-3 rounded-[10px] p-3 text-left transition-all"
+          style={{ background: 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 50%, #F5EDE4 100%)', border: 'none', cursor: 'pointer' }}
+          onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(42,42,40,0.06)')}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+        >
           <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-white shrink-0" style={{ backgroundColor: '#1B4332', fontFamily: 'var(--font-display)', fontSize: '0.6rem' }}>
             {analyst.first_name[0]}{analyst.last_name[0]}
           </div>
@@ -177,7 +183,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
             <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.45rem', letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#B0AB9F' }}>VOTRE ANALYSTE</div>
             <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.8rem', color: '#2A2A28' }}>{analyst.first_name} {analyst.last_name}</div>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Vue d'ensemble link */}

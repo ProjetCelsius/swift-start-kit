@@ -15,6 +15,7 @@ import DgPage from './pages/respondent/DgPage'
 import JournalPage from './pages/client/JournalPage'
 import MessagesPage from './pages/client/MessagesPage'
 import SondageSuiviPage from './pages/client/SondageSuiviPage'
+import AnalystProfilePage from './pages/client/AnalystProfilePage'
 import AttentePage from './pages/client/AttentePage'
 import DiagnosticPage from './pages/client/DiagnosticPage'
 import AdminLayout from './components/layout/AdminLayout'
@@ -75,6 +76,7 @@ function AppRoutes() {
           <Route path="/client/journal" element={<JournalPage />} />
           <Route path="/client/messages" element={<MessagesPage />} />
           <Route path="/client/aide" element={<AidePage />} />
+          <Route path="/client/analyste" element={<AnalystProfilePage />} />
           {/* Legacy redirects */}
           <Route path="/questionnaire/*" element={<Navigate to="/client/questionnaire/bloc1" replace />} />
           <Route path="/sondage" element={<Navigate to="/client/sondage" replace />} />

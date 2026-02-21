@@ -1,17 +1,17 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Check, Users, Lock, HelpCircle, BookOpen } from 'lucide-react'
 import { useAuth, MOCK_ANALYST } from '../../hooks/useAuth'
 import ProtocolModal, { useProtocolModal } from '../../components/ProtocolModal'
 
-// ── Journey steps for horizontal stepper ──────
-type HStepStatus = 'done' | 'current' | 'upcoming'
-const JOURNEY: { label: string; statusText: string; status: HStepStatus }[] = [
-  { label: 'Appel', statusText: 'Réalisé ✓', status: 'done' },
-  { label: 'Questionnaire', statusText: '2/3 blocs', status: 'current' },
-  { label: 'Sondage', statusText: '12 réponses', status: 'current' },
-  { label: 'Analyse', statusText: '—', status: 'upcoming' },
-  { label: 'Restitution', statusText: 'Verrouillé', status: 'upcoming' },
+// ── Journey pieces (non-sequential, "gems to unlock") ──────
+type PieceStatus = 'done' | 'active' | 'locked'
+const PIECES: { label: string; icon: React.ReactNode; statusText: string; status: PieceStatus }[] = [
+  { label: 'Appel', icon: <span style={{ fontSize: '1rem' }}>📞</span>, statusText: 'Réalisé', status: 'done' },
+  { label: 'Questionnaire', icon: <span style={{ fontSize: '1rem' }}>📋</span>, statusText: '2/3 blocs', status: 'active' },
+  { label: 'Sondage', icon: <span style={{ fontSize: '1rem' }}>👥</span>, statusText: '12 réponses', status: 'active' },
+  { label: 'Analyse', icon: <span style={{ fontSize: '1rem' }}>📊</span>, statusText: 'En attente', status: 'locked' },
+  { label: 'Restitution', icon: <span style={{ fontSize: '1rem' }}>🎯</span>, statusText: 'Verrouillé', status: 'locked' },
 ]
 
 export default function ClientHomeDashboard() {
@@ -42,16 +42,20 @@ export default function ClientHomeDashboard() {
           <button
             onClick={() => protocol.setOpen(true)}
             style={{
-              display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px',
-              borderRadius: 20, border: '1px solid #EDEAE3', background: 'none',
-              fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D',
+              display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px',
+              borderRadius: 12, border: '1px solid #EDEAE3', background: '#FFFFFF',
+              fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#2A2A28',
               cursor: 'pointer', flexShrink: 0, marginTop: 4,
-              transition: 'background-color 0.15s',
+              transition: 'all 0.15s', boxShadow: '0 1px 3px rgba(42,42,40,0.04)',
             }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#F7F5F0')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#E8F0EB'; e.currentTarget.style.borderColor = '#1B4332' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#FFFFFF'; e.currentTarget.style.borderColor = '#EDEAE3' }}
           >
-            <HelpCircle size={13} /> Comment ça marche ?
+            <HelpCircle size={15} color="#1B4332" />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 600, fontSize: '0.78rem', color: '#2A2A28' }}>Comment ça marche ?</div>
+              <div style={{ fontSize: '0.65rem', color: '#B0AB9F' }}>Le parcours en 5 étapes</div>
+            </div>
           </button>
         </div>
       </div>
@@ -77,54 +81,46 @@ export default function ClientHomeDashboard() {
         </div>
       </div>
 
-      {/* ZONE 2 — JOURNEY MAP */}
+      {/* ZONE 2 — JOURNEY PIECES (non-sequential) */}
       <div className="mt-8 dash-fadein" style={{ animationDelay: '140ms' }}>
         <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>VOTRE PARCOURS</div>
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 14, padding: '28px 32px' }}>
-          {/* Horizontal stepper */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative' }}>
-            {/* Connecting lines */}
-            <div style={{ position: 'absolute', top: 18, left: 18, right: 18, height: 3 }}>
-              {JOURNEY.map((step, i) => {
-                if (i === JOURNEY.length - 1) return null
-                const next = JOURNEY[i + 1]
-                const isDoneLine = step.status === 'done' && (next.status === 'done' || next.status === 'current')
-                const isGradient = step.status === 'current' && next.status === 'upcoming'
-                const left = `${(i / (JOURNEY.length - 1)) * 100}%`
-                const width = `${(1 / (JOURNEY.length - 1)) * 100}%`
-                return (
-                  <div key={i} style={{
-                    position: 'absolute', left, width, height: 3,
-                    background: isDoneLine ? '#1B4332' : isGradient ? 'linear-gradient(90deg, #1B4332, #E5E1D8)' : '#E5E1D8',
-                  }} />
-                )
-              })}
-            </div>
-
-            {JOURNEY.map((step, i) => (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: `${100 / JOURNEY.length}%`, position: 'relative', zIndex: 1 }}>
-                {/* Circle */}
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%', marginBottom: 8,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: step.status === 'done' ? '#1B4332' : '#FFFFFF',
-                  border: step.status === 'done' ? 'none' : step.status === 'current' ? '2.5px solid #1B4332' : '1.5px solid #E5E1D8',
-                }}>
-                  {step.status === 'done' && <Check size={16} color="#fff" strokeWidth={2.5} />}
-                  {step.status === 'current' && <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#1B4332' }} />}
+        <div className="grid grid-cols-5 gap-2">
+          {PIECES.map((piece, i) => {
+            const isDone = piece.status === 'done'
+            const isActive = piece.status === 'active'
+            const isLocked = piece.status === 'locked'
+            return (
+              <div
+                key={i}
+                style={{
+                  backgroundColor: isDone ? '#E8F0EB' : '#FFFFFF',
+                  border: `1.5px solid ${isDone ? '#1B4332' : isActive ? '#B87333' : '#EDEAE3'}`,
+                  borderRadius: 14, padding: '16px 10px', textAlign: 'center',
+                  opacity: isLocked ? 0.5 : 1,
+                  position: 'relative', overflow: 'hidden',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {/* Glow for active */}
+                {isActive && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #B87333, #E8A66A)' }} />}
+                {isDone && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, backgroundColor: '#1B4332' }} />}
+                
+                <div style={{ fontSize: '1.3rem', marginBottom: 6 }}>
+                  {isLocked ? <Lock size={20} color="#B0AB9F" /> : piece.icon}
                 </div>
-                <div style={{
-                  fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.72rem',
-                  color: step.status === 'current' ? '#2A2A28' : step.status === 'done' ? '#7A766D' : '#B0AB9F',
-                  textAlign: 'center', marginBottom: 2,
-                }}>{step.label}</div>
-                <div style={{
-                  fontFamily: 'var(--font-sans)', fontWeight: 400, fontSize: '0.65rem',
-                  color: '#B0AB9F', textAlign: 'center',
-                }}>{step.statusText}</div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.72rem', color: isDone ? '#1B4332' : isLocked ? '#B0AB9F' : '#2A2A28', marginBottom: 2 }}>
+                  {piece.label}
+                </div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', color: isDone ? '#2D6A4F' : '#B0AB9F' }}>
+                  {isDone && <Check size={10} className="inline mr-1" />}
+                  {piece.statusText}
+                </div>
               </div>
-            ))}
-          </div>
+            )
+          })}
+        </div>
+        <div className="mt-2 text-center" style={{ fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: '#B0AB9F' }}>
+          Complétez les éléments actifs pour débloquer l'analyse et la restitution
         </div>
       </div>
 

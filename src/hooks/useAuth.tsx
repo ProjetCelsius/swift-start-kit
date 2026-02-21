@@ -27,8 +27,8 @@ const MOCK_CLIENT: AppUser = {
 const MOCK_ANALYST: AppUser = {
   id: 'mock-analyst-001',
   role: 'analyst',
-  first_name: 'Thomas',
-  last_name: 'Martin',
+  first_name: 'Guillaume',
+  last_name: 'Pakula',
   title: 'Analyste Climat Senior',
   photo_url: undefined,
   created_at: new Date().toISOString(),

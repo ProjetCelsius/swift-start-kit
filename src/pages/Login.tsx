@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useDemoIfAvailable } from '../hooks/useDemo'
-import { Mail, Bug } from 'lucide-react'
+import { Mail, Bug, Compass } from 'lucide-react'
 import celsiusLogo from '@/assets/celsius-logo.svg'
 
 export default function Login() {
@@ -64,10 +64,17 @@ export default function Login() {
         style={{ backgroundColor: '#F7F5F0' }}
       >
         <div className="w-full" style={{ maxWidth: 480 }}>
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-10">
-            <div className="font-display" style={{ fontSize: '1.1rem', color: '#1B4332' }}>
-              Boussole Climat
+          {/* Celsius + Boussole logos */}
+          <div className="mb-8">
+            <img src={celsiusLogo} alt="Projet Celsius" style={{ height: 20, marginBottom: 16 }} />
+            <div className="flex items-center gap-2">
+              <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1B4332', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Compass size={16} color="#fff" strokeWidth={2} />
+              </div>
+              <div>
+                <div className="font-display" style={{ fontSize: '1.05rem', color: '#1B4332', lineHeight: 1.2 }}>Boussole Climat</div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.5rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#B0AB9F' }}>par Celsius</div>
+              </div>
             </div>
           </div>
 
@@ -295,10 +302,7 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Celsius logo centered below steps */}
-        <div className="mt-12">
-          <img src={celsiusLogo} alt="Projet Celsius" style={{ height: 22 }} />
-        </div>
+
       </div>
     </div>
   )
