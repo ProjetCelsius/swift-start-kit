@@ -9,13 +9,15 @@ import {
   BookOpen,
   MessageSquare,
   HelpCircle,
-  Compass,
+  
   ChevronUp,
   User,
   Lock,
   Download,
   LogOut,
 } from 'lucide-react'
+import boussoleLogo from '@/assets/boussole-logo.png'
+import celsiusLogo from '@/assets/celsius-logo.svg'
 import { MOCK_ANALYST } from '../../hooks/useAuth'
 import { useAuth } from '../../hooks/useAuth'
 import HelpPanel from '../questionnaire/HelpPanel'
@@ -106,18 +108,16 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
       {/* Logo */}
       <div className="px-5 pt-5 pb-4">
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-7 h-7 rounded-md flex items-center justify-center"
-            style={{ backgroundColor: '#1B4332' }}
-          >
-            <Compass size={14} color="white" />
-          </div>
+          <img src={boussoleLogo} alt="Boussole Climat" style={{ width: 30, height: 30 }} />
           <div>
             <div className="font-display" style={{ fontSize: '0.9rem', color: '#1B4332' }}>
               Boussole Climat
             </div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.45rem', letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#B0AB9F' }}>
-              PAR CELSIUS
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.45rem', letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#B0AB9F' }}>
+                PAR
+              </span>
+              <img src={celsiusLogo} alt="Celsius" style={{ height: 10 }} />
             </div>
           </div>
         </div>

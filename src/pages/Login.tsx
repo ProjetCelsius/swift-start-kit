@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { Mail, Compass } from 'lucide-react'
+import { Mail, Bug } from 'lucide-react'
+import boussoleLogo from '@/assets/boussole-logo.png'
+import celsiusLogo from '@/assets/celsius-logo.svg'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -50,12 +52,7 @@ export default function Login() {
         className="md:hidden flex flex-col items-center justify-center px-8 py-10"
         style={{ backgroundColor: '#1B4332' }}
       >
-        <div
-          className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
-          style={{ border: '1.5px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)' }}
-        >
-          <Compass size={28} color="rgba(255,255,255,0.7)" />
-        </div>
+        <img src={boussoleLogo} alt="Boussole Climat" style={{ width: 56, height: 56, marginBottom: 20, filter: 'brightness(1.3)' }} />
         <h2 className="font-display text-white text-center" style={{ fontSize: '1.3rem' }}>
           Votre maturité climat,<br />en 3 étapes claires.
         </h2>
@@ -69,27 +66,16 @@ export default function Login() {
         <div className="w-full" style={{ maxWidth: 480 }}>
           {/* Logo */}
           <div className="flex items-center gap-3 mb-10">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: '#1B4332' }}
-            >
-              <Compass size={16} color="white" />
-            </div>
+            <img src={boussoleLogo} alt="Boussole Climat" style={{ width: 38, height: 38 }} />
             <div>
               <div className="font-display" style={{ fontSize: '1.1rem', color: '#1B4332' }}>
                 Boussole Climat
               </div>
-              <div
-                style={{
-                  fontFamily: 'var(--font-sans)',
-                  fontWeight: 600,
-                  fontSize: '0.5rem',
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase' as const,
-                  color: '#7A766D',
-                }}
-              >
-                PAR CELSIUS
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#7A766D' }}>
+                  PAR
+                </span>
+                <img src={celsiusLogo} alt="Celsius" style={{ height: 12 }} />
               </div>
             </div>
           </div>
@@ -184,24 +170,42 @@ export default function Login() {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full transition-colors disabled:opacity-50"
-                  style={{
-                    height: 50,
-                    backgroundColor: '#1B4332',
-                    color: 'white',
-                    borderRadius: 8,
-                    fontFamily: 'var(--font-sans)',
-                    fontWeight: 600,
-                    fontSize: '0.9rem',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#153728')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1B4332')}
-                >
-                  {loading ? 'Connexion...' : 'Se connecter'}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 transition-colors disabled:opacity-50"
+                    style={{
+                      height: 50,
+                      backgroundColor: '#1B4332',
+                      color: 'white',
+                      borderRadius: 8,
+                      fontFamily: 'var(--font-sans)',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#153728')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1B4332')}
+                  >
+                    {loading ? 'Connexion...' : 'Se connecter'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/client/dashboard')}
+                    title="Mode debug — bypass login"
+                    className="transition-colors"
+                    style={{
+                      width: 50, height: 50, borderRadius: 8,
+                      border: '1px solid #EDEAE3', backgroundColor: 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#B0AB9F', cursor: 'pointer', flexShrink: 0,
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#F7F5F0'; e.currentTarget.style.color = '#7A766D' }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#B0AB9F' }}
+                  >
+                    <Bug size={18} />
+                  </button>
+                </div>
               </form>
 
               {/* Divider */}
@@ -252,14 +256,9 @@ export default function Login() {
         style={{ backgroundColor: '#1B4332' }}
       >
         <div style={{ maxWidth: 400 }}>
-          {/* Compass icon */}
+          {/* Logo */}
           <div className="flex justify-center mb-8">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center"
-              style={{ border: '1.5px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)' }}
-            >
-              <Compass size={28} color="rgba(255,255,255,0.7)" />
-            </div>
+            <img src={boussoleLogo} alt="Boussole Climat" style={{ width: 72, height: 72, filter: 'brightness(1.3)' }} />
           </div>
 
           <h2
