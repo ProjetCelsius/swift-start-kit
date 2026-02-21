@@ -1,20 +1,45 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Check, Users, Lock, BookOpen, Compass } from 'lucide-react'
+import { ChevronRight, Check, Users, Lock, Compass, Calendar, BookOpen, Sparkles } from 'lucide-react'
 import { useAuth, MOCK_ANALYST } from '../../hooks/useAuth'
 import ProtocolModal, { useProtocolModal } from '../../components/ProtocolModal'
 import clientAvatar from '../../assets/client-avatar.jpg'
 import guillaumePhoto from '../../assets/guillaume-photo.png'
 
-// ── Journey pieces (non-sequential, "gems to unlock") ──────
-type PieceStatus = 'done' | 'active' | 'locked'
-const PIECES: { label: string; icon: React.ReactNode; statusText: string; status: PieceStatus }[] = [
-  { label: 'Appel', icon: <span style={{ fontSize: '1rem' }}>📞</span>, statusText: 'Réalisé', status: 'done' },
-  { label: 'Questionnaire', icon: <span style={{ fontSize: '1rem' }}>📋</span>, statusText: '2/3 blocs', status: 'active' },
-  { label: 'Sondage', icon: <span style={{ fontSize: '1rem' }}>👥</span>, statusText: '12 réponses', status: 'active' },
-  { label: 'Analyse', icon: <span style={{ fontSize: '1rem' }}>📊</span>, statusText: 'En attente', status: 'locked' },
-  { label: 'Restitution', icon: <span style={{ fontSize: '1rem' }}>🎯</span>, statusText: 'Verrouillé', status: 'locked' },
+// ── Questionnaire blocs ──────
+type BlocStatus = 'done' | 'active' | 'todo'
+interface QuestionnaireBloc {
+  label: string
+  route: string
+  status: BlocStatus
+  progress?: string // e.g. "3/7"
+}
+
+const BLOCS: QuestionnaireBloc[] = [
+  { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
+  { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
+  { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'active', progress: '3/7' },
+  { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'todo' },
 ]
+
+// ── Journey steps ──────
+type StepStatus = 'done' | 'active' | 'locked'
+const STEPS: { num: number; label: string; detail: string; status: StepStatus }[] = [
+  { num: 1, label: 'Appel de lancement', detail: '10 fév.', status: 'done' },
+  { num: 2, label: 'Questionnaire', detail: '2/4 blocs', status: 'active' },
+  { num: 3, label: 'Sondage', detail: '12/30', status: 'active' },
+  { num: 4, label: 'Analyse', detail: '—', status: 'locked' },
+  { num: 5, label: 'Restitution', detail: '—', status: 'locked' },
+]
+
+// Determine questionnaire state: 'not_started' | 'in_progress' | 'completed'
+function getQuestionnaireState(blocs: QuestionnaireBloc[]) {
+  const allDone = blocs.every(b => b.status === 'done')
+  const anyStarted = blocs.some(b => b.status === 'done' || b.status === 'active')
+  if (allDone) return 'completed'
+  if (anyStarted) return 'in_progress'
+  return 'not_started'
+}
 
 export default function ClientHomeDashboard() {
   const { user } = useAuth()
@@ -23,26 +48,28 @@ export default function ClientHomeDashboard() {
   const firstName = user?.first_name || 'Claire'
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const protocol = useProtocolModal()
+  const qState = getQuestionnaireState(BLOCS)
+  const doneCount = BLOCS.filter(b => b.status === 'done').length
 
   return (
     <div>
       <ProtocolModal open={protocol.open} onClose={() => protocol.setOpen(false)} />
 
-      {/* ZONE 1 — Header */}
+      {/* ═══════ HEADER BLOCK ═══════ */}
       <div className="dash-fadein" style={{ animationDelay: '0ms' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <img src={clientAvatar} alt={firstName} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: '2px solid #EDEAE3' }} />
-              <h1 className="font-display" style={{ fontSize: '1.85rem', color: '#2A2A28', fontWeight: 400, lineHeight: 1.25 }}>
-                Bienvenue {firstName},<br />
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <img src={clientAvatar} alt={firstName} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: '2px solid #EDEAE3' }} />
+            <div>
+              <h1 className="font-display" style={{ fontSize: '1.75rem', color: '#2A2A28', fontWeight: 400, lineHeight: 1.25 }}>
+                Bonjour {firstName},<br />
                 <span>votre diagnostic </span>
                 <span style={{ color: '#1B4332', fontWeight: 500 }}>prend forme.</span>
               </h1>
+              <p className="mt-1" style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D' }}>
+                Encore quelques étapes et {analyst.first_name} prendra le relais.
+              </p>
             </div>
-            <p className="mt-3" style={{ fontFamily: 'var(--font-sans)', fontSize: '0.9rem', color: '#7A766D' }}>
-              Vous êtes à l'étape 2. Complétez les 3 blocs restants pour avancer vers l'analyse.
-            </p>
           </div>
           <button
             onClick={() => protocol.setOpen(true)}
@@ -68,10 +95,231 @@ export default function ClientHomeDashboard() {
         </div>
       </div>
 
-      {/* Analyst message */}
+      {/* ═══════ STEPPER PARCOURS ═══════ */}
+      <div className="mt-6 dash-fadein" style={{ animationDelay: '70ms' }}>
+        <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>VOTRE PARCOURS</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, padding: '16px 8px' }}>
+          {STEPS.map((step, i) => {
+            const isDone = step.status === 'done'
+            const isActive = step.status === 'active'
+            const isLocked = step.status === 'locked'
+            return (
+              <React.Fragment key={i}>
+                {/* Connector line */}
+                {i > 0 && (
+                  <div style={{
+                    flex: 1, height: 2, maxWidth: 60,
+                    backgroundColor: isDone || (isActive && STEPS[i - 1].status === 'done') ? '#1B4332' : '#E5E1D8',
+                  }} />
+                )}
+                {/* Step circle + label */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 70 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: isDone ? '#1B4332' : isActive ? '#FFFFFF' : '#FFFFFF',
+                    border: `2px solid ${isDone ? '#1B4332' : isActive ? '#1B4332' : '#E5E1D8'}`,
+                    color: isDone ? '#FFFFFF' : isActive ? '#1B4332' : '#B0AB9F',
+                    fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.8rem',
+                  }}>
+                    {isDone ? <Check size={16} /> : step.num}
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.68rem', color: isDone ? '#1B4332' : isLocked ? '#B0AB9F' : '#2A2A28' }}>
+                      {step.label}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', color: isDone ? '#2D6A4F' : '#B0AB9F' }}>
+                      {step.detail}
+                    </div>
+                  </div>
+                </div>
+              </React.Fragment>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ═══════ TWO-COLUMN LAYOUT ═══════ */}
+      <div className="mt-6 dash-fadein" style={{ animationDelay: '140ms', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'stretch' }}>
+
+        {/* ── LEFT: Action cards ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Sondage card */}
+          <ActionCard
+            label="SONDAGE"
+            title="Relancer vos équipes"
+            subtitle="12 réponses sur 30 — objectif"
+            icon={<Users size={18} color="#B87333" />}
+            iconBg="#F5EDE4"
+            hovered={hoveredCard === 'sondage'}
+            onHover={v => setHoveredCard(v ? 'sondage' : null)}
+            onClick={() => navigate('/client/sondage')}
+          />
+          {/* Planning card */}
+          <ActionCard
+            label="PLANNING"
+            title="Planifier la restitution"
+            subtitle="Disponible après l'analyse"
+            icon={<Calendar size={18} color="#7A766D" />}
+            iconBg="#F7F5F0"
+            hovered={hoveredCard === 'planning'}
+            onHover={v => setHoveredCard(v ? 'planning' : null)}
+            onClick={() => {}}
+            locked
+          />
+          {/* Journal card */}
+          <ActionCard
+            label="JOURNAL"
+            title="Journal de bord"
+            subtitle="2 nouvelles entrées"
+            icon={<BookOpen size={18} color="#1B4332" />}
+            iconBg="#E8F0EB"
+            hovered={hoveredCard === 'journal'}
+            onHover={v => setHoveredCard(v ? 'journal' : null)}
+            onClick={() => navigate('/client/journal')}
+          />
+        </div>
+
+        {/* ── RIGHT: Questionnaire block ── */}
+        <div style={{
+          backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
+          overflow: 'hidden', display: 'flex', flexDirection: 'column',
+          position: 'relative',
+        }}>
+          {qState === 'not_started' ? (
+            /* ── GOLDEN "START" STATE ── */
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, textAlign: 'center', position: 'relative' }}>
+              {/* Subtle radial glow */}
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 40%, rgba(184,115,51,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+              <div style={{
+                width: 64, height: 64, borderRadius: '50%', marginBottom: 16,
+                background: 'linear-gradient(135deg, #B87333 0%, #E8A66A 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 30px rgba(184,115,51,0.25), 0 0 60px rgba(184,115,51,0.10)',
+              }}>
+                <Sparkles size={28} color="#FFFFFF" />
+              </div>
+              <div className="font-display" style={{ fontSize: '1.2rem', fontWeight: 400, color: '#2A2A28', marginBottom: 6 }}>
+                Commencez votre questionnaire
+              </div>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8rem', color: '#7A766D', maxWidth: 260, lineHeight: 1.5, marginBottom: 20 }}>
+                4 blocs thématiques, à votre rythme. Sauvegarde automatique.
+              </p>
+              <button
+                onClick={() => navigate('/client/questionnaire/bloc1')}
+                style={{
+                  padding: '12px 28px', borderRadius: 8, backgroundColor: '#1B4332', color: '#fff',
+                  fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.88rem',
+                  border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+                }}
+              >
+                Démarrer <ChevronRight size={16} />
+              </button>
+            </div>
+          ) : qState === 'in_progress' ? (
+            /* ── IN-PROGRESS STATE with bloc list ── */
+            <div style={{ padding: '20px 22px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+                {/* Progress ring */}
+                <div style={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
+                  <svg width="56" height="56" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r="24" fill="none" stroke="#E5E1D8" strokeWidth="3" />
+                    <circle cx="28" cy="28" r="24" fill="none" stroke="#1B4332" strokeWidth="3"
+                      strokeDasharray={`${(doneCount / BLOCS.length) * 150.8} 150.8`}
+                      strokeLinecap="round" transform="rotate(-90 28 28)" />
+                  </svg>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.5rem', color: '#7A766D', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ÉTAPE</div>
+                    <div className="font-display" style={{ fontSize: '1.1rem', fontWeight: 500, color: '#1B4332', lineHeight: 1 }}>2</div>
+                    <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.5rem', color: '#B0AB9F' }}>sur 5</div>
+                  </div>
+                </div>
+                <div>
+                  <div className="font-display" style={{ fontSize: '1.05rem', fontWeight: 500, color: '#2A2A28' }}>Questionnaire</div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D' }}>
+                    4 blocs thématiques · sauvegarde auto
+                  </div>
+                </div>
+              </div>
+              {/* Bloc list */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                {BLOCS.map((bloc, i) => {
+                  const isDone = bloc.status === 'done'
+                  const isActive = bloc.status === 'active'
+                  const isTodo = bloc.status === 'todo'
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => !isTodo && navigate(bloc.route)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                        borderRadius: 10, cursor: isTodo ? 'default' : 'pointer',
+                        backgroundColor: isActive ? '#FDFAF6' : 'transparent',
+                        border: isActive ? '1px solid #E8D5BF' : '1px solid transparent',
+                        transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={e => { if (!isTodo) e.currentTarget.style.backgroundColor = isDone ? '#E8F0EB' : '#FDFAF6' }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = isActive ? '#FDFAF6' : 'transparent' }}
+                    >
+                      {/* Status icon */}
+                      <div style={{
+                        width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: isDone ? '#1B4332' : isActive ? '#B87333' : '#E5E1D8',
+                      }}>
+                        {isDone ? <Check size={12} color="#FFFFFF" /> :
+                         isActive ? <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#FFFFFF' }} /> :
+                         <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#B0AB9F' }} />}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontFamily: 'var(--font-sans)', fontWeight: isActive ? 600 : 500, fontSize: '0.82rem',
+                          color: isDone ? '#1B4332' : isTodo ? '#B0AB9F' : '#2A2A28',
+                        }}>
+                          {bloc.label} {isActive && bloc.progress && <span style={{ color: '#B87333' }}>— {bloc.progress}</span>}
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      <div style={{ width: 60, height: 4, borderRadius: 2, backgroundColor: '#E5E1D8', overflow: 'hidden', flexShrink: 0 }}>
+                        <div style={{
+                          height: '100%', borderRadius: 2,
+                          width: isDone ? '100%' : isActive ? '43%' : '0%',
+                          backgroundColor: isDone ? '#1B4332' : '#B87333',
+                          transition: 'width 0.3s',
+                        }} />
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: isDone ? '#1B4332' : isTodo ? '#B0AB9F' : '#B87333', flexShrink: 0, width: 52, textAlign: 'right' }}>
+                        {isDone ? 'Terminé' : isActive ? bloc.progress : 'À faire'}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            /* ── COMPLETED STATE ── */
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, textAlign: 'center' }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: '50%', marginBottom: 14,
+                backgroundColor: '#E8F0EB', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Check size={28} color="#1B4332" />
+              </div>
+              <div className="font-display" style={{ fontSize: '1.1rem', fontWeight: 500, color: '#1B4332', marginBottom: 4 }}>
+                Questionnaire terminé
+              </div>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8rem', color: '#7A766D' }}>
+                {analyst.first_name} analyse vos réponses.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ═══════ ANALYST MESSAGE ═══════ */}
       <div className="mt-6 dash-fadein" style={{
         background: 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 50%, #F5EDE4 100%)',
-        borderRadius: 14, padding: '16px 20px', border: '1px solid #EDEAE3', animationDelay: '70ms',
+        borderRadius: 14, padding: '16px 20px', border: '1px solid #EDEAE3', animationDelay: '210ms',
       }}>
         <div className="flex items-center gap-3">
           <img src={guillaumePhoto} alt={`${analyst.first_name} ${analyst.last_name}`} className="w-[38px] h-[38px] rounded-full object-cover shrink-0" />
@@ -87,152 +335,8 @@ export default function ClientHomeDashboard() {
         </div>
       </div>
 
-      {/* ZONE 2 — JOURNEY PIECES (non-sequential) */}
-      <div className="mt-8 dash-fadein" style={{ animationDelay: '140ms' }}>
-        <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>VOTRE PARCOURS</div>
-        <div className="grid grid-cols-5 gap-2">
-          {PIECES.map((piece, i) => {
-            const isDone = piece.status === 'done'
-            const isActive = piece.status === 'active'
-            const isLocked = piece.status === 'locked'
-            return (
-              <div
-                key={i}
-                style={{
-                  backgroundColor: isDone ? '#E8F0EB' : '#FFFFFF',
-                  border: `1.5px solid ${isDone ? '#1B4332' : isActive ? '#B87333' : '#EDEAE3'}`,
-                  borderRadius: 14, padding: '16px 10px', textAlign: 'center',
-                  opacity: isLocked ? 0.5 : 1,
-                  position: 'relative', overflow: 'hidden',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {/* Glow for active */}
-                {isActive && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #B87333, #E8A66A)' }} />}
-                {isDone && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, backgroundColor: '#1B4332' }} />}
-                
-                <div style={{ fontSize: '1.3rem', marginBottom: 6 }}>
-                  {isLocked ? <Lock size={20} color="#B0AB9F" /> : piece.icon}
-                </div>
-                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.72rem', color: isDone ? '#1B4332' : isLocked ? '#B0AB9F' : '#2A2A28', marginBottom: 2 }}>
-                  {piece.label}
-                </div>
-                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', color: isDone ? '#2D6A4F' : '#B0AB9F' }}>
-                  {isDone && <Check size={10} className="inline mr-1" />}
-                  {piece.statusText}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-        <div className="mt-2 text-center" style={{ fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: '#B0AB9F' }}>
-          Complétez les éléments actifs pour débloquer l'analyse et la restitution
-        </div>
-      </div>
-
-      {/* ZONE 3 — CURRENT ACTION (hero card) */}
-      <div className="mt-6 dash-fadein" style={{ animationDelay: '210ms' }}>
-        <div style={{
-          backgroundColor: '#FFFFFF', borderRadius: 14,
-          border: '1px solid #EDEAE3',
-          overflow: 'hidden',
-        }}>
-          {/* Gradient top border */}
-          <div style={{ height: 3, background: 'linear-gradient(90deg, #1B4332, #B87333)' }} />
-          <div style={{ padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-            <div>
-              <div style={{
-                fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.52rem',
-                letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#B87333',
-                marginBottom: 6,
-              }}>À FAIRE MAINTENANT</div>
-              <div className="font-display" style={{ fontSize: '1.15rem', fontWeight: 400, color: '#2A2A28', marginBottom: 4 }}>
-                Bloc 3 — Vos enjeux et votre vision
-              </div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#7A766D' }}>
-                Encore 4 questions · environ 5 min
-              </div>
-            </div>
-            <button
-              onClick={() => navigate('/client/questionnaire/bloc3')}
-              style={{
-                padding: '13px 28px', borderRadius: 8,
-                backgroundColor: '#1B4332', color: '#fff',
-                fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.88rem',
-                border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 8,
-                transition: 'background-color 0.2s', flexShrink: 0,
-              }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#153728')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1B4332')}
-            >
-              Reprendre <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ZONE 4 — SECONDARY ACTIONS */}
-      <div className="mt-6 dash-fadein grid grid-cols-1 md:grid-cols-2 gap-3" style={{ animationDelay: '280ms' }}>
-        <div
-          onClick={() => navigate('/client/sondage')}
-          className="cursor-pointer"
-          style={{
-            backgroundColor: hoveredCard === 'sondage' ? '#FEFEFE' : '#FFFFFF',
-            border: `${hoveredCard === 'sondage' ? '1.5px' : '1px'} solid ${hoveredCard === 'sondage' ? '#1B4332' : '#EDEAE3'}`,
-            borderRadius: 14, padding: '20px 22px',
-            boxShadow: hoveredCard === 'sondage' ? '0 2px 8px rgba(42,42,40,.04), 0 8px 32px rgba(42,42,40,.06)' : 'none',
-            transform: hoveredCard === 'sondage' ? 'translateY(-2px)' : 'none',
-            background: hoveredCard === 'sondage' ? 'linear-gradient(135deg, #FFFFFF 0%, #E8F0EB 100%)' : '#FFFFFF',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={() => setHoveredCard('sondage')}
-          onMouseLeave={() => setHoveredCard(null)}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#F5EDE4' }}>
-              <Users size={18} color="#B87333" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="label-uppercase" style={{ letterSpacing: '0.1em', fontSize: '0.45rem' }}>SONDAGE</div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.88rem', color: '#2A2A28' }}>Relancer le sondage</div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#7A766D' }}>12/30 réponses collectées</div>
-            </div>
-            <ChevronRight size={16} color="#B0AB9F" className="shrink-0" />
-          </div>
-        </div>
-
-        <div
-          onClick={() => navigate('/client/journal')}
-          className="cursor-pointer"
-          style={{
-            backgroundColor: hoveredCard === 'journal' ? '#FEFEFE' : '#FFFFFF',
-            border: `${hoveredCard === 'journal' ? '1.5px' : '1px'} solid ${hoveredCard === 'journal' ? '#1B4332' : '#EDEAE3'}`,
-            borderRadius: 14, padding: '20px 22px',
-            boxShadow: hoveredCard === 'journal' ? '0 2px 8px rgba(42,42,40,.04), 0 8px 32px rgba(42,42,40,.06)' : 'none',
-            transform: hoveredCard === 'journal' ? 'translateY(-2px)' : 'none',
-            background: hoveredCard === 'journal' ? 'linear-gradient(135deg, #FFFFFF 0%, #E8F0EB 100%)' : '#FFFFFF',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={() => setHoveredCard('journal')}
-          onMouseLeave={() => setHoveredCard(null)}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#E8F0EB' }}>
-              <BookOpen size={18} color="#1B4332" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="label-uppercase" style={{ letterSpacing: '0.1em', fontSize: '0.45rem' }}>JOURNAL</div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.88rem', color: '#2A2A28' }}>Journal de bord</div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#7A766D' }}>2 nouvelles entrées</div>
-            </div>
-            <ChevronRight size={16} color="#B0AB9F" className="shrink-0" />
-          </div>
-        </div>
-      </div>
-
-      {/* ZONE 5 — EN UN COUP D'ŒIL */}
-      <div className="mt-8 dash-fadein" style={{ animationDelay: '350ms' }}>
+      {/* ═══════ EN UN COUP D'ŒIL ═══════ */}
+      <div className="mt-8 dash-fadein" style={{ animationDelay: '280ms' }}>
         <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>EN UN COUP D'ŒIL</div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12, padding: 20 }}>
@@ -261,16 +365,16 @@ export default function ClientHomeDashboard() {
         </div>
       </div>
 
-      {/* ZONE 6 — BLURRED DIAGNOSTIC */}
-      <div className="mt-8 dash-fadein" style={{ animationDelay: '420ms' }}>
+      {/* ═══════ BLURRED DIAGNOSTIC ═══════ */}
+      <div className="mt-8 dash-fadein" style={{ animationDelay: '350ms' }}>
         <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>VOTRE FUTUR DIAGNOSTIC</div>
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 14, overflow: 'hidden', position: 'relative', height: 280 }}>
+        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 14, overflow: 'hidden', position: 'relative', height: 260 }}>
           <div style={{ padding: '28px 32px', filter: 'blur(6px)', opacity: 0.6 }}>
             <div className="font-display" style={{ fontSize: '1.3rem', color: '#2A2A28', fontWeight: 400, marginBottom: 16 }}>Synthèse éditoriale</div>
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 12 }}>
               Votre organisation présente un profil de maturité climat de niveau intermédiaire, avec des fondations solides sur le volet réglementaire mais des lacunes identifiées sur l'intégration opérationnelle des enjeux carbone.
             </p>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 12 }}>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6 }}>
               Les résultats du sondage interne révèlent un écart significatif entre la perception de la direction et celle des équipes terrain.
             </p>
           </div>
@@ -291,6 +395,43 @@ export default function ClientHomeDashboard() {
         @keyframes dashFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .dash-fadein { animation: dashFadeIn 0.5s ease-out both; }
       `}</style>
+    </div>
+  )
+}
+
+/* ── Reusable Action Card ── */
+function ActionCard({ label, title, subtitle, icon, iconBg, hovered, onHover, onClick, locked }: {
+  label: string; title: string; subtitle: string; icon: React.ReactNode; iconBg: string
+  hovered: boolean; onHover: (v: boolean) => void; onClick: () => void; locked?: boolean
+}) {
+  return (
+    <div
+      onClick={locked ? undefined : onClick}
+      className={locked ? '' : 'cursor-pointer'}
+      style={{
+        backgroundColor: hovered && !locked ? '#FEFEFE' : '#FFFFFF',
+        border: `${hovered && !locked ? '1.5px' : '1px'} solid ${hovered && !locked ? '#1B4332' : '#EDEAE3'}`,
+        borderRadius: 14, padding: '16px 18px',
+        boxShadow: hovered && !locked ? '0 2px 8px rgba(42,42,40,.04), 0 8px 32px rgba(42,42,40,.06)' : 'none',
+        transform: hovered && !locked ? 'translateY(-1px)' : 'none',
+        background: hovered && !locked ? 'linear-gradient(135deg, #FFFFFF 0%, #E8F0EB 100%)' : '#FFFFFF',
+        transition: 'all 0.2s ease',
+        opacity: locked ? 0.55 : 1,
+      }}
+      onMouseEnter={() => onHover(true)}
+      onMouseLeave={() => onHover(false)}
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: iconBg }}>
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="label-uppercase" style={{ letterSpacing: '0.1em', fontSize: '0.45rem' }}>{label}</div>
+          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.85rem', color: '#2A2A28' }}>{title}</div>
+          <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#7A766D' }}>{subtitle}</div>
+        </div>
+        {locked ? <Lock size={14} color="#B0AB9F" className="shrink-0" /> : <ChevronRight size={16} color="#B0AB9F" className="shrink-0" />}
+      </div>
     </div>
   )
 }
