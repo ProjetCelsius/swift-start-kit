@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import celsiusLogo from '@/assets/celsius-logo.svg'
 import clientAvatar from '@/assets/client-avatar.jpg'
+import guillaumePhoto from '@/assets/guillaume-photo.png'
 import { MOCK_ANALYST } from '../../hooks/useAuth'
 import { useAuth } from '../../hooks/useAuth'
 import { useDemoIfAvailable } from '../../hooks/useDemo'
@@ -178,9 +179,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
           onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(42,42,40,0.06)')}
           onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
         >
-          <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-white shrink-0" style={{ backgroundColor: '#1B4332', fontFamily: 'var(--font-display)', fontSize: '0.6rem' }}>
-            {analyst.first_name[0]}{analyst.last_name[0]}
-          </div>
+          <img src={guillaumePhoto} alt={`${analyst.first_name} ${analyst.last_name}`} className="w-[34px] h-[34px] rounded-full object-cover shrink-0" />
           <div className="min-w-0">
             <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.45rem', letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#B0AB9F' }}>VOTRE ANALYSTE</div>
             <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.8rem', color: '#2A2A28' }}>{analyst.first_name} {analyst.last_name}</div>
