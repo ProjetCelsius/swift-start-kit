@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -18,12 +18,54 @@ import {
 } from 'lucide-react'
 import { MOCK_ANALYST } from '../../hooks/useAuth'
 import { useAuth } from '../../hooks/useAuth'
+import HelpPanel from '../questionnaire/HelpPanel'
 
-const QUESTIONNAIRE_ITEMS = [
-  { key: 'bloc1', label: 'Votre démarche', path: '/client/questionnaire/bloc1', icon: <ClipboardList size={16} />, status: 'done' },
-  { key: 'bloc2', label: 'Votre maturité', path: '/client/questionnaire/bloc2', icon: <BarChart3 size={16} />, status: 'done' },
-  { key: 'bloc3', label: 'Vos enjeux', path: '/client/questionnaire/bloc3', icon: <Target size={16} />, status: 'in_progress' },
-  { key: 'bloc4', label: 'La perception', path: '/client/questionnaire/bloc4', icon: <Sparkles size={16} />, status: 'todo' },
+function computeBlocStatuses(): Record<string, string> {
+  try {
+    const bloc1 = localStorage.getItem('boussole_bloc1')
+    const bloc2 = localStorage.getItem('boussole_bloc2')
+    const bloc3 = localStorage.getItem('boussole_bloc3')
+    const bloc4 = localStorage.getItem('boussole_bloc4')
+
+    const s1 = bloc1 ? (() => {
+      const d = JSON.parse(bloc1)
+      const hasCompany = d.company?.raison_sociale
+      const tiles = d.tiles ? Object.values(d.tiles) : []
+      const allDone = tiles.length > 0 && tiles.every((t: any) => t.status !== 'not_started')
+      return allDone && hasCompany ? 'done' : (hasCompany || tiles.some((t: any) => t.status !== 'not_started')) ? 'in_progress' : 'todo'
+    })() : 'todo'
+
+    const s2 = bloc2 ? (() => {
+      const d = JSON.parse(bloc2)
+      const answered = Object.keys(d).length
+      return answered >= 20 ? 'done' : answered > 0 ? 'in_progress' : 'todo'
+    })() : 'todo'
+
+    const s3 = bloc3 ? (() => {
+      const d = JSON.parse(bloc3)
+      const hasMoteurs = d.moteurs?.length > 0
+      const hasFrein = !!d.frein
+      const hasReg = Object.keys(d.regulatory || {}).length > 0
+      const complete = hasMoteurs && hasFrein && hasReg && d.q25 && d.q26
+      return complete ? 'done' : (hasMoteurs || hasFrein || hasReg) ? 'in_progress' : 'todo'
+    })() : 'todo'
+
+    const s4 = bloc4 ? (() => {
+      const d = JSON.parse(bloc4)
+      const selfDone = d.selfScores?.filter((v: any) => v !== null).length >= 8
+      const predDone = d.predScores?.filter((v: any) => v !== null).length >= 8
+      return selfDone && predDone ? 'done' : (d.selfScores?.some((v: any) => v !== null)) ? 'in_progress' : 'todo'
+    })() : 'todo'
+
+    return { bloc1: s1, bloc2: s2, bloc3: s3, bloc4: s4 }
+  } catch { return { bloc1: 'todo', bloc2: 'todo', bloc3: 'todo', bloc4: 'todo' } }
+}
+
+const QUESTIONNAIRE_ITEMS_BASE = [
+  { key: 'bloc1', label: 'Votre démarche', path: '/client/questionnaire/bloc1', icon: <ClipboardList size={16} /> },
+  { key: 'bloc2', label: 'Votre maturité', path: '/client/questionnaire/bloc2', icon: <BarChart3 size={16} /> },
+  { key: 'bloc3', label: 'Vos enjeux', path: '/client/questionnaire/bloc3', icon: <Target size={16} /> },
+  { key: 'bloc4', label: 'La perception', path: '/client/questionnaire/bloc4', icon: <Sparkles size={16} /> },
 ]
 
 const DIAGNOSTIC_ITEMS = [
@@ -41,6 +83,13 @@ const dotColor: Record<string, string> = {
 export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation()
   const analyst = MOCK_ANALYST
+  const [helpOpen, setHelpOpen] = useState(false)
+
+  const statuses = useMemo(computeBlocStatuses, [])
+  const QUESTIONNAIRE_ITEMS = QUESTIONNAIRE_ITEMS_BASE.map(item => ({
+    ...item,
+    status: statuses[item.key] ?? 'todo',
+  }))
 
   const isActive = (path: string) => location.pathname === path
   const isDashboard = location.pathname === '/client/dashboard'
@@ -121,21 +170,37 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
 
       {/* Bottom: Aide + User Profile */}
       <div className="px-3">
-        <NavLink
-          to="/client/aide"
-          className="flex items-center gap-2 px-3 py-2"
-          style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}
-        >
-          <HelpCircle size={14} />
-          Aide
-        </NavLink>
+        <div className="flex items-center">
+          <NavLink
+            to="/client/aide"
+            className="flex items-center gap-2 px-3 py-2 flex-1"
+            style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}
+          >
+            <HelpCircle size={14} />
+            Aide
+          </NavLink>
+          <button
+            onClick={() => setHelpOpen(true)}
+            title="Questions fréquentes"
+            style={{
+              width: 22, height: 22, borderRadius: '50%', border: '1px solid #EDEAE3',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'none', cursor: 'pointer', color: '#B0AB9F', flexShrink: 0,
+              fontSize: '0.65rem', fontWeight: 600, fontFamily: 'var(--font-sans)',
+              transition: 'background-color 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#F7F5F0')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            ?
+          </button>
+        </div>
 
-        {/* Separator */}
         <div style={{ height: 1, backgroundColor: '#EDEAE3', margin: '4px 0 12px' }} />
-
-        {/* User profile block */}
         <UserProfileBlock />
       </div>
+
+      <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
 
       {/* Pulse animation for in-progress dots */}
       <style>{`
