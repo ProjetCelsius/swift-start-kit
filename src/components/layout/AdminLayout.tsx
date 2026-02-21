@@ -1,11 +1,11 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FileSearch, BarChart3, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, FileText, BarChart3, PlusCircle, LogOut } from 'lucide-react'
 
 const NAV_ITEMS = [
   { label: 'Tableau de bord', path: '/admin', icon: LayoutDashboard, end: true },
-  { label: 'Diagnostics', path: '/admin/diagnostics', icon: FileSearch },
+  { label: 'Diagnostics', path: '/admin/diagnostics', icon: FileText },
   { label: 'Statistiques', path: '/admin/stats', icon: BarChart3 },
-  { label: 'Paramètres', path: '/admin/settings', icon: Settings },
+  { label: 'Nouveau diagnostic', path: '/admin/new', icon: PlusCircle },
 ]
 
 export default function AdminLayout() {
@@ -18,27 +18,36 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: 'var(--color-fond)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F7F5F0' }}>
       {/* Sidebar */}
-      <aside
-        className="fixed left-0 top-0 bottom-0 flex flex-col overflow-y-auto"
-        style={{ width: 'var(--sidebar-width)', backgroundColor: '#1A1A2E' }}
-      >
+      <aside style={{
+        position: 'fixed', left: 0, top: 0, bottom: 0, width: 240,
+        backgroundColor: '#0F2620', display: 'flex', flexDirection: 'column',
+        overflow: 'hidden',
+      }}>
         {/* Logo */}
-        <div className="px-5 pt-5 pb-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#1B5E3B' }}>
-              C
-            </div>
-            <div>
-              <div className="font-semibold text-sm text-white">Boussole Climat</div>
-              <div className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Admin</div>
+        <div style={{ padding: '20px 16px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8, backgroundColor: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'Fraunces, serif', fontWeight: 600, fontSize: '0.8rem', color: '#0F2620',
+            }}>BC</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontFamily: 'Fraunces, serif', fontWeight: 400, fontSize: '0.95rem', color: '#E8F0EB' }}>
+                Boussole Climat
+              </span>
+              <span style={{
+                padding: '2px 8px', borderRadius: 20, fontSize: '0.6rem',
+                fontFamily: 'DM Sans, sans-serif', fontWeight: 600,
+                backgroundColor: '#1B4332', color: '#fff',
+              }}>Admin</span>
             </div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 space-y-1">
+        <nav style={{ flex: 1, padding: '0 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           {NAV_ITEMS.map(item => {
             const active = isActive(item.path, item.end)
             return (
@@ -46,12 +55,17 @@ export default function AdminLayout() {
                 key={item.path}
                 to={item.path}
                 end={item.end}
-                className="flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-colors"
                 style={{
-                  backgroundColor: active ? 'rgba(27, 94, 59, 0.3)' : 'transparent',
-                  color: active ? '#93C5A0' : 'rgba(255,255,255,0.6)',
-                  fontWeight: active ? 600 : 400,
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 16px', borderRadius: 8, textDecoration: 'none',
+                  fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem',
+                  backgroundColor: active ? '#1B4332' : 'transparent',
+                  color: active ? '#fff' : '#E8F0EB',
+                  fontWeight: active ? 500 : 400,
+                  transition: 'background-color 0.15s',
                 }}
+                onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.08)' }}
+                onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent' }}
               >
                 <item.icon size={18} />
                 {item.label}
@@ -60,22 +74,30 @@ export default function AdminLayout() {
           })}
         </nav>
 
-        {/* Bottom */}
-        <div className="px-4 pb-5 space-y-3">
-          <div className="h-px" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: '#2D7A50', color: 'white' }}>
-              CL
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">Claire Lefèvre</p>
-              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Analyste</p>
+        {/* Bottom user */}
+        <div style={{ padding: '0 16px 20px' }}>
+          <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginBottom: 16 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1B4332',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.6rem', fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif',
+            }}>CD</div>
+            <div>
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', color: '#E8F0EB', fontWeight: 500 }}>Claire Dubois</p>
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.65rem', color: '#7A766D' }}>Analyste senior</p>
             </div>
           </div>
           <button
             onClick={() => navigate('/login')}
-            className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg w-full transition-colors"
-            style={{ color: 'rgba(255,255,255,0.5)' }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+              border: 'none', background: 'none', cursor: 'pointer', borderRadius: 8,
+              fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)',
+              width: '100%', transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
           >
             <LogOut size={16} /> Déconnexion
           </button>
@@ -83,8 +105,8 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main */}
-      <main className="flex-1" style={{ marginLeft: 'var(--sidebar-width)' }}>
-        <div className="px-8 py-8">
+      <main style={{ flex: 1, marginLeft: 240, overflowY: 'auto' }}>
+        <div style={{ maxWidth: 1100, padding: '32px 40px', margin: '0 auto' }}>
           <Outlet />
         </div>
       </main>
