@@ -12,8 +12,8 @@ const PROFILE_COLORS = POPULATION_PROFILES.map(p => p.color)
 
 function gapSeverityColor(gap: number) {
   if (gap > 2) return '#DC4A4A'
-  if (gap >= 1) return '#E8734A'
-  return '#1B5E3B'
+  if (gap >= 1) return '#B87333'
+  return '#1B4332'
 }
 
 export default function DiagnosticSection4() {
@@ -89,8 +89,8 @@ export default function DiagnosticSection4() {
               <Legend
                 wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
               />
-              <Bar dataKey="RSE" fill="#1B5E3B" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Prédiction" fill="#E8734A" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="RSE" fill="#1B4332" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Prédiction" fill="#B87333" radius={[4, 4, 0, 0]} />
               <Bar dataKey="Collaborateurs" fill="#93C5A0" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -111,12 +111,12 @@ export default function DiagnosticSection4() {
           >
             <p className="text-sm font-semibold mb-2">{g.label}</p>
             <div className="flex gap-4 mb-2">
-              <span className="flex items-center gap-1.5 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: '#1B5E3B' }} />
+                 <span className="flex items-center gap-1.5 text-xs">
+                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: '#1B4332' }} />
                 RSE : {g.rse.toFixed(1)}
               </span>
               <span className="flex items-center gap-1.5 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: '#E8734A' }} />
+                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: '#B87333' }} />
                 Prédiction : {g.pred.toFixed(1)}
               </span>
               <span className="flex items-center gap-1.5 text-xs">
@@ -215,11 +215,11 @@ export default function DiagnosticSection4() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-xs" style={{ color: 'var(--color-gris-400)' }}>Direction (DG5)</p>
-                  <p className="text-sm font-bold" style={{ color: '#1B5E3B' }}>{MOCK_DG_COMPARISON.dgMeansScore}/10</p>
+                  <p className="text-sm font-bold" style={{ color: '#1B4332' }}>{MOCK_DG_COMPARISON.dgMeansScore}/10</p>
                 </div>
                 <div>
                   <p className="text-xs" style={{ color: 'var(--color-gris-400)' }}>RSE (P2)</p>
-                  <p className="text-sm font-bold" style={{ color: '#E8734A' }}>{MOCK_DG_COMPARISON.rseMeansScore}/10</p>
+                  <p className="text-sm font-bold" style={{ color: '#B87333' }}>{MOCK_DG_COMPARISON.rseMeansScore}/10</p>
                 </div>
               </div>
             </div>

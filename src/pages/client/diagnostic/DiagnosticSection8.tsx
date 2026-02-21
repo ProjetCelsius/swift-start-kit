@@ -3,14 +3,14 @@ import { ADVANCEMENT_TILES } from '@/data/bloc1Tiles'
 import { MOCK_TILE_ENRICHMENTS } from '@/data/mockDiagnosticData'
 
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  done: { label: 'Réalisé', bg: 'var(--color-celsius-100)', color: '#1B5E3B' },
-  in_progress: { label: 'En cours', bg: 'var(--color-gold-100)', color: '#E8734A' },
+  done: { label: 'Réalisé', bg: 'var(--color-celsius-100)', color: '#1B4332' },
+  in_progress: { label: 'En cours', bg: 'var(--color-accent-warm-light)', color: '#B87333' },
   not_started: { label: 'Pas fait', bg: 'var(--color-gris-100)', color: 'var(--color-gris-400)' },
 }
 
 const RELEVANCE_MAP: Record<string, { label: string; bg: string; color: string }> = {
   essential: { label: 'Essentiel pour votre profil', bg: '#FEE2E2', color: '#DC4A4A' },
-  recommended: { label: 'Recommandé', bg: 'var(--color-gold-100)', color: '#E8734A' },
+  recommended: { label: 'Recommandé', bg: 'var(--color-accent-warm-light)', color: '#B87333' },
   optional: { label: 'Optionnel', bg: 'var(--color-gris-100)', color: 'var(--color-gris-400)' },
 }
 
@@ -70,7 +70,7 @@ export default function DiagnosticSection8() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-xs font-medium mt-3 hover:underline"
-                  style={{ color: '#E8734A' }}
+                  style={{ color: '#B87333' }}
                 >
                   Découvrir l'offre Celsius <ExternalLink size={11} />
                 </a>

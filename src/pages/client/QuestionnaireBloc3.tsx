@@ -331,7 +331,7 @@ export default function QuestionnaireBloc3() {
         </div>
 
         <button
-          onClick={() => navigate('/questionnaire/4')}
+          onClick={() => navigate('/client/questionnaire/bloc4')}
           className="font-display"
           style={{
             width: '100%', padding: '14px 28px', borderRadius: 8,

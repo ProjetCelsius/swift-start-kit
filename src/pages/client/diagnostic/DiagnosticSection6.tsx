@@ -6,7 +6,7 @@ import {
 import { ExternalLink } from 'lucide-react'
 import { MOCK_FOOTPRINT } from '@/data/mockDiagnosticData'
 
-const SCOPE_COLORS = { scope1: '#1B5E3B', scope2: '#2D7A50', scope3: '#93C5A0' }
+const SCOPE_COLORS = { scope1: '#1B4332', scope2: '#2D6A4F', scope3: '#93C5A0' }
 
 export default function DiagnosticSection6() {
   const [hasFootprint, setHasFootprint] = useState(MOCK_FOOTPRINT.hasFootprint)
@@ -148,7 +148,7 @@ function StateA() {
             style={{
               left: `${sectorPos}%`,
               transform: 'translate(-50%, -50%)',
-              backgroundColor: sectorPos > sectorAvgPos ? '#E8734A' : '#1B5E3B',
+              backgroundColor: sectorPos > sectorAvgPos ? '#B87333' : '#1B4332',
               borderColor: 'white',
               boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
             }}
@@ -160,7 +160,7 @@ function StateA() {
             {Math.round(d.sectorAvgIntensity * 1.8)} tCO₂e/sal.
           </span>
         </div>
-        <p className="text-xs mt-3 font-medium" style={{ color: sectorPos > sectorAvgPos ? '#E8734A' : '#1B5E3B' }}>
+        <p className="text-xs mt-3 font-medium" style={{ color: sectorPos > sectorAvgPos ? '#B87333' : '#1B4332' }}>
           {sectorPos > sectorAvgPos
             ? `Au-dessus de la moyenne sectorielle (${d.sectorAvgIntensity} tCO₂e/sal.)`
             : `En dessous de la moyenne sectorielle (${d.sectorAvgIntensity} tCO₂e/sal.)`
@@ -186,7 +186,7 @@ function StateA() {
               />
               <Legend wrapperStyle={{ fontSize: '12px' }} />
               <Line type="monotone" dataKey="Tendance actuelle" stroke="#DC4A4A" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="6 3" />
-              <Line type="monotone" dataKey="Trajectoire Paris" stroke="#1B5E3B" strokeWidth={2} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="Trajectoire Paris" stroke="#1B4332" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -205,8 +205,8 @@ function StateB() {
       <div
         className="rounded-xl p-6 mb-6 border-l-4"
         style={{
-          backgroundColor: 'var(--color-gold-100)',
-          borderLeftColor: 'var(--color-gold-500)',
+          backgroundColor: 'var(--color-accent-warm-light)',
+          borderLeftColor: 'var(--color-accent-warm)',
         }}
       >
         <p className="text-sm leading-relaxed">

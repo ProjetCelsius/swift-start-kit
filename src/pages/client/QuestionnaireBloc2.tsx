@@ -137,7 +137,7 @@ export default function QuestionnaireBloc2() {
       {/* Sticky top bar */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 10,
-        backgroundColor: 'var(--color-blanc)', borderBottom: '1px solid var(--color-border)',
+        backgroundColor: 'var(--color-fond)', borderBottom: '1px solid var(--color-border)',
         padding: '16px 0', marginBottom: 32,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
