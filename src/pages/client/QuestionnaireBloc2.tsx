@@ -1,231 +1,68 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Clock, Check, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Check, ChevronRight, ChevronLeft } from 'lucide-react'
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts'
-import { MATURITY_DIMENSIONS, getAllQuestions } from '@/data/maturityQuestions'
+import { maturityQuestions } from '@/data/maturityQuestions'
+import { computeDimensionScores, computeGlobalScore, computeProfilClimat } from '@/utils/maturityScoring'
 
 const STORAGE_KEY = 'boussole_bloc2'
+const TOTAL = 20
 
-function loadState(): Record<string, number> {
+function loadState(): Record<number, number> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : {}
   } catch { return {} }
 }
 
-// Grade helpers
-function scoreToGrade(score: number) {
-  if (score >= 75) return { letter: 'A', label: 'Avancé', color: '#1B5E3B' }
-  if (score >= 50) return { letter: 'B', label: 'Structuré', color: '#2D7A50' }
-  if (score >= 25) return { letter: 'C', label: 'En construction', color: '#E8734A' }
-  return { letter: 'D', label: 'Émergent', color: '#DC4A4A' }
+// ── Dimension transition SVG icons ───────────
+function DimensionIcon({ index }: { index: number }) {
+  const icons = [
+    // Governance — shield
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M24 4L6 12v12c0 11 8 18 18 22 10-4 18-11 18-22V12L24 4z" stroke="currentColor" strokeWidth="2" fill="none"/><path d="M16 24l6 6 10-12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+    // Measure — chart
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="8" y="28" width="8" height="14" rx="2" stroke="currentColor" strokeWidth="2"/><rect x="20" y="18" width="8" height="24" rx="2" stroke="currentColor" strokeWidth="2"/><rect x="32" y="8" width="8" height="34" rx="2" stroke="currentColor" strokeWidth="2"/></svg>,
+    // Strategy — compass
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18" stroke="currentColor" strokeWidth="2"/><path d="M18 30l4-12 12-4-4 12-12 4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>,
+    // Culture — people
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="16" r="6" stroke="currentColor" strokeWidth="2"/><path d="M12 38c0-6.627 5.373-12 12-12s12 5.373 12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>,
+  ]
+  return <div style={{ color: 'var(--color-primary)' }}>{icons[index] ?? icons[0]}</div>
 }
 
-function computeDimensionScore(answers: Record<string, number>, dimIndex: number) {
-  const dim = MATURITY_DIMENSIONS[dimIndex]
-  const sum = dim.questions.reduce((acc, q) => acc + (answers[q.key] ?? 1), 0)
-  return ((sum - 5) / 15) * 100
-}
-
-// ── Transition Card ──────────────────────────────────────
-function TransitionCard({ title, subtitle, remaining, onContinue }: {
-  title: string; subtitle: string; remaining: number; onContinue: () => void
-}) {
-  return (
-    <div className="max-w-[640px] animate-fade-in">
-      <div
-        className="rounded-xl p-10 text-center"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-      >
-        <div
-          className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
-          style={{ backgroundColor: 'var(--color-celsius-100)', color: 'var(--color-celsius-900)' }}
-        >
-          <Check size={28} />
-        </div>
-        <h2 className="text-xl font-bold mb-2">{title}</h2>
-        <p className="text-sm mb-1" style={{ color: 'var(--color-texte-secondary)' }}>{subtitle}</p>
-        <p className="text-xs mb-8" style={{ color: 'var(--color-gris-400)' }}>
-          Encore {remaining} question{remaining > 1 ? 's' : ''}.
-        </p>
-        <button
-          onClick={onContinue}
-          className="px-8 py-3 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition-all hover:scale-[1.01]"
-          style={{ backgroundColor: 'var(--color-celsius-900)', boxShadow: 'var(--shadow-card)' }}
-        >
-          Continuer <ChevronRight size={18} />
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ── Feedback / Results ───────────────────────────────────
-function FeedbackView({ answers }: { answers: Record<string, number> }) {
-  const navigate = useNavigate()
-
-  const dimensionScores = MATURITY_DIMENSIONS.map((dim, i) => {
-    const score = computeDimensionScore(answers, i)
-    const grade = scoreToGrade(score)
-    return { dim, score, grade, label: dim.label }
-  })
-
-  const radarData = dimensionScores.map(d => ({
-    dimension: d.label.replace('et ', '&\n'),
-    score: Math.round(d.score),
-    fullMark: 100,
-  }))
-
-  const globalScore = dimensionScores.reduce((a, d) => a + d.score, 0) / 4
-  const globalGrade = scoreToGrade(globalScore)
-
-  const best = dimensionScores.reduce((a, b) => a.score > b.score ? a : b)
-  const worst = dimensionScores.reduce((a, b) => a.score < b.score ? a : b)
-
-  return (
-    <div className="max-w-[640px] animate-fade-in">
-      <h1 className="text-2xl font-bold mb-2">Votre profil de maturité climat</h1>
-      <p className="text-sm mb-8" style={{ color: 'var(--color-texte-secondary)' }}>
-        Synthèse de vos réponses aux 20 questions du Bloc 2.
-      </p>
-
-      {/* Global grade */}
-      <div
-        className="rounded-xl p-6 mb-6 text-center"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-      >
-        <p className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--color-celsius-900)', letterSpacing: '0.05em' }}>
-          Score global
-        </p>
-        <div
-          className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-4xl font-bold text-white"
-          style={{ backgroundColor: globalGrade.color }}
-        >
-          {globalGrade.letter}
-        </div>
-        <p className="text-lg font-semibold">{globalGrade.label}</p>
-      </div>
-
-      {/* Radar chart */}
-      <div
-        className="rounded-xl p-6 mb-6"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-      >
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
-              <PolarGrid stroke="var(--color-border)" />
-              <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fill: 'var(--color-texte)' }} />
-              <Radar
-                dataKey="score"
-                stroke="#1B5E3B"
-                fill="#1B5E3B"
-                fillOpacity={0.15}
-                strokeWidth={2}
-                dot={{ r: 4, fill: '#1B5E3B' }}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Dimension scores */}
-      <div
-        className="rounded-xl p-6 mb-6"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-      >
-        <div className="space-y-3">
-          {dimensionScores.map(d => (
-            <div key={d.dim.id} className="flex items-center gap-3">
-              <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold text-white shrink-0"
-                style={{ backgroundColor: d.grade.color }}
-              >
-                {d.grade.letter}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{d.label}</p>
-                <div className="h-1.5 rounded-full mt-1" style={{ backgroundColor: 'var(--color-gris-200)' }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${Math.round(d.score)}%`, backgroundColor: d.grade.color }}
-                  />
-                </div>
-              </div>
-              <span className="text-xs font-medium shrink-0" style={{ color: d.grade.color }}>
-                {Math.round(d.score)}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Interpretation */}
-      <div
-        className="rounded-xl p-6 mb-6"
-        style={{ backgroundColor: 'var(--color-celsius-50)', border: '1px solid var(--color-celsius-100)' }}
-      >
-        <p className="text-sm leading-relaxed">
-          Vous êtes en phase de <strong style={{ color: globalGrade.color }}>{globalGrade.label}</strong>.
-          Votre <strong>{best.label}</strong> est votre point fort,{' '}
-          <strong>{worst.label}</strong> est votre principal axe de progression.
-        </p>
-        <p className="text-xs mt-3" style={{ color: 'var(--color-texte-secondary)' }}>
-          Ce profil est provisoire. Il sera affiné lors de l'analyse par votre analyste.
-        </p>
-      </div>
-
-      <button
-        onClick={() => navigate('/questionnaire/3')}
-        className="w-full py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-        style={{ backgroundColor: 'var(--color-celsius-900)', boxShadow: 'var(--shadow-card)' }}
-      >
-        Passer au Bloc 3 <ChevronRight size={18} />
-      </button>
-    </div>
-  )
-}
-
-// ── Main Component ───────────────────────────────────────
+// ── Main Component ───────────────────────────
 export default function QuestionnaireBloc2() {
-  const allQuestions = useMemo(() => getAllQuestions(), [])
-  const [answers, setAnswers] = useState<Record<string, number>>(loadState)
+  const [answers, setAnswers] = useState<Record<number, number>>(loadState)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [showTransition, setShowTransition] = useState(false)
-  const [showFeedback, setShowFeedback] = useState(false)
+  const [phase, setPhase] = useState<'question' | 'transition' | 'feedback'>('question')
   const [fadeKey, setFadeKey] = useState(0)
 
   // Auto-save
   const save = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(answers))
   }, [answers])
+  useEffect(() => { const t = setTimeout(save, 500); return () => clearTimeout(t) }, [save])
 
-  useEffect(() => {
-    const t = setTimeout(save, 500)
-    return () => clearTimeout(t)
-  }, [save])
-
-  const current = allQuestions[currentIndex]
-  const totalQuestions = allQuestions.length
-  const selected = answers[current?.question.key]
+  const question = maturityQuestions[currentIndex]
+  const selected = answers[question?.id]
 
   function selectOption(level: number) {
-    setAnswers(prev => ({ ...prev, [current.question.key]: level }))
+    setAnswers(prev => ({ ...prev, [question.id]: level }))
   }
 
   function goNext() {
-    const nextIndex = currentIndex + 1
-    // Check for dimension transition points: after Q5 (index 4), Q10 (9), Q15 (14)
-    if (nextIndex < totalQuestions && current.dimensionIndex !== allQuestions[nextIndex].dimensionIndex) {
-      setShowTransition(true)
-      setCurrentIndex(nextIndex)
+    const nextIdx = currentIndex + 1
+    // Dimension boundary → transition
+    if (nextIdx < TOTAL && question.dimensionIndex !== maturityQuestions[nextIdx].dimensionIndex) {
+      setCurrentIndex(nextIdx)
+      setPhase('transition')
       return
     }
-    if (nextIndex >= totalQuestions) {
-      setShowFeedback(true)
+    if (nextIdx >= TOTAL) {
+      setPhase('feedback')
       return
     }
-    setCurrentIndex(nextIndex)
+    setCurrentIndex(nextIdx)
     setFadeKey(k => k + 1)
   }
 
@@ -236,147 +73,360 @@ export default function QuestionnaireBloc2() {
     }
   }
 
-  function continueFromTransition() {
-    setShowTransition(false)
-    setFadeKey(k => k + 1)
+  // ── FEEDBACK ──────────────────────────────
+  if (phase === 'feedback') {
+    return <FeedbackScreen answers={answers} />
   }
 
-  // ── Feedback view ──
-  if (showFeedback) {
-    return <FeedbackView answers={answers} />
-  }
+  // ── TRANSITION ────────────────────────────
+  if (phase === 'transition') {
+    const prevDimIndex = maturityQuestions[currentIndex - 1]?.dimensionIndex ?? 0
+    
+    const remaining = TOTAL - currentIndex
 
-  // ── Transition view ──
-  if (showTransition) {
-    const prevDim = MATURITY_DIMENSIONS[allQuestions[currentIndex - 1]?.dimensionIndex ?? 0]
-    const nextDim = MATURITY_DIMENSIONS[current.dimensionIndex]
-    const remaining = totalQuestions - currentIndex
-
-    let subtitle = `Passons à ${nextDim.label}.`
-    if (currentIndex === 10) subtitle = 'Mi-parcours. Plus que 2 dimensions.'
-    if (currentIndex === 15) subtitle = `Dernière dimension : ${nextDim.label}.`
+    const titles = [
+      `Gouvernance climat : terminée`,
+      `Mi-parcours`,
+      `Dernière dimension`,
+    ]
+    const subtitles = [
+      `Passons à Mesure et données. Encore ${remaining} questions.`,
+      `Plus que 2 dimensions. Vous êtes sur la bonne voie.`,
+      `Culture et engagement. 5 dernières questions.`,
+    ]
+    const tIdx = prevDimIndex
 
     return (
-      <div className="max-w-[640px]">
+      <div style={{ maxWidth: 960 }} className="animate-fade-in">
         {/* Progress bar */}
-        <div className="mb-8">
-          <div className="h-1.5 rounded-full" style={{ backgroundColor: 'var(--color-gris-200)' }}>
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${(currentIndex / totalQuestions) * 100}%`, backgroundColor: 'var(--color-celsius-900)' }}
-            />
-          </div>
+        <div style={{ height: 4, backgroundColor: 'var(--color-subtle)', borderRadius: 2, marginBottom: 48 }}>
+          <div style={{ height: '100%', width: `${(currentIndex / TOTAL) * 100}%`, backgroundColor: 'var(--color-primary)', borderRadius: 2, transition: 'width 0.7s ease' }} />
         </div>
-        <TransitionCard
-          title={`${prevDim.label} : terminée`}
-          subtitle={subtitle}
-          remaining={remaining}
-          onContinue={continueFromTransition}
-        />
+
+        <div style={{ maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
+          <DimensionIcon index={prevDimIndex} />
+          <h2 className="font-display" style={{ fontSize: '1.3rem', fontWeight: 500, color: 'var(--color-texte)', marginTop: 20, marginBottom: 8 }}>
+            {titles[tIdx] ?? titles[0]}
+          </h2>
+          <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)', marginBottom: 32 }}>
+            {subtitles[tIdx] ?? subtitles[0]}
+          </p>
+          <button
+            onClick={() => { setPhase('question'); setFadeKey(k => k + 1) }}
+            className="font-display"
+            style={{
+              padding: '12px 28px', borderRadius: 8, backgroundColor: 'var(--color-primary)',
+              color: '#fff', fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
+          >
+            Continuer <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
     )
   }
 
-  // ── Question view ──
-  const progress = ((currentIndex + 1) / totalQuestions) * 100
+  // ── QUESTION ──────────────────────────────
+  const progress = ((currentIndex + 1) / TOTAL) * 100
 
   return (
-    <div className="max-w-[640px]">
-      {/* Top bar */}
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold">Bloc 2 : Votre maturité climat</h1>
-        <span
-          className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full shrink-0"
-          style={{ backgroundColor: 'var(--color-celsius-50)', color: 'var(--color-celsius-900)' }}
-        >
-          <Clock size={12} /> ~15 min
-        </span>
+    <div style={{ maxWidth: 960 }}>
+      {/* Sticky top bar */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        backgroundColor: 'var(--color-blanc)', borderBottom: '1px solid var(--color-border)',
+        padding: '16px 0', marginBottom: 32,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span className="font-display" style={{ fontSize: '1.1rem', fontWeight: 400, color: 'var(--color-texte)' }}>
+            Bloc 2 : Votre maturité climat
+          </span>
+          <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-texte)', whiteSpace: 'nowrap' }}>
+            Question {currentIndex + 1}/{TOTAL}
+          </span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--color-texte-muted)' }}>~15 min</span>
+        </div>
+        <div style={{ height: 4, backgroundColor: 'var(--color-subtle)', borderRadius: 2 }}>
+          <div style={{ height: '100%', width: `${progress}%`, backgroundColor: 'var(--color-primary)', borderRadius: 2, transition: 'width 0.5s ease' }} />
+        </div>
+        <p className="label-uppercase" style={{ marginTop: 8, marginBottom: 0 }}>
+          {question.dimension}
+        </p>
       </div>
 
-      {/* Progress */}
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium" style={{ color: 'var(--color-texte-secondary)' }}>
-          Question {currentIndex + 1}/{totalQuestions}
-        </span>
-        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-celsius-900)', letterSpacing: '0.05em' }}>
-          {current.dimensionLabel}
-        </span>
-      </div>
-      <div className="h-1.5 rounded-full mb-8" style={{ backgroundColor: 'var(--color-gris-200)' }}>
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${progress}%`, backgroundColor: 'var(--color-celsius-900)' }}
-        />
-      </div>
-
-      {/* Question */}
+      {/* Question content */}
       <div key={fadeKey} className="animate-fade-in">
-        <h2 className="text-lg font-semibold mb-6">
-          Q{currentIndex + 1}. {current.question.title}
+        <h2 className="font-display" style={{ fontSize: '1.5rem', fontWeight: 400, color: 'var(--color-texte)', marginBottom: 20 }}>
+          Q{currentIndex + 1}. {question.title}
         </h2>
 
-        <div className="space-y-3 mb-8">
-          {current.question.options.map(opt => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
+          {question.options.map(opt => {
             const isSelected = selected === opt.level
             return (
               <button
                 key={opt.level}
                 onClick={() => selectOption(opt.level)}
-                className="w-full text-left p-4 rounded-xl border-2 transition-all duration-200 active:scale-[0.98]"
                 style={{
-                  backgroundColor: isSelected ? 'var(--color-celsius-50)' : 'var(--color-blanc)',
-                  borderColor: isSelected ? 'var(--color-celsius-900)' : 'var(--color-border)',
-                  boxShadow: isSelected ? 'none' : undefined,
+                  width: '100%', textAlign: 'left', padding: '20px 24px',
+                  borderRadius: 14,
+                  border: `${isSelected ? '1.5px' : '1px'} solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                  backgroundColor: isSelected ? 'var(--color-fond)' : 'var(--color-blanc)',
+                  cursor: 'pointer', outline: 'none',
+                  display: 'flex', alignItems: 'flex-start', gap: 16,
+                  transition: 'all 0.2s ease',
+                  position: 'relative',
                 }}
                 onMouseEnter={e => {
                   if (!isSelected) {
-                    (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-card-hover)'
+                    e.currentTarget.style.borderColor = 'var(--color-border-active)'
+                    e.currentTarget.style.boxShadow = 'var(--shadow-card-hover)'
+                    e.currentTarget.style.transform = 'translateY(-1px)'
                   }
                 }}
                 onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = 'none'
+                  if (!isSelected) {
+                    e.currentTarget.style.borderColor = 'var(--color-border)'
+                    e.currentTarget.style.boxShadow = 'none'
+                    e.currentTarget.style.transform = ''
+                  }
                 }}
               >
-                <div className="flex items-start gap-3">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-                    style={{
-                      backgroundColor: isSelected ? 'var(--color-celsius-900)' : 'var(--color-gris-200)',
-                      color: isSelected ? 'white' : 'var(--color-gris-400)',
-                    }}
-                  >
-                    {isSelected ? <Check size={14} /> : opt.level}
-                  </div>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--color-texte)' }}>
-                    {opt.text}
-                  </p>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                  border: `1.5px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border-active)'}`,
+                  backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
+                  color: isSelected ? '#fff' : 'var(--color-texte-secondary)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.75rem', fontWeight: 500,
+                  transition: 'all 0.2s',
+                }}>
+                  {isSelected ? <Check size={14} /> : opt.level}
                 </div>
+                <p style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--color-texte)', margin: 0 }}>
+                  {opt.text}
+                </p>
+                {isSelected && (
+                  <div style={{ position: 'absolute', top: 12, right: 16, color: 'var(--color-primary)' }}>
+                    <Check size={16} />
+                  </div>
+                )}
               </button>
             )
           })}
         </div>
 
         {/* Navigation */}
-        <div className="flex gap-3">
+        <div style={{ display: 'flex', gap: 12 }}>
           {currentIndex > 0 && (
             <button
               onClick={goPrev}
-              className="px-5 py-3 rounded-xl font-medium text-sm flex items-center gap-1.5 transition-colors"
-              style={{ color: 'var(--color-texte-secondary)', backgroundColor: 'var(--color-gris-100)' }}
+              style={{
+                padding: '12px 20px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-texte-secondary)',
+                backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 6,
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-texte)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-texte-secondary)')}
             >
-              <ChevronLeft size={16} /> Précédente
+              <ChevronLeft size={16} /> Question précédente
             </button>
           )}
           <button
             onClick={goNext}
             disabled={selected === undefined}
-            className="flex-1 py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-40 disabled:hover:scale-100"
-            style={{ backgroundColor: 'var(--color-celsius-900)', boxShadow: 'var(--shadow-card)' }}
+            className="font-display"
+            style={{
+              flex: 1, padding: '12px 28px', borderRadius: 8,
+              backgroundColor: 'var(--color-primary)', color: '#fff',
+              fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              opacity: selected === undefined ? 0.4 : 1,
+              transition: 'background-color 0.2s, opacity 0.2s',
+              pointerEvents: selected === undefined ? 'none' : 'auto',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
           >
-            {currentIndex < totalQuestions - 1 ? 'Question suivante' : 'Voir mes résultats'} <ChevronRight size={18} />
+            {currentIndex < TOTAL - 1 ? 'Question suivante' : 'Voir mes résultats'} <ChevronRight size={18} />
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── Feedback Screen ──────────────────────────
+function FeedbackScreen({ answers }: { answers: Record<number, number> }) {
+  const navigate = useNavigate()
+  const dimensionScores = computeDimensionScores(answers)
+  const global = computeGlobalScore(dimensionScores)
+  const profil = computeProfilClimat(answers)
+
+  const best = dimensionScores.reduce((a, b) => a.score > b.score ? a : b)
+  const worst = dimensionScores.reduce((a, b) => a.score < b.score ? a : b)
+
+  const radarData = dimensionScores.map(d => ({
+    dimension: d.name,
+    score: Math.round(d.score),
+    fullMark: 100,
+  }))
+
+  return (
+    <div style={{ maxWidth: 960 }} className="animate-fade-in">
+      <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, marginBottom: 4 }}>
+        Votre profil de maturité climat
+      </h1>
+      <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)', marginBottom: 32 }}>
+        Synthèse de vos réponses aux 20 questions du Bloc 2.
+      </p>
+
+      {/* Radar chart */}
+      <div style={{
+        backgroundColor: 'var(--color-blanc)', borderRadius: 14, padding: 24,
+        boxShadow: 'var(--shadow-card)', marginBottom: 24,
+      }}>
+        <div style={{ width: 300, height: 300, margin: '0 auto' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
+              <PolarGrid stroke="var(--color-border)" />
+              <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fontFamily: 'var(--font-sans)', fontWeight: 500, fill: 'var(--color-texte)' }} />
+              <Radar dataKey="score" stroke="#1B4332" fill="#1B4332" fillOpacity={0.15} strokeWidth={2} dot={{ r: 4, fill: '#1B4332' }} />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Global score */}
+      <div style={{
+        backgroundColor: 'var(--color-blanc)', borderRadius: 14, padding: 28,
+        boxShadow: 'var(--shadow-card)', marginBottom: 24, textAlign: 'center',
+      }}>
+        <p className="label-uppercase" style={{ marginBottom: 16 }}>Score global</p>
+        <div style={{
+          width: 60, height: 60, borderRadius: '50%', margin: '0 auto 12px',
+          backgroundColor: global.grade.color, color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <span className="font-display" style={{ fontSize: '3rem', fontWeight: 600, lineHeight: 1 }}>
+            {global.grade.letter}
+          </span>
+        </div>
+        <p className="font-display" style={{ fontSize: '1.1rem', fontWeight: 500, color: global.grade.color }}>
+          {global.grade.label}
+        </p>
+      </div>
+
+      {/* Dimension scores */}
+      <div style={{
+        backgroundColor: 'var(--color-blanc)', borderRadius: 14, padding: 24,
+        boxShadow: 'var(--shadow-card)', marginBottom: 24,
+      }}>
+        {dimensionScores.map(d => (
+          <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+              backgroundColor: d.grade.color, color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.85rem', fontWeight: 600, fontFamily: 'var(--font-display)',
+            }}>
+              {d.grade.letter}
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '0.85rem', fontWeight: 500, marginBottom: 4 }}>{d.name}</p>
+              <div style={{ height: 6, backgroundColor: 'var(--color-subtle)', borderRadius: 3 }}>
+                <div style={{ height: '100%', width: `${Math.round(d.score)}%`, backgroundColor: d.grade.color, borderRadius: 3, transition: 'width 0.5s' }} />
+              </div>
+            </div>
+            <span style={{ fontSize: '0.8rem', fontWeight: 500, color: d.grade.color, flexShrink: 0 }}>
+              {Math.round(d.score)}/100
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Interpretation */}
+      <div style={{
+        backgroundColor: 'var(--color-primary-light)', border: '1px solid var(--color-primary)',
+        borderRadius: 14, padding: 24, marginBottom: 24,
+      }}>
+        <p style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
+          Vous êtes en phase de <strong style={{ color: global.grade.color }}>{global.grade.label}</strong>.{' '}
+          <strong>{best.name}</strong> est votre point fort, <strong>{worst.name}</strong> est votre axe de progression.
+        </p>
+        <p style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--color-texte-muted)', marginTop: 12 }}>
+          Ce profil est provisoire. Il sera affiné lors de l'analyse.
+        </p>
+      </div>
+
+      {/* Profil Climat teaser */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 24 }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-border-active)' }} />
+        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-border-active)' }} />
+        <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-border-active)' }} />
+      </div>
+
+      <div style={{
+        background: 'linear-gradient(135deg, #E8F0EB, #F5EDE4)',
+        borderRadius: 14, padding: '28px 32px', marginBottom: 32,
+      }}>
+        <p className="label-uppercase" style={{ color: 'var(--color-accent-warm)', marginBottom: 8, letterSpacing: '0.1em' }}>
+          VOTRE PROFIL CLIMAT
+        </p>
+        <h3 className="font-display" style={{ fontSize: '1.3rem', fontWeight: 500, color: 'var(--color-primary)', marginBottom: 16 }}>
+          Votre profil se dessine…
+        </h3>
+
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16, justifyContent: 'center' }}>
+          <span className="font-display" style={{ fontSize: '2.5rem', fontWeight: 600, color: 'var(--color-primary)' }}>
+            {profil.axe1}
+          </span>
+          <span className="font-display" style={{ fontSize: '2.5rem', fontWeight: 600, color: 'var(--color-primary)' }}>
+            {profil.axe2}
+          </span>
+          <span className="font-display pulse-letter" style={{ fontSize: '2.5rem', fontWeight: 600, color: 'var(--color-border-active)' }}>
+            ?
+          </span>
+          <span className="font-display pulse-letter" style={{ fontSize: '2.5rem', fontWeight: 600, color: 'var(--color-border-active)', animationDelay: '0.3s' }}>
+            ?
+          </span>
+        </div>
+
+        <p style={{ fontSize: '0.88rem', color: 'var(--color-texte-secondary)', lineHeight: 1.5, textAlign: 'center' }}>
+          Votre démarche est ancrée dans {profil.axe1 === 'S' ? 'la structure' : 'la culture'} et vous privilégiez {profil.axe2 === 'M' ? 'la mesure' : "l'action"}.
+          Complétez la suite pour découvrir votre profil complet.
+        </p>
+      </div>
+
+      <button
+        onClick={() => navigate('/questionnaire/3')}
+        className="font-display"
+        style={{
+          width: '100%', padding: '14px 28px', borderRadius: 8,
+          backgroundColor: 'var(--color-primary)', color: '#fff',
+          fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          transition: 'background-color 0.2s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
+        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
+      >
+        Passer au Bloc 3 <ChevronRight size={18} />
+      </button>
+
+      <style>{`
+        .pulse-letter {
+          animation: pulse-mystery 2s ease-in-out infinite;
+        }
+        @keyframes pulse-mystery {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
     </div>
   )
 }
