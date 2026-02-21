@@ -1,11 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Check, Users, Lock, Compass, Calendar, BookOpen, Sparkles } from 'lucide-react'
 import { useAuth, MOCK_ANALYST } from '../../hooks/useAuth'
+import { useDemoIfAvailable } from '../../hooks/useDemo'
 import ProtocolModal, { useProtocolModal } from '../../components/ProtocolModal'
 import guillaumePhoto from '../../assets/guillaume-photo.png'
+import type { DemoStatus } from '@/data/demoData'
 
-// ── Questionnaire blocs ──────
+// ── Types ──────
 type BlocStatus = 'done' | 'active' | 'todo'
 interface QuestionnaireBloc {
   label: string
@@ -14,22 +16,155 @@ interface QuestionnaireBloc {
   progress?: string
 }
 
-const BLOCS: QuestionnaireBloc[] = [
-  { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
-  { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
-  { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'active', progress: '3/7' },
-  { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'todo' },
-]
-
-// ── Journey steps ──────
 type StepStatus = 'done' | 'active' | 'locked'
-const STEPS: { num: number; label: string; detail: string; status: StepStatus }[] = [
-  { num: 1, label: 'Lancement', detail: 'Jour 1', status: 'done' },
-  { num: 2, label: 'Questionnaire', detail: '~2 jours', status: 'active' },
-  { num: 3, label: 'Sondage', detail: '~3 jours', status: 'active' },
-  { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
-  { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
-]
+interface JourneyStep {
+  num: number
+  label: string
+  detail: string
+  status: StepStatus
+}
+
+// ── Derive state from demo status ──────
+function deriveFromStatus(status: DemoStatus | undefined): {
+  blocs: QuestionnaireBloc[]
+  steps: JourneyStep[]
+  headerTitle: string
+  headerSubtitle: string
+  surveyCount: number
+  surveyTarget: number
+  analystMessage: string
+  showDiagnosticPreview: boolean
+  diagnosticUnlocked: boolean
+} {
+  const s = status || 'questionnaire'
+
+  // Default questionnaire state per status
+  const blocConfigs: Record<string, QuestionnaireBloc[]> = {
+    onboarding: [
+      { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'todo' },
+      { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'todo' },
+      { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'todo' },
+      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'todo' },
+    ],
+    questionnaire: [
+      { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
+      { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
+      { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'active', progress: '3/7' },
+      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'todo' },
+    ],
+    survey_pending: [
+      { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
+      { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
+      { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'done' },
+      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'active', progress: '5/8' },
+    ],
+    analysis: [
+      { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
+      { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
+      { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'done' },
+      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'done' },
+    ],
+    ready_for_restitution: [
+      { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
+      { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
+      { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'done' },
+      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'done' },
+    ],
+    delivered: [
+      { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
+      { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
+      { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'done' },
+      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'done' },
+    ],
+  }
+
+  const stepConfigs: Record<string, JourneyStep[]> = {
+    onboarding: [
+      { num: 1, label: 'Lancement', detail: 'Aujourd\'hui', status: 'active' },
+      { num: 2, label: 'Questionnaire', detail: '~2 jours', status: 'locked' },
+      { num: 3, label: 'Sondage', detail: '~3 jours', status: 'locked' },
+      { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
+      { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
+    ],
+    questionnaire: [
+      { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
+      { num: 2, label: 'Questionnaire', detail: '2/4 blocs', status: 'active' },
+      { num: 3, label: 'Sondage', detail: 'À lancer', status: 'locked' },
+      { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
+      { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
+    ],
+    survey_pending: [
+      { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
+      { num: 2, label: 'Questionnaire', detail: '3/4 blocs', status: 'active' },
+      { num: 3, label: 'Sondage', detail: '12/30', status: 'active' },
+      { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
+      { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
+    ],
+    analysis: [
+      { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
+      { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
+      { num: 3, label: 'Sondage', detail: 'Terminé', status: 'done' },
+      { num: 4, label: 'Analyse', detail: 'En cours', status: 'active' },
+      { num: 5, label: 'Restitution', detail: 'Bientôt', status: 'locked' },
+    ],
+    ready_for_restitution: [
+      { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
+      { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
+      { num: 3, label: 'Sondage', detail: 'Terminé', status: 'done' },
+      { num: 4, label: 'Analyse', detail: 'Terminé', status: 'done' },
+      { num: 5, label: 'Restitution', detail: 'À planifier', status: 'active' },
+    ],
+    delivered: [
+      { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
+      { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
+      { num: 3, label: 'Sondage', detail: 'Terminé', status: 'done' },
+      { num: 4, label: 'Analyse', detail: 'Terminé', status: 'done' },
+      { num: 5, label: 'Restitution', detail: 'Fait', status: 'done' },
+    ],
+  }
+
+  const headerConfigs: Record<string, { title: string; subtitle: string }> = {
+    onboarding: { title: 'prend forme.', subtitle: 'Commençons par un appel de lancement.' },
+    questionnaire: { title: 'prend forme.', subtitle: 'Encore quelques étapes et Guillaume prendra le relais.' },
+    survey_pending: { title: 'avance bien.', subtitle: 'Le sondage est lancé, continuez le questionnaire.' },
+    analysis: { title: 'est en cours d\'analyse.', subtitle: 'Guillaume analyse vos réponses, patience !' },
+    ready_for_restitution: { title: 'est prêt !', subtitle: 'Planifiez votre appel de restitution.' },
+    delivered: { title: 'est disponible.', subtitle: 'Consultez vos 9 sections d\'analyse.' },
+  }
+
+  const surveyConfigs: Record<string, { count: number; target: number }> = {
+    onboarding: { count: 0, target: 30 },
+    questionnaire: { count: 0, target: 30 },
+    survey_pending: { count: 12, target: 30 },
+    analysis: { count: 34, target: 30 },
+    ready_for_restitution: { count: 34, target: 30 },
+    delivered: { count: 34, target: 30 },
+  }
+
+  const analystMessages: Record<string, string> = {
+    onboarding: '« Bienvenue ! On se retrouve bientôt pour l\'appel de lancement. N\'hésitez pas si vous avez des questions. »',
+    questionnaire: '« Vos deux premiers blocs sont très bien renseignés. Votre profil de maturité est intéressant — j\'ai hâte de voir la suite ! »',
+    survey_pending: '« Le sondage est bien lancé ! Continuez à relancer vos équipes pour atteindre les 30 réponses. »',
+    analysis: '« J\'ai commencé l\'analyse croisée de vos réponses. Les résultats sont très intéressants, je vous en dis plus bientôt. »',
+    ready_for_restitution: '« Votre diagnostic est finalisé ! Prenons rendez-vous pour la restitution en visio. »',
+    delivered: '« Votre diagnostic est disponible. N\'hésitez pas à me contacter si vous avez des questions. »',
+  }
+
+  const header = headerConfigs[s] || headerConfigs.questionnaire
+  const survey = surveyConfigs[s] || surveyConfigs.questionnaire
+
+  return {
+    blocs: blocConfigs[s] || blocConfigs.questionnaire,
+    steps: stepConfigs[s] || stepConfigs.questionnaire,
+    headerTitle: header.title,
+    headerSubtitle: header.subtitle,
+    surveyCount: survey.count,
+    surveyTarget: survey.target,
+    analystMessage: analystMessages[s] || analystMessages.questionnaire,
+    showDiagnosticPreview: true,
+    diagnosticUnlocked: s === 'delivered',
+  }
+}
 
 function getQuestionnaireState(blocs: QuestionnaireBloc[]) {
   const allDone = blocs.every(b => b.status === 'done')
@@ -41,13 +176,25 @@ function getQuestionnaireState(blocs: QuestionnaireBloc[]) {
 
 export default function ClientHomeDashboard() {
   const { user } = useAuth()
+  const demo = useDemoIfAvailable()
   const navigate = useNavigate()
   const analyst = MOCK_ANALYST
   const firstName = user?.first_name || 'Claire'
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const protocol = useProtocolModal()
-  const qState = getQuestionnaireState(BLOCS)
-  const doneCount = BLOCS.filter(b => b.status === 'done').length
+
+  // Derive all state from demo status
+  const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
+  const derived = useMemo(() => deriveFromStatus(demoStatus), [demoStatus])
+
+  const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked } = derived
+  const qState = getQuestionnaireState(blocs)
+  const doneCount = blocs.filter(b => b.status === 'done').length
+
+  // Determine which cards are locked based on status
+  const isBeforeSurvey = !demoStatus || demoStatus === 'onboarding' || demoStatus === 'questionnaire'
+  const isAnalysisOrLater = demoStatus === 'analysis' || demoStatus === 'ready_for_restitution' || demoStatus === 'delivered'
+  const isRestitutionReady = demoStatus === 'ready_for_restitution' || demoStatus === 'delivered'
 
   return (
     <div>
@@ -65,10 +212,10 @@ export default function ClientHomeDashboard() {
             <h1 className="font-display" style={{ fontSize: '1.65rem', color: '#2A2A28', fontWeight: 400, lineHeight: 1.3 }}>
               Bonjour {firstName},<br />
               <span>votre diagnostic </span>
-              <span style={{ color: '#1B4332', fontWeight: 500 }}>prend forme.</span>
+              <span style={{ color: '#1B4332', fontWeight: 500 }}>{headerTitle}</span>
             </h1>
             <p className="mt-2" style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D' }}>
-              Encore quelques étapes et {analyst.first_name} prendra le relais.
+              {headerSubtitle}
             </p>
           </div>
           <button
@@ -100,7 +247,7 @@ export default function ClientHomeDashboard() {
         {/* Stepper */}
         <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em', fontSize: '0.5rem' }}>VOTRE PARCOURS</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, padding: '8px 0 4px' }}>
-          {STEPS.map((step, i) => {
+          {steps.map((step, i) => {
             const isDone = step.status === 'done'
             const isActive = step.status === 'active'
             const isLocked = step.status === 'locked'
@@ -109,7 +256,7 @@ export default function ClientHomeDashboard() {
                 {i > 0 && (
                   <div style={{
                     flex: 1, height: 2, maxWidth: 56,
-                    backgroundColor: isDone || (isActive && STEPS[i - 1].status === 'done') ? '#1B4332' : '#E5E1D8',
+                    backgroundColor: isDone || (isActive && steps[i - 1].status === 'done') ? '#1B4332' : '#E5E1D8',
                   }} />
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 72 }}>
@@ -145,29 +292,30 @@ export default function ClientHomeDashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <ActionCard
             label="SONDAGE"
-            title="Relancer vos équipes"
-            subtitle="12 réponses sur 30 — objectif"
-            icon={<Users size={18} color="#B87333" />}
-            iconBg="#F5EDE4"
+            title={isBeforeSurvey ? 'Lancer le sondage' : surveyCount >= surveyTarget ? 'Sondage complété ✓' : 'Relancer vos équipes'}
+            subtitle={`${surveyCount} réponses sur ${surveyTarget}`}
+            icon={<Users size={18} color={isBeforeSurvey ? '#7A766D' : '#B87333'} />}
+            iconBg={isBeforeSurvey ? '#F7F5F0' : '#F5EDE4'}
             hovered={hoveredCard === 'sondage'}
             onHover={v => setHoveredCard(v ? 'sondage' : null)}
             onClick={() => navigate('/client/sondage')}
+            locked={demoStatus === 'onboarding'}
           />
           <ActionCard
             label="PLANNING"
             title="Planifier la restitution"
-            subtitle="Disponible après l'analyse"
-            icon={<Calendar size={18} color="#7A766D" />}
-            iconBg="#F7F5F0"
+            subtitle={isRestitutionReady ? 'Choisissez un créneau' : 'Disponible après l\'analyse'}
+            icon={<Calendar size={18} color={isRestitutionReady ? '#1B4332' : '#7A766D'} />}
+            iconBg={isRestitutionReady ? '#E8F0EB' : '#F7F5F0'}
             hovered={hoveredCard === 'planning'}
             onHover={v => setHoveredCard(v ? 'planning' : null)}
             onClick={() => {}}
-            locked
+            locked={!isRestitutionReady}
           />
           <ActionCard
             label="JOURNAL"
             title="Journal de bord"
-            subtitle="2 nouvelles entrées"
+            subtitle="Suivi en temps réel"
             icon={<BookOpen size={18} color="#1B4332" />}
             iconBg="#E8F0EB"
             hovered={hoveredCard === 'journal'}
@@ -176,7 +324,7 @@ export default function ClientHomeDashboard() {
           />
         </div>
 
-        {/* ── RIGHT: Questionnaire block (matches left height) ── */}
+        {/* ── RIGHT: Questionnaire block ── */}
         <div style={{
           backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
           overflow: 'hidden', display: 'flex', flexDirection: 'column',
@@ -214,7 +362,7 @@ export default function ClientHomeDashboard() {
                   <svg width="54" height="54" viewBox="0 0 54 54">
                     <circle cx="27" cy="27" r="23" fill="none" stroke="#E5E1D8" strokeWidth="3" />
                     <circle cx="27" cy="27" r="23" fill="none" stroke="#1B4332" strokeWidth="3"
-                      strokeDasharray={`${(doneCount / BLOCS.length) * 144.5} 144.5`}
+                      strokeDasharray={`${(doneCount / blocs.length) * 144.5} 144.5`}
                       strokeLinecap="round" transform="rotate(-90 27 27)" />
                   </svg>
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -232,7 +380,7 @@ export default function ClientHomeDashboard() {
               </div>
               {/* Bloc list */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, justifyContent: 'center' }}>
-                {BLOCS.map((bloc, i) => {
+                {blocs.map((bloc, i) => {
                   const isDone = bloc.status === 'done'
                   const isActive = bloc.status === 'active'
                   const isTodo = bloc.status === 'todo'
@@ -267,7 +415,6 @@ export default function ClientHomeDashboard() {
                           {bloc.label}
                         </div>
                       </div>
-                      {/* Progress bar */}
                       <div style={{ width: 50, height: 4, borderRadius: 2, backgroundColor: '#E5E1D8', overflow: 'hidden', flexShrink: 0 }}>
                         <div style={{
                           height: '100%', borderRadius: 2,
@@ -278,7 +425,6 @@ export default function ClientHomeDashboard() {
                       <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.68rem', color: isDone ? '#1B4332' : isTodo ? '#B0AB9F' : '#B87333', flexShrink: 0, width: 48, textAlign: 'right' }}>
                         {isDone ? 'Terminé' : isActive ? bloc.progress : 'À faire'}
                       </div>
-                      {/* Arrow for clickable items */}
                       {!isTodo && (
                         <ChevronRight size={14} color={isDone ? '#1B4332' : '#B87333'} style={{ flexShrink: 0, opacity: 0.6 }} />
                       )}
@@ -319,7 +465,7 @@ export default function ClientHomeDashboard() {
               <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: '#B0AB9F' }}>il y a 2h</span>
             </div>
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#7A766D', fontStyle: 'italic', lineHeight: 1.5 }}>
-              « Vos deux premiers blocs sont très bien renseignés, {firstName}. Votre profil de maturité est intéressant — j'ai hâte de voir la suite ! »
+              {analystMessage}
             </p>
           </div>
         </div>
@@ -332,49 +478,86 @@ export default function ClientHomeDashboard() {
           <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12, padding: 20 }}>
             <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em' }}>SONDAGE INTERNE</div>
             <div>
-              <span className="font-display" style={{ fontWeight: 500, fontSize: '1.4rem', color: '#2A2A28' }}>12</span>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#B0AB9F' }}> / 30</span>
+              <span className="font-display" style={{ fontWeight: 500, fontSize: '1.4rem', color: '#2A2A28' }}>{surveyCount}</span>
+              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#B0AB9F' }}> / {surveyTarget}</span>
             </div>
             <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>réponses collectées</div>
             <div className="flex gap-[3px] mt-2">
-              {Array.from({ length: 30 }).map((_, i) => (
-                <div key={i} className="h-[4px] rounded-full" style={{ width: 6, backgroundColor: i < 12 ? '#1B4332' : '#E5E1D8' }} />
+              {Array.from({ length: surveyTarget }).map((_, i) => (
+                <div key={i} className="h-[4px] rounded-full" style={{ width: 6, backgroundColor: i < surveyCount ? '#1B4332' : '#E5E1D8' }} />
               ))}
             </div>
           </div>
           <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12, padding: 20 }}>
-            <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em' }}>ANALYSE EN COURS</div>
-            <div className="font-display" style={{ fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>Phase 1</div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>{analyst.first_name} étudie vos réponses</div>
+            <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em' }}>
+              {isAnalysisOrLater ? 'ANALYSE' : 'PROCHAINE ÉTAPE'}
+            </div>
+            <div className="font-display" style={{ fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>
+              {isAnalysisOrLater
+                ? (demoStatus === 'analysis' ? 'En cours' : 'Terminée')
+                : 'Questionnaire'}
+            </div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>
+              {isAnalysisOrLater
+                ? (demoStatus === 'analysis' ? `${analyst.first_name} étudie vos réponses` : 'Rapport finalisé')
+                : `${doneCount}/4 blocs complétés`}
+            </div>
           </div>
           <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12, padding: 20 }}>
-            <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em' }}>PROCHAINE ÉTAPE</div>
-            <div className="font-display" style={{ fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>Restitution</div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>Visio planifiée après finalisation</div>
+            <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em' }}>RESTITUTION</div>
+            <div className="font-display" style={{ fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>
+              {diagnosticUnlocked ? 'Fait ✓' : isRestitutionReady ? 'À planifier' : 'Bientôt'}
+            </div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>
+              {diagnosticUnlocked ? 'Diagnostic déverrouillé' : 'Visio après finalisation'}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ═══════ BLURRED DIAGNOSTIC ═══════ */}
+      {/* ═══════ DIAGNOSTIC PREVIEW ═══════ */}
       <div className="mt-7 dash-fadein" style={{ animationDelay: '310ms' }}>
-        <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>VOTRE FUTUR DIAGNOSTIC</div>
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 14, overflow: 'hidden', position: 'relative', height: 240 }}>
-          <div style={{ padding: '28px 32px', filter: 'blur(6px)', opacity: 0.6 }}>
-            <div className="font-display" style={{ fontSize: '1.3rem', color: '#2A2A28', fontWeight: 400, marginBottom: 16 }}>Synthèse éditoriale</div>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 12 }}>
-              Votre organisation présente un profil de maturité climat de niveau intermédiaire, avec des fondations solides sur le volet réglementaire mais des lacunes identifiées sur l'intégration opérationnelle des enjeux carbone.
-            </p>
-          </div>
-          <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ backgroundColor: 'rgba(247,245,240,0.7)' }}>
-            <Lock size={32} color="#B0AB9F" strokeWidth={1.5} />
-            <div className="mt-3" style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.9rem', color: '#7A766D' }}>
-              Déverrouillé après votre restitution
+        <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>
+          {diagnosticUnlocked ? 'VOTRE DIAGNOSTIC' : 'VOTRE FUTUR DIAGNOSTIC'}
+        </div>
+        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 14, overflow: 'hidden', position: 'relative', height: diagnosticUnlocked ? 'auto' : 240 }}>
+          {diagnosticUnlocked ? (
+            <div style={{ padding: '28px 32px' }}>
+              <div className="font-display" style={{ fontSize: '1.3rem', color: '#2A2A28', fontWeight: 400, marginBottom: 12 }}>Votre diagnostic est prêt</div>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 20 }}>
+                9 sections d'analyse personnalisées vous attendent. Découvrez votre profil de maturité climat, les écarts de perception, et nos recommandations concrètes.
+              </p>
+              <button
+                onClick={() => navigate('/client/diagnostic')}
+                style={{
+                  padding: '11px 24px', borderRadius: 8, backgroundColor: '#1B4332', color: '#fff',
+                  fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.85rem',
+                  border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+                }}
+              >
+                Consulter le diagnostic <ChevronRight size={16} />
+              </button>
             </div>
-            <div style={{ width: 40, height: 1, backgroundColor: '#EDEAE3', margin: '12px 0' }} />
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>
-              9 sections d'analyse sur mesure
-            </div>
-          </div>
+          ) : (
+            <>
+              <div style={{ padding: '28px 32px', filter: 'blur(6px)', opacity: 0.6 }}>
+                <div className="font-display" style={{ fontSize: '1.3rem', color: '#2A2A28', fontWeight: 400, marginBottom: 16 }}>Synthèse éditoriale</div>
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 12 }}>
+                  Votre organisation présente un profil de maturité climat de niveau intermédiaire, avec des fondations solides sur le volet réglementaire mais des lacunes identifiées sur l'intégration opérationnelle des enjeux carbone.
+                </p>
+              </div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ backgroundColor: 'rgba(247,245,240,0.7)' }}>
+                <Lock size={32} color="#B0AB9F" strokeWidth={1.5} />
+                <div className="mt-3" style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.9rem', color: '#7A766D' }}>
+                  Déverrouillé après votre restitution
+                </div>
+                <div style={{ width: 40, height: 1, backgroundColor: '#EDEAE3', margin: '12px 0' }} />
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>
+                  9 sections d'analyse sur mesure
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
