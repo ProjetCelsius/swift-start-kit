@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Check, Users, Lock, Compass, Calendar, BookOpen, Sparkles } from 'lucide-react'
+import { ChevronRight, Check, Users, Lock, Compass, User } from 'lucide-react'
 import { useAuth, MOCK_ANALYST } from '../../hooks/useAuth'
 import { useDemoIfAvailable } from '../../hooks/useDemo'
 import ProtocolModal, { useProtocolModal } from '../../components/ProtocolModal'
@@ -16,7 +16,7 @@ interface QuestionnaireBloc {
   progress?: string
 }
 
-type StepStatus = 'done' | 'active' | 'locked'
+type StepStatus = 'done' | 'active' | 'parallel' | 'locked'
 interface JourneyStep {
   num: number
   label: string
@@ -25,20 +25,9 @@ interface JourneyStep {
 }
 
 // ── Derive state from demo status ──────
-function deriveFromStatus(status: DemoStatus | undefined): {
-  blocs: QuestionnaireBloc[]
-  steps: JourneyStep[]
-  headerTitle: string
-  headerSubtitle: string
-  surveyCount: number
-  surveyTarget: number
-  analystMessage: string
-  showDiagnosticPreview: boolean
-  diagnosticUnlocked: boolean
-} {
+function deriveFromStatus(status: DemoStatus | undefined) {
   const s = status || 'questionnaire'
 
-  // Default questionnaire state per status
   const blocConfigs: Record<string, QuestionnaireBloc[]> = {
     onboarding: [
       { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'todo' },
@@ -82,42 +71,42 @@ function deriveFromStatus(status: DemoStatus | undefined): {
     onboarding: [
       { num: 1, label: 'Lancement', detail: 'Aujourd\'hui', status: 'active' },
       { num: 2, label: 'Questionnaire', detail: '~2 jours', status: 'locked' },
-      { num: 3, label: 'Sondage', detail: '~3 jours', status: 'locked' },
+      { num: 3, label: 'Sondages', detail: '~3 jours', status: 'locked' },
       { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
       { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
     ],
     questionnaire: [
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: '2/4 blocs', status: 'active' },
-      { num: 3, label: 'Sondage', detail: 'À lancer', status: 'active' },
+      { num: 3, label: 'Sondages', detail: '12 réponses', status: 'parallel' },
       { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
       { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
     ],
     survey_pending: [
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: '3/4 blocs', status: 'active' },
-      { num: 3, label: 'Sondage', detail: '12/30', status: 'active' },
+      { num: 3, label: 'Sondages', detail: '12/30', status: 'parallel' },
       { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
       { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
     ],
     analysis: [
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
-      { num: 3, label: 'Sondage', detail: 'Terminé', status: 'done' },
+      { num: 3, label: 'Sondages', detail: 'Terminé', status: 'done' },
       { num: 4, label: 'Analyse', detail: 'En cours', status: 'active' },
       { num: 5, label: 'Restitution', detail: 'Bientôt', status: 'locked' },
     ],
     ready_for_restitution: [
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
-      { num: 3, label: 'Sondage', detail: 'Terminé', status: 'done' },
+      { num: 3, label: 'Sondages', detail: 'Terminé', status: 'done' },
       { num: 4, label: 'Analyse', detail: 'Terminé', status: 'done' },
       { num: 5, label: 'Restitution', detail: 'À planifier', status: 'active' },
     ],
     delivered: [
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
-      { num: 3, label: 'Sondage', detail: 'Terminé', status: 'done' },
+      { num: 3, label: 'Sondages', detail: 'Terminé', status: 'done' },
       { num: 4, label: 'Analyse', detail: 'Terminé', status: 'done' },
       { num: 5, label: 'Restitution', detail: 'Fait', status: 'done' },
     ],
@@ -125,16 +114,16 @@ function deriveFromStatus(status: DemoStatus | undefined): {
 
   const headerConfigs: Record<string, { title: string; subtitle: string }> = {
     onboarding: { title: 'prend forme.', subtitle: 'Commençons par un appel de lancement.' },
-    questionnaire: { title: 'prend forme.', subtitle: 'Encore quelques étapes et Guillaume prendra le relais.' },
+    questionnaire: { title: 'votre diagnostic prend forme.', subtitle: 'Encore quelques étapes et Guillaume prendra le relais.' },
     survey_pending: { title: 'avance bien.', subtitle: 'Le sondage est lancé, continuez le questionnaire.' },
-    analysis: { title: 'est en cours d\'analyse.', subtitle: 'Guillaume analyse vos réponses, patience !' },
-    ready_for_restitution: { title: 'est prêt !', subtitle: 'Planifiez votre appel de restitution.' },
-    delivered: { title: 'est disponible.', subtitle: 'Consultez vos 9 sections d\'analyse.' },
+    analysis: { title: 'tout est entre nos mains.', subtitle: 'Guillaume analyse vos résultats. Votre diagnostic sera prêt sous 48h.' },
+    ready_for_restitution: { title: 'votre diagnostic est prêt.', subtitle: 'Planifiez votre appel de restitution.' },
+    delivered: { title: 'merci pour votre confiance.', subtitle: 'Consultez vos 9 sections d\'analyse.' },
   }
 
   const surveyConfigs: Record<string, { count: number; target: number }> = {
     onboarding: { count: 0, target: 30 },
-    questionnaire: { count: 0, target: 30 },
+    questionnaire: { count: 12, target: 30 },
     survey_pending: { count: 12, target: 30 },
     analysis: { count: 34, target: 30 },
     ready_for_restitution: { count: 34, target: 30 },
@@ -145,13 +134,31 @@ function deriveFromStatus(status: DemoStatus | undefined): {
     onboarding: '« Bienvenue ! On se retrouve bientôt pour l\'appel de lancement. N\'hésitez pas si vous avez des questions. »',
     questionnaire: '« Vos deux premiers blocs sont très bien renseignés. Votre profil de maturité est intéressant — j\'ai hâte de voir la suite ! »',
     survey_pending: '« Le sondage est bien lancé ! Continuez à relancer vos équipes pour atteindre les 30 réponses. »',
-    analysis: '« J\'ai commencé l\'analyse croisée de vos réponses. Les résultats sont très intéressants, je vous en dis plus bientôt. »',
-    ready_for_restitution: '« Votre diagnostic est finalisé ! Prenons rendez-vous pour la restitution en visio. »',
+    analysis: '« J\'ai bien reçu toutes vos réponses et celles de vos équipes. Je m\'y plonge — comptez 48h. »',
+    ready_for_restitution: '« Votre diagnostic est finalisé. Prenons rendez-vous pour en discuter ? »',
     delivered: '« Votre diagnostic est disponible. N\'hésitez pas à me contacter si vous avez des questions. »',
+  }
+
+  const dgStatus: Record<string, 'pending' | 'done' | 'not_started'> = {
+    onboarding: 'not_started',
+    questionnaire: 'pending',
+    survey_pending: 'pending',
+    analysis: 'done',
+    ready_for_restitution: 'done',
+    delivered: 'done',
   }
 
   const header = headerConfigs[s] || headerConfigs.questionnaire
   const survey = surveyConfigs[s] || surveyConfigs.questionnaire
+
+  // Count completed steps for teaser
+  const completedSteps = (() => {
+    if (s === 'delivered') return 5
+    if (s === 'ready_for_restitution') return 4
+    if (s === 'analysis') return 3
+    // questionnaire/survey: lancement done + some blocs
+    return 2
+  })()
 
   return {
     blocs: blocConfigs[s] || blocConfigs.questionnaire,
@@ -161,17 +168,12 @@ function deriveFromStatus(status: DemoStatus | undefined): {
     surveyCount: survey.count,
     surveyTarget: survey.target,
     analystMessage: analystMessages[s] || analystMessages.questionnaire,
-    showDiagnosticPreview: true,
     diagnosticUnlocked: s === 'delivered',
+    dgStatus: dgStatus[s] || 'not_started',
+    completedSteps,
+    isAnalysis: s === 'analysis',
+    allSubmitted: s === 'analysis' || s === 'ready_for_restitution' || s === 'delivered',
   }
-}
-
-function getQuestionnaireState(blocs: QuestionnaireBloc[]) {
-  const allDone = blocs.every(b => b.status === 'done')
-  const anyStarted = blocs.some(b => b.status === 'done' || b.status === 'active')
-  if (allDone) return 'completed'
-  if (anyStarted) return 'in_progress'
-  return 'not_started'
 }
 
 export default function ClientHomeDashboard() {
@@ -180,68 +182,57 @@ export default function ClientHomeDashboard() {
   const navigate = useNavigate()
   const analyst = MOCK_ANALYST
   const firstName = user?.first_name || 'Claire'
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const protocol = useProtocolModal()
 
-  // Derive all state from demo status
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
   const derived = useMemo(() => deriveFromStatus(demoStatus), [demoStatus])
 
-  const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked } = derived
-  const qState = getQuestionnaireState(blocs)
+  const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked, dgStatus, completedSteps, isAnalysis, allSubmitted } = derived
   const doneCount = blocs.filter(b => b.status === 'done').length
-
-  // Determine which cards are locked based on status
-  // Sondage + Questionnaire run in PARALLEL — both available from 'questionnaire' onwards
-  // Only Analyse (needs everything submitted) and Restitution/Diagnostic (needs analysis done) are locked
+  const allBlocsDone = blocs.every(b => b.status === 'done')
+  const activeBloc = blocs.find(b => b.status === 'active')
   const isSondageAvailable = !!demoStatus && demoStatus !== 'onboarding'
-  const isAnalysisOrLater = demoStatus === 'analysis' || demoStatus === 'ready_for_restitution' || demoStatus === 'delivered'
-  const isRestitutionReady = demoStatus === 'ready_for_restitution' || demoStatus === 'delivered'
 
   return (
     <div>
       <ProtocolModal open={protocol.open} onClose={() => protocol.setOpen(false)} />
 
-      {/* ═══════ UNIFIED HEADER + STEPPER BLOCK ═══════ */}
+      {/* ═══════ HEADER CARD ═══════ */}
       <div className="dash-fadein" style={{
         animationDelay: '0ms',
         backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
         padding: '28px 32px 20px', marginBottom: 20,
       }}>
-        {/* Top row: title + analyst message */}
+        {/* Top row: greeting + analyst message */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, marginBottom: 20 }}>
           <div style={{ flex: 1 }}>
-            <h1 className="font-display" style={{ fontSize: '1.65rem', color: '#2A2A28', fontWeight: 400, lineHeight: 1.3 }}>
+            <h1 className="font-display" style={{ fontSize: '1.55rem', color: '#2A2A28', fontWeight: 400, lineHeight: 1.3 }}>
               Bonjour {firstName},<br />
-              <span>votre diagnostic </span>
-              <span style={{ color: '#1B4332', fontWeight: 500 }}>{headerTitle}</span>
+              <span>{headerTitle}</span>
             </h1>
-            <p className="mt-2" style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D' }}>
+            <p className="mt-2" style={{ fontFamily: 'var(--font-sans)', fontSize: '0.84rem', color: '#7A766D' }}>
               {headerSubtitle}
             </p>
-            {/* Méthodologie — small inline link */}
             <button
               onClick={() => protocol.setOpen(true)}
               className="mt-3 flex items-center gap-1.5"
               style={{
                 background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                fontFamily: 'var(--font-sans)', fontSize: '0.75rem', fontWeight: 500, color: '#2D6A4F',
+                fontFamily: 'var(--font-sans)', fontSize: '0.75rem', fontWeight: 500, color: '#1B4332',
               }}
-              onMouseEnter={e => e.currentTarget.style.color = '#1B4332'}
-              onMouseLeave={e => e.currentTarget.style.color = '#2D6A4F'}
             >
               <Compass size={13} /> Notre méthodologie →
             </button>
           </div>
 
-          {/* Analyst message — top right */}
+          {/* Analyst message bubble */}
           <div style={{
             maxWidth: 280, flexShrink: 0, padding: '14px 16px', borderRadius: 12,
             background: 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 50%, #F5EDE4 100%)',
             border: '1px solid #EDEAE3',
           }}>
             <div className="flex items-center gap-2.5 mb-2">
-              <img src={guillaumePhoto} alt={`${analyst.first_name} ${analyst.last_name}`} className="w-[30px] h-[30px] rounded-full object-cover shrink-0" />
+              <img src={guillaumePhoto} alt={analyst.first_name} className="w-[30px] h-[30px] rounded-full object-cover shrink-0" />
               <div>
                 <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.75rem', color: '#2A2A28' }}>{analyst.first_name} {analyst.last_name}</span>
                 <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', color: '#B0AB9F', marginLeft: 6 }}>il y a 2h</span>
@@ -256,37 +247,37 @@ export default function ClientHomeDashboard() {
         {/* Separator */}
         <div style={{ height: 1, backgroundColor: '#F0EDE6', marginBottom: 16 }} />
 
-        {/* Stepper */}
-        <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em', fontSize: '0.5rem' }}>VOTRE PARCOURS</div>
+        {/* ── HORIZONTAL STEPPER ── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '8px 0 4px' }}>
           {steps.map((step, i) => {
             const isDone = step.status === 'done'
             const isActive = step.status === 'active'
+            const isParallel = step.status === 'parallel'
             const isLocked = step.status === 'locked'
             return (
               <React.Fragment key={i}>
                 {i > 0 && (
                   <div style={{
-                    flex: 1, height: 2, maxWidth: 64, marginTop: 17, /* Aligns to center of 34px circles */
+                    flex: 1, height: 2, maxWidth: 64, marginTop: 14,
                     backgroundColor: isDone || (isActive && steps[i - 1].status === 'done') ? '#1B4332' : '#E5E1D8',
                   }} />
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 80 }}>
                   <div style={{
-                    width: 34, height: 34, borderRadius: '50%',
+                    width: 30, height: 30, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: isDone ? '#1B4332' : isActive ? '#FFFFFF' : '#FFFFFF',
-                    border: `2px solid ${isDone ? '#1B4332' : isActive ? '#1B4332' : '#E5E1D8'}`,
-                    color: isDone ? '#FFFFFF' : isActive ? '#1B4332' : '#B0AB9F',
-                    fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.78rem',
+                    backgroundColor: isDone ? '#1B4332' : isActive ? '#FFFFFF' : isParallel ? '#F5EDE4' : '#FFFFFF',
+                    border: isDone ? 'none' : isActive ? '2px solid #1B4332' : isParallel ? '1.5px dashed #B87333' : '1.5px solid #E5E1D8',
+                    color: isDone ? '#FFFFFF' : isActive ? '#1B4332' : isParallel ? '#B87333' : '#B0AB9F',
+                    fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.75rem',
                   }}>
-                    {isDone ? <Check size={15} /> : step.num}
+                    {isDone ? <Check size={14} /> : step.num}
                   </div>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.65rem', color: isDone ? '#1B4332' : isLocked ? '#B0AB9F' : '#2A2A28' }}>
                       {step.label}
                     </div>
-                    <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.58rem', color: isDone ? '#2D6A4F' : '#B0AB9F' }}>
+                    <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.58rem', color: isDone ? '#2D6A4F' : isActive ? '#B87333' : '#B0AB9F' }}>
                       {step.detail}
                     </div>
                   </div>
@@ -297,229 +288,18 @@ export default function ClientHomeDashboard() {
         </div>
       </div>
 
-      {/* ═══════ TWO-COLUMN LAYOUT ═══════ */}
-      <div className="dash-fadein" style={{ animationDelay: '100ms', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-
-        {/* ── LEFT: Action cards ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <ActionCard
-            label="SONDAGE"
-            title={!isSondageAvailable ? 'Sondage interne' : surveyCount >= surveyTarget ? 'Sondage complété ✓' : surveyCount > 0 ? 'Relancer vos équipes' : 'Lancer le sondage'}
-            subtitle={isSondageAvailable ? `${surveyCount} réponses sur ${surveyTarget}` : 'Disponible après le lancement'}
-            icon={<Users size={18} color={isSondageAvailable ? '#B87333' : '#7A766D'} />}
-            iconBg={isSondageAvailable ? '#F5EDE4' : '#F7F5F0'}
-            hovered={hoveredCard === 'sondage'}
-            onHover={v => setHoveredCard(v ? 'sondage' : null)}
-            onClick={() => navigate('/client/sondage')}
-            locked={!isSondageAvailable}
-          />
-          <ActionCard
-            label="PLANNING"
-            title="Planifier la restitution"
-            subtitle={isRestitutionReady ? 'Choisissez un créneau' : 'Disponible après l\'analyse'}
-            icon={<Calendar size={18} color={isRestitutionReady ? '#1B4332' : '#7A766D'} />}
-            iconBg={isRestitutionReady ? '#E8F0EB' : '#F7F5F0'}
-            hovered={hoveredCard === 'planning'}
-            onHover={v => setHoveredCard(v ? 'planning' : null)}
-            onClick={() => {}}
-            locked={!isRestitutionReady}
-          />
-          <ActionCard
-            label="JOURNAL"
-            title="Journal de bord"
-            subtitle="Suivi en temps réel"
-            icon={<BookOpen size={18} color="#1B4332" />}
-            iconBg="#E8F0EB"
-            hovered={hoveredCard === 'journal'}
-            onHover={v => setHoveredCard(v ? 'journal' : null)}
-            onClick={() => navigate('/client/journal')}
-          />
-        </div>
-
-        {/* ── RIGHT: Questionnaire block ── */}
+      {/* ═══════ DIAGNOSTIC TEASER ═══════ */}
+      <div className="dash-fadein" style={{ animationDelay: '100ms', marginBottom: 20 }}>
         <div style={{
-          backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
-          overflow: 'hidden', display: 'flex', flexDirection: 'column',
+          position: 'relative', minHeight: diagnosticUnlocked ? 'auto' : 260, borderRadius: 18,
+          overflow: 'hidden', border: '1px solid #EDEAE3', backgroundColor: '#FFFFFF',
         }}>
-          {qState === 'not_started' ? (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 28, textAlign: 'center', position: 'relative' }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 40%, rgba(184,115,51,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
-              <div style={{
-                width: 60, height: 60, borderRadius: '50%', marginBottom: 14,
-                background: 'linear-gradient(135deg, #B87333 0%, #E8A66A 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 30px rgba(184,115,51,0.25), 0 0 60px rgba(184,115,51,0.10)',
-              }}>
-                <Sparkles size={26} color="#FFFFFF" />
-              </div>
-              <div className="font-display" style={{ fontSize: '1.1rem', fontWeight: 400, color: '#2A2A28', marginBottom: 6 }}>
-                Commencez votre questionnaire
-              </div>
-              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D', maxWidth: 240, lineHeight: 1.5, marginBottom: 18 }}>
-                4 blocs thématiques, à votre rythme. Sauvegarde automatique.
-              </p>
-              <button onClick={() => navigate('/client/questionnaire/bloc1')} style={{
-                padding: '11px 24px', borderRadius: 8, backgroundColor: '#1B4332', color: '#fff',
-                fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.85rem',
-                border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
-              }}>
-                Démarrer <ChevronRight size={16} />
-              </button>
-            </div>
-          ) : qState === 'in_progress' ? (
-            <div style={{ padding: '20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-              {/* Header — simple title + progress bar */}
-              <div style={{ marginBottom: 16 }}>
-                <div className="font-display" style={{ fontSize: '1rem', fontWeight: 500, color: '#2A2A28', marginBottom: 4 }}>Questionnaire</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: '#E5E1D8', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%', borderRadius: 3, backgroundColor: '#1B4332',
-                      width: `${(doneCount / blocs.length) * 100}%`,
-                      transition: 'width 0.3s ease',
-                    }} />
-                  </div>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', fontWeight: 600, color: '#1B4332', flexShrink: 0 }}>
-                    {doneCount}/{blocs.length}
-                  </span>
-                </div>
-              </div>
-              {/* Bloc list */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, justifyContent: 'center' }}>
-                {blocs.map((bloc, i) => {
-                  const isDone = bloc.status === 'done'
-                  const isActive = bloc.status === 'active'
-                  const isTodo = bloc.status === 'todo'
-                  return (
-                    <div
-                      key={i}
-                      onClick={() => !isTodo && navigate(bloc.route)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px',
-                        borderRadius: 10, cursor: isTodo ? 'default' : 'pointer',
-                        backgroundColor: isActive ? '#FDFAF6' : 'transparent',
-                        border: isActive ? '1px solid #E8D5BF' : '1px solid transparent',
-                        transition: 'all 0.15s',
-                      }}
-                      onMouseEnter={e => { if (!isTodo) e.currentTarget.style.backgroundColor = isDone ? '#E8F0EB' : '#FDFAF6' }}
-                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = isActive ? '#FDFAF6' : 'transparent' }}
-                    >
-                      <div style={{
-                        width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: isDone ? '#1B4332' : isActive ? '#B87333' : '#E5E1D8',
-                      }}>
-                        {isDone ? <Check size={11} color="#FFFFFF" /> :
-                         isActive ? <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#FFFFFF' }} /> :
-                         <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#B0AB9F' }} />}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontFamily: 'var(--font-sans)', fontWeight: isActive ? 600 : 500, fontSize: '0.8rem',
-                          color: isDone ? '#1B4332' : isTodo ? '#B0AB9F' : '#2A2A28',
-                        }}>
-                          {bloc.label}
-                        </div>
-                      </div>
-                      <div style={{ width: 50, height: 4, borderRadius: 2, backgroundColor: '#E5E1D8', overflow: 'hidden', flexShrink: 0 }}>
-                        <div style={{
-                          height: '100%', borderRadius: 2,
-                          width: isDone ? '100%' : isActive ? '43%' : '0%',
-                          backgroundColor: isDone ? '#1B4332' : '#B87333',
-                        }} />
-                      </div>
-                      <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.68rem', color: isDone ? '#1B4332' : isTodo ? '#B0AB9F' : '#B87333', flexShrink: 0, width: 48, textAlign: 'right' }}>
-                        {isDone ? 'Terminé' : isActive ? bloc.progress : 'À faire'}
-                      </div>
-                      {!isTodo && (
-                        <ChevronRight size={14} color={isDone ? '#1B4332' : '#B87333'} style={{ flexShrink: 0, opacity: 0.6 }} />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ) : (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 28, textAlign: 'center' }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: '50%', marginBottom: 12,
-                backgroundColor: '#E8F0EB', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Check size={26} color="#1B4332" />
-              </div>
-              <div className="font-display" style={{ fontSize: '1.05rem', fontWeight: 500, color: '#1B4332', marginBottom: 4 }}>
-                Questionnaire terminé
-              </div>
-              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D' }}>
-                {analyst.first_name} analyse vos réponses.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ═══════ EN UN COUP D'ŒIL ═══════ */}
-      <div className="mt-7 dash-fadein" style={{ animationDelay: '200ms' }}>
-        <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>EN UN COUP D'ŒIL</div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Sondage */}
-          <KpiCard
-            label="SONDAGE INTERNE"
-            isDone={surveyCount >= surveyTarget}
-          >
-            <div>
-              <span className="font-display" style={{ fontWeight: 500, fontSize: '1.4rem', color: '#2A2A28' }}>{surveyCount}</span>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#B0AB9F' }}> / {surveyTarget}</span>
-            </div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: surveyCount >= surveyTarget ? '#1B4332' : '#B0AB9F', fontWeight: surveyCount >= surveyTarget ? 500 : 400 }}>
-              {surveyCount >= surveyTarget ? '👍 Excellent taux de réponse !' : 'réponses collectées'}
-            </div>
-            <div className="flex gap-[3px] mt-2">
-              {Array.from({ length: surveyTarget }).map((_, i) => (
-                <div key={i} className="h-[4px] rounded-full" style={{ width: 6, backgroundColor: i < surveyCount ? '#1B4332' : '#E5E1D8' }} />
-              ))}
-            </div>
-          </KpiCard>
-          {/* Analyse */}
-          <KpiCard
-            label={isAnalysisOrLater ? 'ANALYSE' : 'PROCHAINE ÉTAPE'}
-            isDone={demoStatus === 'ready_for_restitution' || demoStatus === 'delivered'}
-          >
-            <div className="font-display" style={{ fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>
-              {isAnalysisOrLater
-                ? (demoStatus === 'analysis' ? 'En cours' : 'Terminée')
-                : 'Questionnaire'}
-            </div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>
-              {isAnalysisOrLater
-                ? (demoStatus === 'analysis' ? `${analyst.first_name} étudie vos réponses` : 'Rapport finalisé')
-                : `${doneCount}/4 blocs complétés`}
-            </div>
-          </KpiCard>
-          {/* Restitution */}
-          <KpiCard
-            label="RESTITUTION"
-            isDone={diagnosticUnlocked}
-          >
-            <div className="font-display" style={{ fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>
-              {diagnosticUnlocked ? 'Fait ✓' : isRestitutionReady ? 'À planifier' : 'Bientôt'}
-            </div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>
-              {diagnosticUnlocked ? 'Diagnostic déverrouillé' : 'Visio après finalisation'}
-            </div>
-          </KpiCard>
-        </div>
-      </div>
-
-      {/* ═══════ DIAGNOSTIC PREVIEW ═══════ */}
-      <div className="mt-7 dash-fadein" style={{ animationDelay: '310ms' }}>
-        <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>
-          {diagnosticUnlocked ? 'VOTRE DIAGNOSTIC' : 'VOTRE FUTUR DIAGNOSTIC'}
-        </div>
-        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 14, overflow: 'hidden', position: 'relative', height: diagnosticUnlocked ? 'auto' : 240 }}>
           {diagnosticUnlocked ? (
-            <div style={{ padding: '28px 32px' }}>
-              <div className="font-display" style={{ fontSize: '1.3rem', color: '#2A2A28', fontWeight: 400, marginBottom: 12 }}>Votre diagnostic est prêt</div>
+            /* UNLOCKED STATE */
+            <div style={{ padding: '32px 36px' }}>
+              <div className="font-display" style={{ fontSize: '1.3rem', color: '#2A2A28', fontWeight: 400, marginBottom: 12 }}>
+                Votre diagnostic est prêt
+              </div>
               <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 20 }}>
                 9 sections d'analyse personnalisées vous attendent. Découvrez votre profil de maturité climat, les écarts de perception, et nos recommandations concrètes.
               </p>
@@ -535,21 +315,102 @@ export default function ClientHomeDashboard() {
               </button>
             </div>
           ) : (
+            /* LOCKED STATE with abstract blobs */
             <>
-              <div style={{ padding: '28px 32px', filter: 'blur(6px)', opacity: 0.6 }}>
-                <div className="font-display" style={{ fontSize: '1.3rem', color: '#2A2A28', fontWeight: 400, marginBottom: 16 }}>Synthèse éditoriale</div>
-                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 12 }}>
-                  Votre organisation présente un profil de maturité climat de niveau intermédiaire, avec des fondations solides sur le volet réglementaire mais des lacunes identifiées sur l'intégration opérationnelle des enjeux carbone.
-                </p>
+              {/* Abstract blurred visualization */}
+              <div style={{ position: 'absolute', inset: 0, filter: 'blur(12px)', opacity: 0.4, pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(27,67,50,0.3) 0%, transparent 70%)', top: 20, left: '10%' }} />
+                <div style={{ position: 'absolute', width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(184,115,51,0.25) 0%, transparent 70%)', top: 40, right: '15%' }} />
+                <div style={{ position: 'absolute', width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,106,79,0.2) 0%, transparent 70%)', bottom: 30, left: '40%' }} />
+                <div style={{ position: 'absolute', width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(184,115,51,0.15) 0%, transparent 70%)', bottom: 10, right: '5%' }} />
+                {/* Geometric SVG shapes */}
+                <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+                  <rect x="15%" y="25%" width="80" height="60" rx="8" fill="rgba(27,67,50,0.08)" />
+                  <circle cx="70%" cy="35%" r="40" fill="rgba(184,115,51,0.08)" />
+                  <polygon points="50,80 80,140 20,140" fill="rgba(45,106,79,0.06)" transform="translate(200, 20)" />
+                  <line x1="10%" y1="60%" x2="40%" y2="40%" stroke="rgba(27,67,50,0.1)" strokeWidth="2" />
+                  <line x1="60%" y1="70%" x2="85%" y2="30%" stroke="rgba(184,115,51,0.1)" strokeWidth="2" />
+                </svg>
               </div>
-              <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ backgroundColor: 'rgba(247,245,240,0.7)' }}>
-                <Lock size={32} color="#B0AB9F" strokeWidth={1.5} />
-                <div className="mt-3" style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.9rem', color: '#7A766D' }}>
-                  Déverrouillé après votre restitution
+
+              {/* Overlay */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ backgroundColor: 'rgba(247,245,240,0.75)' }}>
+                {isAnalysis ? (
+                  /* Analysis in progress — show analyst avatar */
+                  <>
+                    <div style={{
+                      width: 52, height: 52, borderRadius: '50%', marginBottom: 14,
+                      background: 'linear-gradient(135deg, #F5EDE4, #F0EDE6)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      animation: 'analysisPulse 2s ease-in-out infinite',
+                    }}>
+                      <div style={{
+                        width: 30, height: 30, borderRadius: '50%', backgroundColor: '#1B4332',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.65rem', color: '#FFFFFF',
+                      }}>
+                        GP
+                      </div>
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.8rem', color: '#B87333', marginBottom: 6 }}>
+                      Analyse en cours
+                    </div>
+                  </>
+                ) : (
+                  /* Lock icon */
+                  <div style={{
+                    width: 52, height: 52, borderRadius: '50%', marginBottom: 14,
+                    background: 'linear-gradient(135deg, #F5EDE4, #F0EDE6)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                  }}>
+                    <Lock size={22} color="#B87333" strokeWidth={1.5} />
+                  </div>
+                )}
+
+                <div className="font-display" style={{ fontSize: '1.2rem', fontWeight: 500, color: '#2A2A28', marginBottom: 6, textAlign: 'center' }}>
+                  Votre diagnostic en 9 sections
                 </div>
-                <div style={{ width: 40, height: 1, backgroundColor: '#EDEAE3', margin: '12px 0' }} />
-                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>
-                  9 sections d'analyse sur mesure
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#7A766D', marginBottom: 16, textAlign: 'center' }}>
+                  {isAnalysis
+                    ? 'Guillaume est en train d\'analyser vos résultats.'
+                    : 'Complétez les étapes pour déverrouiller votre analyse complète.'}
+                </p>
+
+                {/* Progress bar */}
+                <div style={{ width: 200, height: 6, borderRadius: 3, backgroundColor: '#E5E1D8', overflow: 'hidden', marginBottom: 8 }}>
+                  <div style={{
+                    height: '100%', borderRadius: 3,
+                    background: 'linear-gradient(90deg, #1B4332, #B87333)',
+                    width: `${(completedSteps / 5) * 100}%`,
+                    transition: 'width 0.5s ease',
+                  }} />
+                </div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#7A766D', marginBottom: 14 }}>
+                  {completedSteps} / 5 étapes complétées
+                </div>
+
+                {/* Step pills */}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {[
+                    { label: 'Appel de lancement', done: completedSteps >= 1, active: completedSteps === 0 },
+                    { label: 'Blocs 1 & 2', done: completedSteps >= 2, active: completedSteps === 1 },
+                    { label: 'Questionnaire', done: allBlocsDone, active: !allBlocsDone && completedSteps >= 2 },
+                    { label: 'Sondage interne', done: allSubmitted, active: isSondageAvailable && !allSubmitted },
+                    { label: 'Entretien DG', done: allSubmitted, active: false },
+                  ].map((pill, i) => (
+                    <span key={i} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      padding: '4px 12px', borderRadius: 20,
+                      backgroundColor: pill.done ? '#E8F0EB' : pill.active ? '#F5EDE4' : '#F7F5F0',
+                      border: `1px solid ${pill.done ? '#2D6A4F33' : pill.active ? '#B8733333' : '#EDEAE3'}`,
+                      fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 500,
+                      color: pill.done ? '#1B4332' : pill.active ? '#B87333' : '#B0AB9F',
+                    }}>
+                      {pill.done && <Check size={10} />}
+                      {pill.label}
+                    </span>
+                  ))}
                 </div>
               </div>
             </>
@@ -557,85 +418,230 @@ export default function ClientHomeDashboard() {
         </div>
       </div>
 
+      {/* ═══════ TWO-COLUMN LAYOUT ═══════ */}
+      <div className="dash-fadein" style={{ animationDelay: '200ms', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+        {/* ── LEFT: SONDAGES CARD ── */}
+        <div style={{
+          backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
+          padding: '20px 20px', display: 'flex', flexDirection: 'column',
+        }}>
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-2">
+            <div style={{
+              width: 36, height: 36, borderRadius: 9, backgroundColor: '#E8F0EB',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Users size={18} color="#1B4332" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div className="font-display" style={{ fontSize: '1.05rem', fontWeight: 500, color: '#2A2A28' }}>Sondages</div>
+            </div>
+            <span style={{
+              padding: '3px 10px', borderRadius: 12,
+              backgroundColor: surveyCount >= surveyTarget ? '#E8F0EB' : '#F5EDE4',
+              fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 600,
+              color: surveyCount >= surveyTarget ? '#1B4332' : '#B87333',
+            }}>
+              {surveyCount}/{surveyTarget}
+            </span>
+          </div>
+
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D', lineHeight: 1.5, marginBottom: 14 }}>
+            Croisez les perspectives de vos équipes et de votre direction.
+          </p>
+
+          {/* Sondage interne sub-item */}
+          <button
+            onClick={() => navigate('/client/sondage')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+              borderRadius: 10, border: '1px solid #EDEAE3', backgroundColor: '#FFFFFF',
+              cursor: isSondageAvailable ? 'pointer' : 'default', marginBottom: 8,
+              transition: 'background-color 0.15s', textAlign: 'left', width: '100%',
+              opacity: isSondageAvailable ? 1 : 0.5,
+            }}
+            onMouseEnter={e => { if (isSondageAvailable) e.currentTarget.style.backgroundColor = '#F7F5F0' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#FFFFFF' }}
+          >
+            <div style={{
+              width: 32, height: 32, borderRadius: 8, backgroundColor: '#F5EDE4',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <User size={14} color="#B87333" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.78rem', color: '#2A2A28' }}>Sondage interne</div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', color: '#B0AB9F' }}>{surveyCount} réponses sur {surveyTarget}</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
+              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 600, color: surveyCount >= surveyTarget ? '#1B4332' : '#B87333' }}>
+                {surveyCount}/{surveyTarget}
+              </span>
+              <div style={{ width: 50, height: 3, borderRadius: 2, backgroundColor: '#E5E1D8', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 2, backgroundColor: surveyCount >= surveyTarget ? '#1B4332' : '#B87333', width: `${Math.min((surveyCount / surveyTarget) * 100, 100)}%` }} />
+              </div>
+            </div>
+          </button>
+
+          {/* Entretien direction sub-item */}
+          <button
+            onClick={() => navigate('/client/entretiens')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+              borderRadius: 10, border: '1px solid #EDEAE3', backgroundColor: '#FFFFFF',
+              cursor: 'pointer', textAlign: 'left', width: '100%',
+              transition: 'background-color 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#F7F5F0' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#FFFFFF' }}
+          >
+            <div style={{
+              width: 32, height: 32, borderRadius: 8, backgroundColor: '#E8F0EB',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Users size={14} color="#1B4332" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.78rem', color: '#2A2A28' }}>Entretien direction</div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', color: '#B0AB9F' }}>Questionnaire envoyé</div>
+            </div>
+            <span style={{
+              fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 500,
+              color: dgStatus === 'done' ? '#1B4332' : '#B87333',
+            }}>
+              {dgStatus === 'done' ? 'Terminé' : 'En attente'}
+            </span>
+          </button>
+        </div>
+
+        {/* ── RIGHT: QUESTIONNAIRE CARD ── */}
+        <div style={{
+          backgroundColor: '#FFFFFF', borderRadius: 16,
+          border: allBlocsDone ? '1px solid #EDEAE3' : '2px solid #B87333',
+          overflow: 'hidden', display: 'flex', flexDirection: 'column',
+          boxShadow: allBlocsDone ? 'none' : undefined,
+          animation: allBlocsDone ? 'none' : 'questionnaireGlow 3s ease-in-out infinite',
+          position: 'relative',
+        }}>
+          {/* Shimmer bar */}
+          {!allBlocsDone && (
+            <div style={{
+              height: 3, width: '100%',
+              background: 'linear-gradient(90deg, #B87333, #1B4332, #B87333)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 3s linear infinite',
+            }} />
+          )}
+
+          <div style={{ padding: '20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-display" style={{ fontSize: '1.05rem', fontWeight: 500, color: '#2A2A28' }}>Questionnaire</div>
+              <span className="font-display" style={{ fontSize: '1.1rem', fontWeight: 500, color: allBlocsDone ? '#1B4332' : '#B87333' }}>
+                {doneCount}/{blocs.length}
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div style={{ height: 4, borderRadius: 2, backgroundColor: '#E5E1D8', overflow: 'hidden', marginBottom: 14 }}>
+              <div style={{
+                height: '100%', borderRadius: 2,
+                background: 'linear-gradient(90deg, #1B4332, #B87333)',
+                width: `${(doneCount / blocs.length) * 100}%`,
+                transition: 'width 0.3s ease',
+              }} />
+            </div>
+
+            {/* Bloc list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+              {blocs.map((bloc, i) => {
+                const isDone = bloc.status === 'done'
+                const isActive = bloc.status === 'active'
+                const isTodo = bloc.status === 'todo'
+                return (
+                  <div
+                    key={i}
+                    onClick={() => !isTodo && navigate(bloc.route)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px',
+                      borderRadius: 10, cursor: isTodo ? 'default' : 'pointer',
+                      backgroundColor: isActive ? '#F5EDE4' : 'transparent',
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => { if (!isTodo) e.currentTarget.style.backgroundColor = isDone ? '#E8F0EB' : '#F5EDE4' }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = isActive ? '#F5EDE4' : 'transparent' }}
+                  >
+                    <div style={{
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: isDone ? '#1B4332' : isActive ? '#B87333' : 'transparent',
+                      border: isTodo ? '1.5px solid #E5E1D8' : 'none',
+                    }}>
+                      {isDone ? <Check size={12} color="#FFFFFF" /> :
+                       isActive ? <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#FFFFFF' }} /> :
+                       null}
+                    </div>
+                    <div style={{
+                      flex: 1, fontFamily: 'var(--font-sans)', fontWeight: isActive ? 500 : 400, fontSize: '0.82rem',
+                      color: isDone ? '#7A766D' : isTodo ? '#B0AB9F' : '#2A2A28',
+                    }}>
+                      {bloc.label}
+                    </div>
+                    <span style={{
+                      fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 500,
+                      color: isDone ? '#1B4332' : isActive ? '#B87333' : '#B0AB9F',
+                    }}>
+                      {isDone ? 'Terminé ›' : isActive ? `${bloc.progress} ›` : 'À faire'}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* CTA button */}
+            {!allBlocsDone && activeBloc ? (
+              <button
+                onClick={() => navigate(activeBloc.route)}
+                style={{
+                  marginTop: 14, width: '100%', padding: '11px 20px', borderRadius: 8,
+                  backgroundColor: '#1B4332', color: '#fff',
+                  fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.82rem',
+                  border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                Reprendre « {activeBloc.label} » → 
+              </button>
+            ) : allBlocsDone ? (
+              <div style={{
+                marginTop: 14, width: '100%', padding: '11px 20px', borderRadius: 8,
+                backgroundColor: '#E8F0EB', textAlign: 'center',
+                fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.82rem', color: '#1B4332',
+              }}>
+                Questionnaire terminé ✓
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
       <style>{`
         @keyframes dashFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .dash-fadein { animation: dashFadeIn 0.5s ease-out both; }
-        @keyframes kpiPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes questionnaireGlow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(184,115,51,0); }
+          50% { box-shadow: 0 0 0 8px rgba(184,115,51,0.1); }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        @keyframes analysisPulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.05); opacity: 0.8; }
+        }
       `}</style>
-    </div>
-  )
-}
-
-/* ── Reusable Action Card ── */
-function ActionCard({ label, title, subtitle, icon, iconBg, hovered, onHover, onClick, locked }: {
-  label: string; title: string; subtitle: string; icon: React.ReactNode; iconBg: string
-  hovered: boolean; onHover: (v: boolean) => void; onClick: () => void; locked?: boolean
-}) {
-  return (
-    <div
-      onClick={locked ? undefined : onClick}
-      className={locked ? '' : 'cursor-pointer'}
-      style={{
-        backgroundColor: hovered && !locked ? '#FEFEFE' : '#FFFFFF',
-        border: `${hovered && !locked ? '1.5px' : '1px'} solid ${hovered && !locked ? '#1B4332' : '#EDEAE3'}`,
-        borderRadius: 14, padding: '16px 18px', flex: 1,
-        boxShadow: hovered && !locked ? '0 2px 8px rgba(42,42,40,.04), 0 8px 32px rgba(42,42,40,.06)' : 'none',
-        transform: hovered && !locked ? 'translateY(-1px)' : 'none',
-        background: hovered && !locked ? 'linear-gradient(135deg, #FFFFFF 0%, #E8F0EB 100%)' : '#FFFFFF',
-        transition: 'all 0.2s ease',
-        opacity: locked ? 0.55 : 1,
-      }}
-      onMouseEnter={() => onHover(true)}
-      onMouseLeave={() => onHover(false)}
-    >
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: iconBg }}>
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="label-uppercase" style={{ letterSpacing: '0.1em', fontSize: '0.45rem' }}>{label}</div>
-          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.85rem', color: '#2A2A28' }}>{title}</div>
-          <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#7A766D' }}>{subtitle}</div>
-        </div>
-        {locked ? <Lock size={14} color="#B0AB9F" className="shrink-0" /> : <ChevronRight size={16} color="#B0AB9F" className="shrink-0" />}
-      </div>
-    </div>
-  )
-}
-
-/* ── KPI Card with green halo ── */
-function KpiCard({ label, isDone, children }: {
-  label: string; isDone: boolean; children: React.ReactNode
-}) {
-  return (
-    <div style={{
-      backgroundColor: '#FFFFFF',
-      border: `1px solid ${isDone ? '#2D6A4F' : '#EDEAE3'}`,
-      borderRadius: 12, padding: 20, position: 'relative', overflow: 'hidden',
-      transition: 'border-color 0.3s, box-shadow 0.3s',
-      boxShadow: isDone ? '0 0 0 1px rgba(27,67,50,0.08), 0 4px 16px rgba(27,67,50,0.08)' : 'none',
-    }}>
-      {/* Green glow background when done */}
-      {isDone && (
-        <div style={{
-          position: 'absolute', top: -20, right: -20, width: 80, height: 80,
-          borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,106,79,0.12) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-      )}
-      <div className="flex items-center gap-2 mb-2">
-        <div className="label-uppercase" style={{ letterSpacing: '0.1em', flex: 1 }}>{label}</div>
-        {isDone && (
-          <div style={{
-            width: 20, height: 20, borderRadius: '50%', backgroundColor: '#1B4332',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            animation: 'kpiPop 0.4s ease-out',
-          }}>
-            <Check size={11} color="#fff" strokeWidth={2.5} />
-          </div>
-        )}
-      </div>
-      {children}
     </div>
   )
 }
