@@ -170,7 +170,7 @@ export default function SurveyPage() {
                     borderColor: isSelected ? '#1B5E3B' : 'var(--color-border)',
                   }}
                 >
-                  <span className="mr-2">{p.icon}</span>
+                  <span className="mr-2">{p.iconName}</span>
                   <span className="font-semibold text-sm">{p.label}</span>
                   <span className="text-xs ml-2" style={{ color: 'var(--color-texte-secondary)' }}>— {p.description}</span>
                 </button>
