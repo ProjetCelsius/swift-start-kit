@@ -4,7 +4,7 @@ import { DemoProvider, useDemoIfAvailable } from './hooks/useDemo'
 import DevToolbar from './components/DevToolbar'
 import ClientLayout from './components/layout/ClientLayout'
 import Login from './pages/Login'
-// Dashboard is accessed via redirect to /client/questionnaire/bloc1
+import ClientHomeDashboard from './pages/client/ClientHomeDashboard'
 import QuestionnaireBloc1 from './pages/client/QuestionnaireBloc1'
 import QuestionnaireBloc2 from './pages/client/QuestionnaireBloc2'
 import QuestionnaireBloc3 from './pages/client/QuestionnaireBloc3'
@@ -51,12 +51,13 @@ function AppRoutes() {
   return (
     <>
       <Routes>
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/client/questionnaire/bloc1" /> : <Login />} />
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/client/dashboard" /> : <Login />} />
         
         {/* Espace Client */}
         <Route element={isAuthenticated ? <ClientLayout /> : <Navigate to="/login" />}>
-          <Route path="/" element={<Navigate to="/client/questionnaire/bloc1" replace />} />
-          <Route path="/client" element={<Navigate to="/client/questionnaire/bloc1" replace />} />
+          <Route path="/" element={<Navigate to="/client/dashboard" replace />} />
+          <Route path="/client" element={<Navigate to="/client/dashboard" replace />} />
+          <Route path="/client/dashboard" element={<ClientHomeDashboard />} />
           <Route path="/client/questionnaire" element={<QuestionnairePage />} />
           <Route path="/client/questionnaire/bloc1" element={<QuestionnaireBloc1 />} />
           <Route path="/client/questionnaire/bloc2" element={<QuestionnaireBloc2 />} />

@@ -1,305 +1,222 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import {
+  LayoutDashboard,
   ClipboardList,
-  Users,
-  FileText,
-  Target,
   BarChart3,
-  GitCompare,
-  UserCheck,
-  Leaf,
-  Calendar,
-  CheckSquare,
-  ArrowRight,
+  Target,
+  Sparkles,
   BookOpen,
   MessageSquare,
-  Download,
   HelpCircle,
-  Lock,
+  Compass,
 } from 'lucide-react'
-import { useAuth, MOCK_ANALYST } from '../../hooks/useAuth'
-import { useDemoIfAvailable } from '../../hooks/useDemo'
+import { MOCK_ANALYST } from '../../hooks/useAuth'
 
-interface NavItem {
-  key: string
-  label: string
-  path: string
-  icon: React.ReactNode
-  locked?: boolean
-  badge?: string | number
-  children?: { key: string; label: string; path: string; status?: string }[]
+const QUESTIONNAIRE_ITEMS = [
+  { key: 'bloc1', label: 'Votre démarche', path: '/client/questionnaire/bloc1', icon: <ClipboardList size={16} />, status: 'done' },
+  { key: 'bloc2', label: 'Votre maturité', path: '/client/questionnaire/bloc2', icon: <BarChart3 size={16} />, status: 'done' },
+  { key: 'bloc3', label: 'Vos enjeux', path: '/client/questionnaire/bloc3', icon: <Target size={16} />, status: 'in_progress' },
+  { key: 'bloc4', label: 'La perception', path: '/client/questionnaire/bloc4', icon: <Sparkles size={16} />, status: 'todo' },
+]
+
+const DIAGNOSTIC_ITEMS = [
+  { key: 'synthese', label: 'Synthèse', path: '/client/diagnostic' },
+  { key: 'priorites', label: 'Priorités', path: '/client/diagnostic' },
+  { key: 'maturite', label: 'Maturité', path: '/client/diagnostic' },
+]
+
+const dotColor: Record<string, string> = {
+  done: '#1B4332',
+  in_progress: '#B87333',
+  todo: '#E5E1D8',
 }
 
-interface ClientSidebarProps {
-  diagnosticUnlocked?: boolean
-  surveyCount?: number
-  hasNewJournal?: boolean
-  hasNewMessages?: boolean
-  questionnaireProgress?: { block: number; status: string }[]
-}
-
-export default function ClientSidebar({
-  diagnosticUnlocked: propUnlocked = false,
-  surveyCount: propSurveyCount = 0,
-  hasNewJournal = false,
-  hasNewMessages = false,
-  questionnaireProgress = [],
-}: ClientSidebarProps) {
-  const { user } = useAuth()
+export default function ClientSidebar() {
   const location = useLocation()
   const analyst = MOCK_ANALYST
-  const demo = useDemoIfAvailable()
-  const isDemo = demo?.enabled ?? false
-  const diag = isDemo ? demo?.activeDiagnostic : null
 
-  const diagnosticUnlocked = isDemo && diag ? diag.diagnosticUnlocked : propUnlocked
-  const surveyCount = isDemo && diag ? diag.survey.respondents : propSurveyCount
-  const orgName = isDemo && diag ? diag.organization.name : (user?.organization_id ? 'TechVert Solutions' : 'Mon entreprise')
-
-  const questionnaireSections: NavItem['children'] = [
-    { key: 'bloc1', label: 'Votre démarche', path: '/client/questionnaire/bloc1', status: getBlockStatus(1) },
-    { key: 'bloc2', label: 'Votre maturité', path: '/client/questionnaire/bloc2', status: getBlockStatus(2) },
-    { key: 'bloc3', label: 'Vos enjeux', path: '/client/questionnaire/bloc3', status: getBlockStatus(3) },
-    { key: 'bloc4', label: 'La perception', path: '/client/questionnaire/bloc4', status: getBlockStatus(4) },
-  ]
-
-  function getBlockStatus(block: number): string {
-    const progress = questionnaireProgress.find(p => p.block === block)
-    return progress?.status || 'not_started'
-  }
-
-  const diagnosticSections: NavItem[] = [
-    { key: 'synthese', label: 'Synthèse éditoriale', path: '/client/diagnostic/1', icon: <FileText size={18} />, locked: !diagnosticUnlocked },
-    { key: 'priorites', label: 'Ce que nous ferions', path: '/client/diagnostic/2', icon: <Target size={18} />, locked: !diagnosticUnlocked },
-    { key: 'maturite', label: 'Score de maturité', path: '/client/diagnostic/3', icon: <BarChart3 size={18} />, locked: !diagnosticUnlocked },
-    { key: 'ecarts', label: 'Écarts de perception', path: '/client/diagnostic/4', icon: <GitCompare size={18} />, locked: !diagnosticUnlocked },
-    { key: 'capital', label: 'Capital humain', path: '/client/diagnostic/5', icon: <UserCheck size={18} />, locked: !diagnosticUnlocked },
-    { key: 'empreinte', label: 'Empreinte carbone', path: '/client/diagnostic/6', icon: <Leaf size={18} />, locked: !diagnosticUnlocked },
-    { key: 'echeances', label: 'Vos échéances', path: '/client/diagnostic/7', icon: <Calendar size={18} />, locked: !diagnosticUnlocked },
-    { key: 'avancement', label: "Profil d'avancement", path: '/client/diagnostic/8', icon: <CheckSquare size={18} />, locked: !diagnosticUnlocked },
-    { key: 'etapes', label: 'Prochaines étapes', path: '/client/diagnostic/9', icon: <ArrowRight size={18} />, locked: !diagnosticUnlocked },
-  ]
+  const isActive = (path: string) => location.pathname === path
+  const isDashboard = location.pathname === '/client/dashboard'
 
   return (
     <aside
-      className="fixed left-0 top-0 bottom-0 flex flex-col bg-blanc overflow-y-auto"
+      className="fixed left-0 top-0 bottom-0 flex flex-col overflow-y-auto"
       style={{
         width: 'var(--sidebar-width)',
-        boxShadow: 'var(--shadow-sidebar)',
+        backgroundColor: '#FFFFFF',
+        borderRight: '1px solid #EDEAE3',
       }}
     >
       {/* Logo */}
-      <div className="px-5 pt-5 pb-3">
-        <div className="flex items-center gap-2">
+      <div className="px-5 pt-5 pb-4">
+        <div className="flex items-center gap-2.5">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
-            style={{ backgroundColor: 'var(--color-celsius-900)' }}
+            className="w-7 h-7 rounded-md flex items-center justify-center"
+            style={{ backgroundColor: '#1B4332' }}
           >
-            C
+            <Compass size={14} color="white" />
           </div>
           <div>
-            <div className="font-semibold text-sm" style={{ color: 'var(--color-celsius-900)' }}>
+            <div className="font-display" style={{ fontSize: '0.9rem', color: '#1B4332' }}>
               Boussole Climat
             </div>
-            <div className="text-xs" style={{ color: 'var(--color-texte-secondary)' }}>
-              Projet Celsius
+            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.45rem', letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#B0AB9F' }}>
+              PAR CELSIUS
             </div>
           </div>
         </div>
       </div>
 
-      {/* Organisation */}
-      <div className="px-5 pb-3">
-        <div className="font-semibold text-sm truncate">
-          {orgName}
-        </div>
-      </div>
-
-      {/* Analyste */}
-      <div className="px-5 pb-4">
-        <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'var(--color-gris-100)' }}>
+      {/* Analyst card */}
+      <div className="px-4 pb-4">
+        <div
+          className="flex items-center gap-3 rounded-[10px] p-3"
+          style={{ background: 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 50%, #F5EDE4 100%)' }}
+        >
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0"
-            style={{ backgroundColor: 'var(--color-celsius-800)' }}
+            className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-white shrink-0"
+            style={{ backgroundColor: '#1B4332', fontFamily: 'var(--font-display)', fontSize: '0.6rem' }}
           >
             {analyst.first_name[0]}{analyst.last_name[0]}
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-medium truncate">{analyst.first_name}</div>
-            <div className="text-xs" style={{ color: 'var(--color-texte-secondary)' }}>
-              Votre analyste
+            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.45rem', letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#B0AB9F' }}>
+              VOTRE ANALYSTE
+            </div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.8rem', color: '#2A2A28' }}>
+              {analyst.first_name} {analyst.last_name}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mx-5 mb-3" style={{ borderTop: '1px solid var(--color-border-light)' }} />
-
-      {/* Navigation */}
+      {/* Nav */}
       <nav className="flex-1 px-3 space-y-1">
-        {/* Questionnaire */}
-        <div className="mb-1">
-          <SidebarNavItem
-            to="/client/questionnaire/bloc1"
-            icon={<ClipboardList size={18} />}
-            label="Questionnaire"
-            active={location.pathname.startsWith('/client/questionnaire')}
-          />
-          {location.pathname.startsWith('/client/questionnaire') && (
-            <div className="ml-8 mt-1 space-y-0.5">
-              {questionnaireSections.map(child => (
-                <NavLink
-                  key={child.key}
-                  to={child.path}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-[var(--color-gris-100)]"
-                  style={({ isActive }) => ({
-                    color: isActive ? 'var(--color-celsius-900)' : 'var(--color-texte-secondary)',
-                    fontWeight: isActive ? 600 : 400,
-                  })}
-                >
-                  <StatusDot status={child.status || 'not_started'} />
-                  {child.label}
-                </NavLink>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Sondage */}
-        <SidebarNavItem
-          to="/client/sondage"
-          icon={<Users size={18} />}
-          label="Sondage interne"
-          badge={surveyCount > 0 ? `${surveyCount}` : undefined}
-          active={location.pathname === '/client/sondage'}
+        {/* NAVIGATION section */}
+        <SectionLabel>NAVIGATION</SectionLabel>
+        <SidebarItem
+          to="/client/dashboard"
+          icon={<LayoutDashboard size={16} />}
+          label="Vue d'ensemble"
+          active={isDashboard}
         />
 
-        <div className="mx-2 my-3" style={{ borderTop: '1px solid var(--color-border-light)' }} />
-
-        {/* Sections diagnostic */}
-        <div className="label-uppercase px-3 mb-2">Votre diagnostic</div>
-        {diagnosticSections.map(section => (
-          <SidebarNavItem
-            key={section.key}
-            to={section.locked ? '#' : section.path}
-            icon={section.locked ? <Lock size={16} className="opacity-40" /> : section.icon}
-            label={section.label}
-            locked={section.locked}
-            active={location.pathname === section.path}
+        {/* QUESTIONNAIRE section */}
+        <SectionLabel className="mt-5">QUESTIONNAIRE</SectionLabel>
+        {QUESTIONNAIRE_ITEMS.map(item => (
+          <SidebarItem
+            key={item.key}
+            to={item.path}
+            icon={item.icon}
+            label={item.label}
+            active={isActive(item.path)}
+            dotStatus={item.status}
           />
         ))}
+
+        {/* DIAGNOSTIC section */}
+        <SectionLabel className="mt-5">DIAGNOSTIC</SectionLabel>
+        {DIAGNOSTIC_ITEMS.map(item => (
+          <div
+            key={item.key}
+            className="flex items-center gap-3 px-3 py-2 text-sm"
+            style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#B0AB9F', opacity: 0.35 }}
+          >
+            {item.label}
+          </div>
+        ))}
+
+        {/* SUIVI section */}
+        <SectionLabel className="mt-5">SUIVI</SectionLabel>
+        <SidebarItem
+          to="/client/journal"
+          icon={<BookOpen size={16} />}
+          label="Journal"
+          active={isActive('/client/journal')}
+        />
+        <SidebarItem
+          to="/client/messages"
+          icon={<MessageSquare size={16} />}
+          label="Messages"
+          active={isActive('/client/messages')}
+        />
       </nav>
 
-      <div className="mx-5 my-2" style={{ borderTop: '1px solid var(--color-border-light)' }} />
-
-      {/* Bottom nav */}
-      <div className="px-3 pb-4 space-y-0.5">
-        <SidebarNavItem
-          to="/client/journal"
-          icon={<BookOpen size={18} />}
-          label="Journal de bord"
-          badge={hasNewJournal ? '•' : undefined}
-          active={location.pathname === '/client/journal'}
-        />
-        <SidebarNavItem
-          to="/client/messages"
-          icon={<MessageSquare size={18} />}
-          label="Messagerie"
-          badge={hasNewMessages ? '•' : undefined}
-          active={location.pathname === '/client/messages'}
-        />
-        <button
-          className="flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg hover:bg-[var(--color-gris-100)] disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ color: 'var(--color-texte-secondary)' }}
-          disabled={!diagnosticUnlocked}
-          title={diagnosticUnlocked ? 'Exporter en PDF' : 'Disponible après la restitution'}
-        >
-          <Download size={18} />
-          Exporter en PDF
-        </button>
+      {/* Bottom */}
+      <div className="px-3 pb-5">
         <NavLink
           to="/client/aide"
-          className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-[var(--color-gris-100)]"
-          style={{ color: 'var(--color-texte-secondary)' }}
+          className="flex items-center gap-2 px-3 py-2"
+          style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}
         >
-          <HelpCircle size={18} />
+          <HelpCircle size={14} />
           Aide
         </NavLink>
       </div>
+
+      {/* Pulse animation for in-progress dots */}
+      <style>{`
+        @keyframes sidebarPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+        .dot-pulse { animation: sidebarPulse 2s ease-in-out infinite; }
+      `}</style>
     </aside>
   )
 }
 
-// --- Sub-components ---
+function SectionLabel({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={`px-3 pt-2 pb-1 ${className}`}
+      style={{
+        fontFamily: 'var(--font-sans)',
+        fontWeight: 600,
+        fontSize: '0.5rem',
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase' as const,
+        color: '#B0AB9F',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
 
-function SidebarNavItem({
+function SidebarItem({
   to,
   icon,
   label,
-  locked,
   active,
-  badge,
+  dotStatus,
 }: {
   to: string
   icon: React.ReactNode
   label: string
-  locked?: boolean
   active?: boolean
-  badge?: string
+  dotStatus?: string
 }) {
-  if (locked) {
-    return (
-      <div
-        className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg cursor-not-allowed opacity-50"
-        style={{ color: 'var(--color-gris-400)' }}
-      >
-        {icon}
-        <span className="truncate">{label}</span>
-      </div>
-    )
-  }
-
   return (
     <NavLink
       to={to}
-      className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg"
+      className="flex items-center gap-3 px-3 py-2 rounded-md"
       style={{
-        backgroundColor: active ? 'var(--color-celsius-50)' : 'transparent',
-        color: active ? 'var(--color-celsius-900)' : 'var(--color-texte)',
+        backgroundColor: active ? '#E8F0EB' : 'transparent',
+        color: active ? '#1B4332' : '#2A2A28',
+        fontFamily: 'var(--font-sans)',
         fontWeight: active ? 600 : 400,
+        fontSize: '0.85rem',
       }}
     >
-      <span style={{ color: active ? 'var(--color-celsius-900)' : 'var(--color-texte-secondary)' }}>
-        {icon}
-      </span>
-      <span className="truncate flex-1">{label}</span>
-      {badge && (
+      <span style={{ color: active ? '#1B4332' : '#7A766D' }}>{icon}</span>
+      <span className="flex-1 truncate">{label}</span>
+      {dotStatus && (
         <span
-          className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-          style={{
-            backgroundColor: badge === '•' ? 'var(--color-corail-500)' : 'var(--color-celsius-100)',
-            color: badge === '•' ? 'white' : 'var(--color-celsius-900)',
-            minWidth: badge === '•' ? '8px' : undefined,
-            height: badge === '•' ? '8px' : undefined,
-          }}
-        >
-          {badge === '•' ? '' : badge}
-        </span>
+          className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotStatus === 'in_progress' ? 'dot-pulse' : ''}`}
+          style={{ backgroundColor: dotColor[dotStatus] || '#E5E1D8' }}
+        />
       )}
     </NavLink>
-  )
-}
-
-function StatusDot({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    completed: 'var(--color-celsius-900)',
-    in_progress: 'var(--color-corail-500)',
-    not_started: 'var(--color-gris-300)',
-  }
-  return (
-    <div
-      className="w-2 h-2 rounded-full shrink-0"
-      style={{ backgroundColor: colors[status] || colors.not_started }}
-    />
   )
 }
