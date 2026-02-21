@@ -460,23 +460,29 @@ export default function ClientHomeDashboard() {
       <div className="mt-7 dash-fadein" style={{ animationDelay: '200ms' }}>
         <div className="label-uppercase mb-3" style={{ letterSpacing: '0.1em' }}>EN UN COUP D'ŒIL</div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12, padding: 20 }}>
-            <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em' }}>SONDAGE INTERNE</div>
+          {/* Sondage */}
+          <KpiCard
+            label="SONDAGE INTERNE"
+            isDone={surveyCount >= surveyTarget}
+          >
             <div>
               <span className="font-display" style={{ fontWeight: 500, fontSize: '1.4rem', color: '#2A2A28' }}>{surveyCount}</span>
               <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#B0AB9F' }}> / {surveyTarget}</span>
             </div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>réponses collectées</div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: surveyCount >= surveyTarget ? '#1B4332' : '#B0AB9F', fontWeight: surveyCount >= surveyTarget ? 500 : 400 }}>
+              {surveyCount >= surveyTarget ? '👍 Excellent taux de réponse !' : 'réponses collectées'}
+            </div>
             <div className="flex gap-[3px] mt-2">
               {Array.from({ length: surveyTarget }).map((_, i) => (
                 <div key={i} className="h-[4px] rounded-full" style={{ width: 6, backgroundColor: i < surveyCount ? '#1B4332' : '#E5E1D8' }} />
               ))}
             </div>
-          </div>
-          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12, padding: 20 }}>
-            <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em' }}>
-              {isAnalysisOrLater ? 'ANALYSE' : 'PROCHAINE ÉTAPE'}
-            </div>
+          </KpiCard>
+          {/* Analyse */}
+          <KpiCard
+            label={isAnalysisOrLater ? 'ANALYSE' : 'PROCHAINE ÉTAPE'}
+            isDone={demoStatus === 'ready_for_restitution' || demoStatus === 'delivered'}
+          >
             <div className="font-display" style={{ fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>
               {isAnalysisOrLater
                 ? (demoStatus === 'analysis' ? 'En cours' : 'Terminée')
@@ -487,16 +493,19 @@ export default function ClientHomeDashboard() {
                 ? (demoStatus === 'analysis' ? `${analyst.first_name} étudie vos réponses` : 'Rapport finalisé')
                 : `${doneCount}/4 blocs complétés`}
             </div>
-          </div>
-          <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 12, padding: 20 }}>
-            <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em' }}>RESTITUTION</div>
+          </KpiCard>
+          {/* Restitution */}
+          <KpiCard
+            label="RESTITUTION"
+            isDone={diagnosticUnlocked}
+          >
             <div className="font-display" style={{ fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>
               {diagnosticUnlocked ? 'Fait ✓' : isRestitutionReady ? 'À planifier' : 'Bientôt'}
             </div>
             <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F' }}>
               {diagnosticUnlocked ? 'Diagnostic déverrouillé' : 'Visio après finalisation'}
             </div>
-          </div>
+          </KpiCard>
         </div>
       </div>
 
@@ -549,6 +558,7 @@ export default function ClientHomeDashboard() {
       <style>{`
         @keyframes dashFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .dash-fadein { animation: dashFadeIn 0.5s ease-out both; }
+        @keyframes kpiPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
       `}</style>
     </div>
   )
@@ -587,6 +597,43 @@ function ActionCard({ label, title, subtitle, icon, iconBg, hovered, onHover, on
         </div>
         {locked ? <Lock size={14} color="#B0AB9F" className="shrink-0" /> : <ChevronRight size={16} color="#B0AB9F" className="shrink-0" />}
       </div>
+    </div>
+  )
+}
+
+/* ── KPI Card with green halo ── */
+function KpiCard({ label, isDone, children }: {
+  label: string; isDone: boolean; children: React.ReactNode
+}) {
+  return (
+    <div style={{
+      backgroundColor: '#FFFFFF',
+      border: `1px solid ${isDone ? '#2D6A4F' : '#EDEAE3'}`,
+      borderRadius: 12, padding: 20, position: 'relative', overflow: 'hidden',
+      transition: 'border-color 0.3s, box-shadow 0.3s',
+      boxShadow: isDone ? '0 0 0 1px rgba(27,67,50,0.08), 0 4px 16px rgba(27,67,50,0.08)' : 'none',
+    }}>
+      {/* Green glow background when done */}
+      {isDone && (
+        <div style={{
+          position: 'absolute', top: -20, right: -20, width: 80, height: 80,
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,106,79,0.12) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
+      )}
+      <div className="flex items-center gap-2 mb-2">
+        <div className="label-uppercase" style={{ letterSpacing: '0.1em', flex: 1 }}>{label}</div>
+        {isDone && (
+          <div style={{
+            width: 20, height: 20, borderRadius: '50%', backgroundColor: '#1B4332',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            animation: 'kpiPop 0.4s ease-out',
+          }}>
+            <Check size={11} color="#fff" strokeWidth={2.5} />
+          </div>
+        )}
+      </div>
+      {children}
     </div>
   )
 }

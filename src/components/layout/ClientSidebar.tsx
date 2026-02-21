@@ -86,67 +86,167 @@ const dotColor: Record<string, string> = {
   todo: '#E5E1D8',
 }
 
-export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void }) {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const analyst = MOCK_ANALYST
-  const [helpOpen, setHelpOpen] = useState(false)
-  const [expandedStep, setExpandedStep] = useState<string | null>(null)
+// ── Derive sidebar steps from demo status ──────
+import type { DemoStatus } from '@/data/demoData'
 
-  const blocStatuses = useMemo(computeBlocStatuses, [])
+function deriveStepsFromDemo(demoStatus: DemoStatus | undefined, analyst: { first_name: string }): JourneyStep[] {
+  const s = demoStatus || 'questionnaire'
 
-  // For demo: step 1 done, step 2 current, step 3 parallel, steps 4-5 upcoming
-  const completedBlocs = Object.values(blocStatuses).filter(s => s === 'done').length
-  const allBlocsDone = completedBlocs === 4
-  const questStatus: StepStatus = allBlocsDone ? 'done' : 'current'
+  const statusMap: Record<string, { appel: StepStatus; quest: StepStatus; sondage: StepStatus; analyse: StepStatus; restitution: StepStatus }> = {
+    onboarding:            { appel: 'current',  quest: 'upcoming', sondage: 'upcoming', analyse: 'upcoming', restitution: 'upcoming' },
+    questionnaire:         { appel: 'done',     quest: 'current',  sondage: 'upcoming', analyse: 'upcoming', restitution: 'upcoming' },
+    survey_pending:        { appel: 'done',     quest: 'current',  sondage: 'current',  analyse: 'upcoming', restitution: 'upcoming' },
+    analysis:              { appel: 'done',     quest: 'done',     sondage: 'done',     analyse: 'current',  restitution: 'upcoming' },
+    ready_for_restitution: { appel: 'done',     quest: 'done',     sondage: 'done',     analyse: 'done',     restitution: 'current' },
+    delivered:             { appel: 'done',     quest: 'done',     sondage: 'done',     analyse: 'done',     restitution: 'done' },
+  }
 
-  const steps: JourneyStep[] = [
+  const st = statusMap[s] || statusMap.questionnaire
+
+  const statusTexts: Record<string, { appel: string; quest: string; sondage: string; analyse: string; restitution: string }> = {
+    onboarding:            { appel: 'À planifier',    quest: '—',            sondage: '—',              analyse: '—',            restitution: '—' },
+    questionnaire:         { appel: 'Réalisé',        quest: '2/3 blocs',    sondage: '—',              analyse: '—',            restitution: '—' },
+    survey_pending:        { appel: 'Réalisé',        quest: '3/3 blocs',    sondage: '12/30 réponses', analyse: '—',            restitution: '—' },
+    analysis:              { appel: 'Réalisé',        quest: 'Terminé',      sondage: '34/30 ✓',        analyse: 'En cours',     restitution: '—' },
+    ready_for_restitution: { appel: 'Réalisé',        quest: 'Terminé',      sondage: '34/30 ✓',        analyse: 'Terminée',     restitution: 'À planifier' },
+    delivered:             { appel: 'Réalisé',        quest: 'Terminé',      sondage: '34/30 ✓',        analyse: 'Terminée',     restitution: 'Fait ✓' },
+  }
+
+  const txt = statusTexts[s] || statusTexts.questionnaire
+
+  // Sub-item statuses for questionnaire blocs
+  const blocStatusMap: Record<string, { b2: 'done' | 'in_progress' | 'todo'; b3: 'done' | 'in_progress' | 'todo'; b4: 'done' | 'in_progress' | 'todo' }> = {
+    onboarding:            { b2: 'todo', b3: 'todo', b4: 'todo' },
+    questionnaire:         { b2: 'done', b3: 'in_progress', b4: 'todo' },
+    survey_pending:        { b2: 'done', b3: 'done', b4: 'in_progress' },
+    analysis:              { b2: 'done', b3: 'done', b4: 'done' },
+    ready_for_restitution: { b2: 'done', b3: 'done', b4: 'done' },
+    delivered:             { b2: 'done', b3: 'done', b4: 'done' },
+  }
+
+  const bs = blocStatusMap[s] || blocStatusMap.questionnaire
+  const blocLabel = (st: 'done' | 'in_progress' | 'todo') => st === 'done' ? 'Terminé' : st === 'in_progress' ? 'En cours' : 'À faire'
+
+  const sondageSubStatus: Record<string, { sondage: 'done' | 'in_progress' | 'todo'; entretien: 'done' | 'in_progress' | 'todo'; sondageTxt: string; entretienTxt: string }> = {
+    onboarding:            { sondage: 'todo', entretien: 'todo', sondageTxt: '—', entretienTxt: '—' },
+    questionnaire:         { sondage: 'todo', entretien: 'todo', sondageTxt: '—', entretienTxt: '—' },
+    survey_pending:        { sondage: 'in_progress', entretien: 'todo', sondageTxt: '12/30 réponses', entretienTxt: 'À compléter' },
+    analysis:              { sondage: 'done', entretien: 'done', sondageTxt: '34/30 ✓', entretienTxt: 'Complété' },
+    ready_for_restitution: { sondage: 'done', entretien: 'done', sondageTxt: '34/30 ✓', entretienTxt: 'Complété' },
+    delivered:             { sondage: 'done', entretien: 'done', sondageTxt: '34/30 ✓', entretienTxt: 'Complété' },
+  }
+
+  const ss = sondageSubStatus[s] || sondageSubStatus.questionnaire
+
+  return [
     {
       id: 'appel', label: 'Appel de lancement', icon: <Phone size={12} />,
-      status: 'done', statusText: 'Réalisé',
+      status: st.appel, statusText: txt.appel,
       subItems: [
-        { label: 'Bloc 1 — Votre démarche', path: '/client/questionnaire/bloc1', status: blocStatuses.bloc1 as any },
+        { label: 'Bloc 1 — Votre démarche', path: '/client/questionnaire/bloc1', status: st.appel === 'done' ? 'done' as const : 'todo' as const },
       ],
     },
     {
       id: 'questionnaire', label: 'Questionnaire', icon: <FileText size={12} />,
-      status: questStatus, statusText: `${completedBlocs - 1}/3 blocs`,
+      status: st.quest, statusText: txt.quest,
       subItems: [
-        { label: 'Bloc 2 — Votre maturité', path: '/client/questionnaire/bloc2', status: blocStatuses.bloc2 as any, statusText: blocStatuses.bloc2 === 'done' ? 'Terminé' : blocStatuses.bloc2 === 'in_progress' ? 'En cours' : 'À faire' },
-        { label: 'Bloc 3 — Vos enjeux', path: '/client/questionnaire/bloc3', status: blocStatuses.bloc3 as any, statusText: blocStatuses.bloc3 === 'done' ? 'Terminé' : blocStatuses.bloc3 === 'in_progress' ? 'En cours' : 'À faire' },
-        { label: 'Bloc 4 — La perception', path: '/client/questionnaire/bloc4', status: blocStatuses.bloc4 as any, statusText: blocStatuses.bloc4 === 'done' ? 'Terminé' : blocStatuses.bloc4 === 'in_progress' ? 'En cours' : 'À faire' },
+        { label: 'Bloc 2 — Votre maturité', path: '/client/questionnaire/bloc2', status: bs.b2, statusText: blocLabel(bs.b2) },
+        { label: 'Bloc 3 — Vos enjeux', path: '/client/questionnaire/bloc3', status: bs.b3, statusText: blocLabel(bs.b3) },
+        { label: 'Bloc 4 — La perception', path: '/client/questionnaire/bloc4', status: bs.b4, statusText: blocLabel(bs.b4) },
       ],
     },
     {
       id: 'sondage', label: 'Sondage & entretiens', icon: <Users size={12} />,
-      status: 'current', statusText: '12/30 réponses',
+      status: st.sondage, statusText: txt.sondage,
       subItems: [
-        { label: 'Sondage interne', path: '/client/sondage', status: 'in_progress', statusText: '12/30 réponses' },
-        { label: 'Entretiens direction', path: '/client/entretiens', status: 'todo', statusText: 'À compléter' },
+        { label: 'Sondage interne', path: '/client/sondage', status: ss.sondage, statusText: ss.sondageTxt },
+        { label: 'Entretiens direction', path: '/client/entretiens', status: ss.entretien, statusText: ss.entretienTxt },
       ],
     },
     {
       id: 'analyse', label: 'Analyse', icon: <BarChart3 size={12} />,
-      status: 'upcoming', statusText: '—',
+      status: st.analyse, statusText: txt.analyse,
       subItems: [
         { label: `${analyst.first_name} travaille sur votre diagnostic`, info: true },
-        { label: 'Étape 1/4 — Collecte des données', info: true },
       ],
     },
     {
       id: 'restitution', label: 'Restitution & diagnostic', icon: <Presentation size={12} />,
-      status: 'upcoming', statusText: 'Verrouillé',
-      subItems: DIAG_SECTIONS.map(s => ({
-        label: s.label, path: `/client/diagnostic/${s.slug}`, status: 'todo' as const,
+      status: st.restitution, statusText: txt.restitution,
+      subItems: DIAG_SECTIONS.map(sec => ({
+        label: sec.label, path: `/client/diagnostic/${sec.slug}`,
+        status: (st.restitution === 'done' ? 'done' : 'todo') as 'done' | 'todo',
       })),
     },
   ]
+}
+
+export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const analyst = MOCK_ANALYST
+  const demo = useDemoIfAvailable()
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [expandedStep, setExpandedStep] = useState<string | null>(null)
+
+  // Use demo-derived steps if demo is active, otherwise fall back to localStorage-based
+  const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
+  const steps = useMemo(() => {
+    if (demoStatus) {
+      return deriveStepsFromDemo(demoStatus, analyst)
+    }
+    // Fallback: compute from localStorage
+    const blocStatuses = computeBlocStatuses()
+    const completedBlocs = Object.values(blocStatuses).filter(s => s === 'done').length
+    const allBlocsDone = completedBlocs === 4
+    const questStatus: StepStatus = allBlocsDone ? 'done' : 'current'
+    return [
+      {
+        id: 'appel', label: 'Appel de lancement', icon: <Phone size={12} />,
+        status: 'done' as StepStatus, statusText: 'Réalisé',
+        subItems: [
+          { label: 'Bloc 1 — Votre démarche', path: '/client/questionnaire/bloc1', status: blocStatuses.bloc1 as any },
+        ] as SubItem[],
+      },
+      {
+        id: 'questionnaire', label: 'Questionnaire', icon: <FileText size={12} />,
+        status: questStatus, statusText: `${completedBlocs - 1}/3 blocs`,
+        subItems: [
+          { label: 'Bloc 2 — Votre maturité', path: '/client/questionnaire/bloc2', status: blocStatuses.bloc2 as any, statusText: blocStatuses.bloc2 === 'done' ? 'Terminé' : blocStatuses.bloc2 === 'in_progress' ? 'En cours' : 'À faire' },
+          { label: 'Bloc 3 — Vos enjeux', path: '/client/questionnaire/bloc3', status: blocStatuses.bloc3 as any, statusText: blocStatuses.bloc3 === 'done' ? 'Terminé' : blocStatuses.bloc3 === 'in_progress' ? 'En cours' : 'À faire' },
+          { label: 'Bloc 4 — La perception', path: '/client/questionnaire/bloc4', status: blocStatuses.bloc4 as any, statusText: blocStatuses.bloc4 === 'done' ? 'Terminé' : blocStatuses.bloc4 === 'in_progress' ? 'En cours' : 'À faire' },
+        ] as SubItem[],
+      },
+      {
+        id: 'sondage', label: 'Sondage & entretiens', icon: <Users size={12} />,
+        status: 'current' as StepStatus, statusText: '12/30 réponses',
+        subItems: [
+          { label: 'Sondage interne', path: '/client/sondage', status: 'in_progress', statusText: '12/30 réponses' },
+          { label: 'Entretiens direction', path: '/client/entretiens', status: 'todo', statusText: 'À compléter' },
+        ] as SubItem[],
+      },
+      {
+        id: 'analyse', label: 'Analyse', icon: <BarChart3 size={12} />,
+        status: 'upcoming' as StepStatus, statusText: '—',
+        subItems: [
+          { label: `${analyst.first_name} travaille sur votre diagnostic`, info: true },
+        ] as SubItem[],
+      },
+      {
+        id: 'restitution', label: 'Restitution & diagnostic', icon: <Presentation size={12} />,
+        status: 'upcoming' as StepStatus, statusText: 'Verrouillé',
+        subItems: DIAG_SECTIONS.map(s => ({
+          label: s.label, path: `/client/diagnostic/${s.slug}`, status: 'todo' as const,
+        })) as SubItem[],
+      },
+    ] as JourneyStep[]
+  }, [demoStatus, analyst])
 
   // Auto-expand current step
   useEffect(() => {
     const current = steps.find(s => s.status === 'current')
-    if (current && expandedStep === null) setExpandedStep(current.id)
-  }, [])
+    if (current) setExpandedStep(current.id)
+  }, [demoStatus])
 
   function toggleStep(id: string) {
     setExpandedStep(prev => prev === id ? null : id)

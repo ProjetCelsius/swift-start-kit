@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Lock, ChevronRight, ChevronLeft, GripVertical, X, Clock } from 'lucide-react'
+import { Lock, ChevronRight, ChevronLeft, GripVertical, X } from 'lucide-react'
+import QuestionnaireHeader from '@/components/questionnaire/QuestionnaireHeader'
 import {
   MOTEURS, FREINS,
   REGULATORY_ROWS, REGULATORY_COLUMNS,
@@ -359,28 +360,14 @@ export default function QuestionnaireBloc3() {
   // ── MAIN FORM ──────────────────────────────
   return (
     <div style={{ maxWidth: 680 }} className="animate-fade-in">
-      {/* Standardized header */}
-      <div style={{ marginBottom: 32 }}>
-        <p className="label-uppercase" style={{ marginBottom: 12 }}>QUESTIONNAIRE</p>
-        <h1 className="font-display" style={{ fontSize: '1.4rem', fontWeight: 400, color: 'var(--color-texte)', marginBottom: 8 }}>
-          Bloc 3 — Vos enjeux
-        </h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-texte-secondary)', margin: 0 }}>
-            Identifiez et hiérarchisez vos enjeux climat prioritaires.
-          </p>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            padding: '4px 12px', borderRadius: 20,
-            border: '1px solid var(--color-border)',
-            fontSize: '0.7rem', fontWeight: 500, color: 'var(--color-texte-secondary)',
-            whiteSpace: 'nowrap', flexShrink: 0,
-          }}>
-            <Clock size={11} /> ~12 min
-          </span>
-        </div>
-        <div style={{ borderBottom: '1px solid var(--color-border)' }} />
-      </div>
+      {/* Premium header */}
+      <QuestionnaireHeader
+        blocNumber={3}
+        title="Vos enjeux"
+        subtitle="Identifiez et hiérarchisez vos enjeux climat prioritaires."
+        duration="~12 min"
+        accentColor="#B87333"
+      />
 
       {/* Q21 — Moteurs */}
       <div style={{ marginBottom: 48 }}>
