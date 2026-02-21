@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, ChevronLeft, Copy, Mail, Link2, Rocket, CheckCircle, Minus, HelpCircle, XCircle } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Copy, Mail, Link2, Rocket, CheckCircle, Minus, HelpCircle, XCircle, Clock } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import {
   PERCEPTION_AFFIRMATIONS,
@@ -80,7 +80,7 @@ function PerceptionSlider({ value, onChange, color }: {
           onChange={e => onChange(parseInt(e.target.value))}
           className={`perception-slider-${sliderId}`}
           style={{
-            width: '100%', height: 6, borderRadius: 3, appearance: 'none', cursor: 'pointer',
+            width: '100%', height: 4, borderRadius: 3, appearance: 'none', cursor: 'pointer',
             background: `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, var(--color-subtle) ${pct}%, var(--color-subtle) 100%)`,
             outline: 'none',
           }}
@@ -90,13 +90,13 @@ function PerceptionSlider({ value, onChange, color }: {
             -webkit-appearance: none;
             width: 20px; height: 20px; border-radius: 50%;
             background: ${color}; border: 3px solid white;
-            box-shadow: 0 1px 3px rgba(42,42,40,.04);
+            box-shadow: 0 2px 6px rgba(27,67,50,0.2);
             cursor: grab;
           }
           .perception-slider-${sliderId}::-moz-range-thumb {
             width: 20px; height: 20px; border-radius: 50%;
             background: ${color}; border: 3px solid white;
-            box-shadow: 0 1px 3px rgba(42,42,40,.04);
+            box-shadow: 0 2px 6px rgba(27,67,50,0.2);
             cursor: grab; border: none;
           }
           .perception-slider-${sliderId}:active::-webkit-slider-thumb { cursor: grabbing; }
@@ -104,8 +104,8 @@ function PerceptionSlider({ value, onChange, color }: {
         `}</style>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-        <span style={{ fontSize: '0.75rem', color: 'var(--color-texte-muted)' }}>Pas du tout d'accord</span>
-        <span style={{ fontSize: '0.75rem', color: 'var(--color-texte-muted)' }}>Tout à fait d'accord</span>
+        <span style={{ fontSize: '0.7rem', color: 'var(--color-texte-muted)' }}>Pas du tout d'accord</span>
+        <span style={{ fontSize: '0.7rem', color: 'var(--color-texte-muted)' }}>Tout à fait d'accord</span>
       </div>
     </div>
   )
@@ -213,20 +213,35 @@ export default function QuestionnaireBloc4() {
   // ── INTRO ──
   if (phase === 'intro') {
     return (
-      <div style={{ maxWidth: 960 }} className="animate-fade-in">
-        <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: 20, marginBottom: 32 }}>
-          <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, marginBottom: 4 }}>
-            La perception dans votre organisation
+      <div style={{ maxWidth: 680 }} className="animate-fade-in">
+        <div style={{ marginBottom: 32 }}>
+          <p className="label-uppercase" style={{ marginBottom: 12 }}>QUESTIONNAIRE</p>
+          <h1 className="font-display" style={{ fontSize: '1.4rem', fontWeight: 400, color: 'var(--color-texte)', marginBottom: 8 }}>
+            Bloc 4 — La perception
           </h1>
-          <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)' }}>Bloc 4 · ~15 min</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-texte-secondary)', margin: 0 }}>
+              Comment le climat est-il perçu en interne ?
+            </p>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '4px 12px', borderRadius: 20,
+              border: '1px solid var(--color-border)',
+              fontSize: '0.7rem', fontWeight: 500, color: 'var(--color-texte-secondary)',
+              whiteSpace: 'nowrap', flexShrink: 0,
+            }}>
+              <Clock size={11} /> ~15 min
+            </span>
+          </div>
+          <div style={{ borderBottom: '1px solid var(--color-border)' }} />
         </div>
-        <p style={{ fontSize: '0.9rem', color: 'var(--color-texte)', lineHeight: 1.6, maxWidth: 640, marginBottom: 32 }}>
+
+        <p style={{ fontSize: '0.9rem', color: 'var(--color-texte)', lineHeight: 1.6, maxWidth: 560, marginBottom: 32 }}>
           Vous allez d'abord répondre pour vous-même, puis estimer ce que diraient vos équipes.
           Les résultats seront confrontés aux réponses réelles via le sondage interne.
         </p>
         <button
           onClick={() => setPhase('self')}
-          className="font-display"
           style={{
             padding: '12px 28px', borderRadius: 8, backgroundColor: 'var(--color-primary)',
             color: '#fff', fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
@@ -244,17 +259,16 @@ export default function QuestionnaireBloc4() {
   // ── DONE ──
   if (phase === 'done') {
     return (
-      <div style={{ maxWidth: 960 }} className="animate-fade-in">
+      <div style={{ maxWidth: 680 }} className="animate-fade-in">
         <div style={{
-          backgroundColor: 'var(--color-blanc)', borderRadius: 14, padding: 32,
-          boxShadow: 'var(--shadow-card)', textAlign: 'center',
+          backgroundColor: 'var(--color-blanc)', border: '1px solid var(--color-border)',
+          borderRadius: 14, padding: 32, textAlign: 'center',
         }}>
           <p style={{ fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--color-texte-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
             Vos réponses sont enregistrées. Les résultats seront révélés dans votre diagnostic.
           </p>
           <button
-            onClick={() => navigate('/')}
-            className="font-display"
+            onClick={() => navigate('/client/dashboard')}
             style={{
               padding: '12px 28px', borderRadius: 8, backgroundColor: 'var(--color-primary)',
               color: '#fff', fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
@@ -274,15 +288,16 @@ export default function QuestionnaireBloc4() {
   if (phase === 'survey') {
     const rec = getRecommendedRespondents(effectif)
     return (
-      <div style={{ maxWidth: 960 }} className="animate-fade-in">
+      <div style={{ maxWidth: 680 }} className="animate-fade-in">
         <p className="label-uppercase" style={{ marginBottom: 8 }}>SONDAGE INTERNE</p>
-        <h1 className="font-display" style={{ fontSize: '1.5rem', fontWeight: 400, marginBottom: 24 }}>
-          Lancer le sondage
+        <h1 className="font-display" style={{ fontSize: '1.2rem', fontWeight: 400, marginBottom: 24 }}>
+          Lancez le sondage interne
         </h1>
 
         {/* Recommendation */}
         <div style={{
-          backgroundColor: 'var(--color-primary-light)', borderRadius: 14, padding: 24, marginBottom: 24,
+          backgroundColor: 'var(--color-primary-light)', border: '1px solid var(--color-primary)',
+          borderRadius: 14, padding: 20, marginBottom: 24,
         }}>
           <p style={{ fontSize: '0.9rem', color: 'var(--color-texte)' }}>
             Nous recommandons <strong>{rec}</strong> pour obtenir des résultats exploitables.
@@ -291,12 +306,12 @@ export default function QuestionnaireBloc4() {
 
         {/* Config form */}
         <div style={{
-          backgroundColor: 'var(--color-blanc)', borderRadius: 14, padding: 24,
-          boxShadow: 'var(--shadow-card)', marginBottom: 24,
+          backgroundColor: 'var(--color-blanc)', border: '1px solid var(--color-border)',
+          borderRadius: 14, padding: 24, marginBottom: 24,
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, marginBottom: 6 }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, marginBottom: 6, fontFamily: 'var(--font-sans)' }}>
                 Nombre estimé de collaborateurs à sonder
               </label>
               <input
@@ -304,10 +319,13 @@ export default function QuestionnaireBloc4() {
                 onChange={e => update('surveyCount', e.target.value)}
                 placeholder="Ex: 25"
                 style={{
-                  width: '100%', height: 44, padding: '0 14px', borderRadius: 8,
+                  width: '100%', height: 48, padding: '0 14px', borderRadius: 8,
                   border: '1px solid var(--color-border)', fontSize: '0.875rem',
                   fontFamily: 'var(--font-sans)', outline: 'none',
+                  transition: 'border-color 0.2s, box-shadow 0.2s',
                 }}
+                onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(27,67,50,0.08)' }}
+                onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
               />
             </div>
 
@@ -336,10 +354,14 @@ export default function QuestionnaireBloc4() {
                 value={state.surveyMessage}
                 onChange={e => update('surveyMessage', e.target.value)}
                 style={{
-                  width: '100%', minHeight: 100, padding: 14, borderRadius: 10,
+                  width: '100%', minHeight: 100, padding: 14, borderRadius: 8,
                   border: '1px solid var(--color-border)', fontSize: '0.85rem',
                   fontFamily: 'var(--font-sans)', resize: 'none', outline: 'none',
+                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                  backgroundColor: 'var(--color-blanc)',
                 }}
+                onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(27,67,50,0.08)' }}
+                onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
               />
             </div>
           </div>
@@ -348,7 +370,6 @@ export default function QuestionnaireBloc4() {
         {!state.linkGenerated ? (
           <button
             onClick={() => update('linkGenerated', true)}
-            className="font-display"
             style={{
               width: '100%', padding: '14px 28px', borderRadius: 8,
               backgroundColor: 'var(--color-primary)', color: '#fff',
@@ -365,14 +386,14 @@ export default function QuestionnaireBloc4() {
               display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16,
             }}>
               <Link2 size={16} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
-              <code style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontFamily: 'var(--font-sans)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <code style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 https://boussole-climat.app/sondage/abc123
               </code>
             </div>
             <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
               <button onClick={copyLink} style={{
                 flex: 1, padding: '10px 16px', borderRadius: 8,
-                border: `1.5px solid var(--color-primary)`,
+                border: `1px solid var(--color-primary)`,
                 backgroundColor: copied ? 'var(--color-primary)' : 'transparent',
                 color: copied ? '#fff' : 'var(--color-primary)',
                 fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer',
@@ -383,7 +404,7 @@ export default function QuestionnaireBloc4() {
               </button>
               <button style={{
                 flex: 1, padding: '10px 16px', borderRadius: 8,
-                border: '1.5px solid var(--color-accent-warm)',
+                border: '1px solid var(--color-accent-warm)',
                 color: 'var(--color-accent-warm)', backgroundColor: 'transparent',
                 fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -394,8 +415,8 @@ export default function QuestionnaireBloc4() {
 
             {/* DG questionnaire */}
             <div style={{
-              backgroundColor: 'var(--color-blanc)', borderRadius: 14, padding: 20,
-              boxShadow: 'var(--shadow-card)', marginBottom: 24,
+              backgroundColor: 'var(--color-blanc)', border: '1px solid var(--color-border)',
+              borderRadius: 14, padding: 20, marginBottom: 24,
             }}>
               <p style={{ fontSize: '0.85rem', fontWeight: 500, marginBottom: 10 }}>Envoyer le questionnaire DG</p>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -404,7 +425,7 @@ export default function QuestionnaireBloc4() {
                   onChange={e => update('dgEmail', e.target.value)}
                   placeholder="email@entreprise.com"
                   style={{
-                    flex: 1, height: 44, padding: '0 14px', borderRadius: 8,
+                    flex: 1, height: 48, padding: '0 14px', borderRadius: 8,
                     border: '1px solid var(--color-border)', fontSize: '0.85rem',
                     fontFamily: 'var(--font-sans)', outline: 'none',
                   }}
@@ -420,7 +441,6 @@ export default function QuestionnaireBloc4() {
 
             <button
               onClick={() => setPhase('done')}
-              className="font-display"
               style={{
                 width: '100%', padding: '14px 28px', borderRadius: 8,
                 backgroundColor: 'var(--color-primary)', color: '#fff',
@@ -442,9 +462,9 @@ export default function QuestionnaireBloc4() {
   // ── POPULATION MAP ──
   if (phase === 'population') {
     return (
-      <div style={{ maxWidth: 960 }} className="animate-fade-in">
+      <div style={{ maxWidth: 680 }} className="animate-fade-in">
         <p className="label-uppercase" style={{ marginBottom: 8 }}>CARTOGRAPHIE DE VOS ÉQUIPES</p>
-        <h1 className="font-display" style={{ fontSize: '1.5rem', fontWeight: 400, marginBottom: 24 }}>
+        <h1 className="font-display" style={{ fontSize: '1.2rem', fontWeight: 400, marginBottom: 24 }}>
           Répartition de vos collaborateurs
         </h1>
 
@@ -453,7 +473,7 @@ export default function QuestionnaireBloc4() {
           {POPULATION_PROFILES.map(p => (
             <div key={p.id} style={{
               width: 120, textAlign: 'center', padding: 12,
-              backgroundColor: 'var(--color-blanc)', borderRadius: 10,
+              backgroundColor: 'var(--color-blanc)', borderRadius: 12,
               border: '1px solid var(--color-border)',
             }}>
               <div style={{ color: p.color, display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
@@ -466,8 +486,8 @@ export default function QuestionnaireBloc4() {
         </div>
 
         <div style={{
-          backgroundColor: 'var(--color-blanc)', borderRadius: 14, padding: 24,
-          boxShadow: 'var(--shadow-card)', marginBottom: 24,
+          backgroundColor: 'var(--color-blanc)', border: '1px solid var(--color-border)',
+          borderRadius: 14, padding: 24, marginBottom: 24,
         }}>
           {/* Toggle */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
@@ -501,7 +521,7 @@ export default function QuestionnaireBloc4() {
                     value={state.population[i]}
                     onChange={e => updatePopulationManual(i, parseInt(e.target.value) || 0)}
                     style={{
-                      width: '100%', height: 40, padding: '0 14px', borderRadius: 8,
+                      width: '100%', height: 48, padding: '0 14px', borderRadius: 8,
                       border: '1px solid var(--color-border)', fontSize: '0.85rem',
                       fontFamily: 'var(--font-sans)', outline: 'none',
                     }}
@@ -512,7 +532,7 @@ export default function QuestionnaireBloc4() {
                     value={state.population[i]}
                     onChange={e => updatePopulation(i, parseInt(e.target.value))}
                     style={{
-                      width: '100%', height: 6, borderRadius: 3, appearance: 'none', cursor: 'pointer',
+                      width: '100%', height: 4, borderRadius: 3, appearance: 'none', cursor: 'pointer',
                       background: `linear-gradient(to right, ${p.color} 0%, ${p.color} ${state.population[i]}%, var(--color-subtle) ${state.population[i]}%, var(--color-subtle) 100%)`,
                       outline: 'none',
                     }}
@@ -529,23 +549,24 @@ export default function QuestionnaireBloc4() {
           )}
         </div>
 
-        <button
-          onClick={() => setPhase('survey')}
-          disabled={state.manualMode && popTotal !== 100}
-          className="font-display"
-          style={{
-            width: '100%', padding: '14px 28px', borderRadius: 8,
-            backgroundColor: 'var(--color-primary)', color: '#fff',
-            fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            opacity: (state.manualMode && popTotal !== 100) ? 0.4 : 1,
-            transition: 'background-color 0.2s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
-        >
-          Continuer <ChevronRight size={18} />
-        </button>
+        <div style={{ display: 'flex', gap: 12, maxWidth: 400, margin: '0 auto' }}>
+          <button
+            onClick={() => setPhase('survey')}
+            disabled={state.manualMode && popTotal !== 100}
+            style={{
+              flex: 1, padding: '14px 28px', borderRadius: 8,
+              backgroundColor: 'var(--color-primary)', color: '#fff',
+              fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              opacity: (state.manualMode && popTotal !== 100) ? 0.4 : 1,
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
+          >
+            Continuer <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
     )
   }
@@ -562,7 +583,6 @@ export default function QuestionnaireBloc4() {
         </p>
         <button
           onClick={startPrediction}
-          className="font-display"
           style={{
             padding: '12px 28px', borderRadius: 8, backgroundColor: 'var(--color-primary)',
             color: '#fff', fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
@@ -581,35 +601,53 @@ export default function QuestionnaireBloc4() {
   const progress = ((questionIndex + 1) / 8) * 100
 
   return (
-    <div style={{ maxWidth: 960 }}>
-      {/* Sticky top bar */}
-      <div style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        backgroundColor: 'var(--color-blanc)', borderBottom: '1px solid var(--color-border)',
-        padding: '16px 0', marginBottom: 32,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span className="font-display" style={{ fontSize: '1.1rem', fontWeight: 400 }}>
-            Bloc 4 : La perception
+    <div style={{ maxWidth: 680 }}>
+      {/* Standardized header */}
+      <div style={{ marginBottom: 24 }}>
+        <p className="label-uppercase" style={{ marginBottom: 12 }}>QUESTIONNAIRE</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <h1 className="font-display" style={{ fontSize: '1.4rem', fontWeight: 400, color: 'var(--color-texte)', margin: 0 }}>
+            Bloc 4 — La perception
+          </h1>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '4px 12px', borderRadius: 20,
+            border: '1px solid var(--color-border)',
+            fontSize: '0.7rem', fontWeight: 500, color: 'var(--color-texte-secondary)',
+            whiteSpace: 'nowrap',
+          }}>
+            <Clock size={11} /> ~15 min
           </span>
-          <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>
-            Question {questionIndex + 1}/8
+        </div>
+        <div style={{ borderBottom: '1px solid var(--color-border)', marginBottom: 16 }} />
+      </div>
+
+      {/* Progress + Part indicator */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-texte)' }}>
+            Question {questionIndex + 1} / 8
           </span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--color-texte-muted)' }}>~15 min</span>
+          <span style={{
+            fontSize: '0.52rem', fontWeight: 600, textTransform: 'uppercase' as const,
+            letterSpacing: '0.08em',
+            color: isSelf ? 'var(--color-primary)' : 'var(--color-accent-warm)',
+            borderLeft: `3px solid ${isSelf ? 'var(--color-primary)' : 'var(--color-accent-warm)'}`,
+            paddingLeft: 8,
+          }}>
+            {isSelf ? 'Partie A — Votre regard' : 'Partie B — Votre prédiction'}
+          </span>
         </div>
-        <div style={{ height: 4, backgroundColor: 'var(--color-subtle)', borderRadius: 2 }}>
-          <div style={{ height: '100%', width: `${progress}%`, backgroundColor: sliderColor, borderRadius: 2, transition: 'width 0.5s' }} />
+        <div style={{ height: 3, backgroundColor: 'var(--color-subtle)', borderRadius: 2 }}>
+          <div style={{ height: '100%', width: `${progress}%`, backgroundColor: sliderColor, borderRadius: 2, transition: 'width 0.4s ease-out' }} />
         </div>
-        <p className="label-uppercase" style={{ marginTop: 8, marginBottom: 0, color: isSelf ? 'var(--color-primary)' : 'var(--color-accent-warm)' }}>
-          {isSelf ? 'VOTRE REGARD' : 'PRÉDICTION'}
-        </p>
       </div>
 
       {/* Question */}
       <div key={fadeKey} className="animate-fade-in">
         <div style={{
-          backgroundColor: 'var(--color-blanc)', borderRadius: 14, padding: 24,
-          boxShadow: 'var(--shadow-card)', marginBottom: 32,
+          backgroundColor: 'var(--color-blanc)', border: '1px solid var(--color-border)',
+          borderRadius: 14, padding: 24, marginBottom: 32,
         }}>
           <p className="label-uppercase" style={{ marginBottom: 12, color: sliderColor }}>
             P{questionIndex + 1}
@@ -625,23 +663,23 @@ export default function QuestionnaireBloc4() {
         </div>
 
         {/* Navigation */}
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, maxWidth: 400, margin: '0 auto' }}>
           {questionIndex > 0 && (
             <button
               onClick={prevQuestion}
               style={{
-                padding: '12px 20px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-texte-secondary)',
-                backgroundColor: 'transparent', display: 'flex', alignItems: 'center', gap: 6,
+                padding: '12px 20px', borderRadius: 8,
+                border: '1px solid var(--color-border)', backgroundColor: 'transparent',
+                color: 'var(--color-texte)', fontSize: '0.875rem', fontWeight: 500,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
               }}
             >
-              <ChevronLeft size={16} /> Question précédente
+              <ChevronLeft size={16} /> Précédent
             </button>
           )}
           <button
             onClick={nextQuestion}
             disabled={currentScore === null}
-            className="font-display"
             style={{
               flex: 1, padding: '12px 28px', borderRadius: 8,
               backgroundColor: sliderColor, color: '#fff',
@@ -652,7 +690,7 @@ export default function QuestionnaireBloc4() {
               transition: 'opacity 0.2s',
             }}
           >
-            {questionIndex < 7 ? 'Suivante' : 'Continuer'} <ChevronRight size={18} />
+            {questionIndex < 7 ? 'Suivant →' : 'Continuer'} <ChevronRight size={18} />
           </button>
         </div>
       </div>

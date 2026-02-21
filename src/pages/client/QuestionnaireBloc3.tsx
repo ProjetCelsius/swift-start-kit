@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Lock, ChevronRight, GripVertical, X } from 'lucide-react'
+import { Lock, ChevronRight, ChevronLeft, GripVertical, X, Clock } from 'lucide-react'
 import {
   MOTEURS, FREINS,
   REGULATORY_ROWS, REGULATORY_COLUMNS,
@@ -60,13 +60,14 @@ function CountedTextarea({ value, onChange, placeholder }: {
         onChange={e => { if (e.target.value.length <= MAX_CHARS) onChange(e.target.value) }}
         placeholder={placeholder}
         style={{
-          width: '100%', minHeight: 120, padding: 16, borderRadius: 10,
+          width: '100%', minHeight: 120, padding: 16, borderRadius: 8,
           border: '1px solid var(--color-border)', fontSize: '0.85rem',
           fontFamily: 'var(--font-sans)', fontStyle: 'italic', resize: 'none',
-          outline: 'none', transition: 'border-color 0.2s', color: 'var(--color-texte)',
+          outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s',
+          color: 'var(--color-texte)', backgroundColor: 'var(--color-blanc)',
         }}
-        onFocus={e => (e.target.style.borderColor = 'var(--color-primary)')}
-        onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
+        onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(27,67,50,0.08)' }}
+        onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
       />
       <span style={{
         position: 'absolute', bottom: 8, right: 12,
@@ -84,19 +85,17 @@ export default function QuestionnaireBloc3() {
   const [state, setState] = useState<Bloc3State>(loadState)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showOverlay, setShowOverlay] = useState(false)
-  const [revealStep, setRevealStep] = useState(0) // 0-4 for letter reveal
+  const [revealStep, setRevealStep] = useState(0)
 
   const update = useCallback(<K extends keyof Bloc3State>(key: K, value: Bloc3State[K]) => {
     setState(prev => ({ ...prev, [key]: value }))
   }, [])
 
-  // Auto-save
   useEffect(() => {
     const t = setTimeout(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(state)), 500)
     return () => clearTimeout(t)
   }, [state])
 
-  // Letter reveal animation
   useEffect(() => {
     if (showOverlay && revealStep < 4) {
       const t = setTimeout(() => setRevealStep(s => s + 1), 200)
@@ -135,7 +134,6 @@ export default function QuestionnaireBloc3() {
     setShowOverlay(true)
   }
 
-  // ── Profil Climat calculation ──
   const bloc2Answers = loadBloc2Answers()
   const { code, profil } = computeFullProfil(
     bloc2Answers,
@@ -230,7 +228,6 @@ export default function QuestionnaireBloc3() {
 
   // ── FEEDBACK ───────────────────────────────
   if (showFeedback) {
-    // Build urgency list from Q23
     const urgencyItems = REGULATORY_ROWS.map(row => {
       const answer = state.regulatory[row.id]
       let level: 'ready' | 'approaching' | 'urgent' | null = null
@@ -252,17 +249,21 @@ export default function QuestionnaireBloc3() {
     }
 
     return (
-      <div style={{ maxWidth: 960 }} className="animate-fade-in">
-        <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, marginBottom: 4 }}>
-          Carte des échéances réglementaires
-        </h1>
-        <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)', marginBottom: 28 }}>
-          Vos 3 échéances les plus urgentes, basées sur vos réponses.
-        </p>
+      <div style={{ maxWidth: 680 }} className="animate-fade-in">
+        <div style={{ marginBottom: 32 }}>
+          <p className="label-uppercase" style={{ marginBottom: 12 }}>QUESTIONNAIRE</p>
+          <h1 className="font-display" style={{ fontSize: '1.4rem', fontWeight: 400, marginBottom: 8 }}>
+            Carte des échéances réglementaires
+          </h1>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-texte-secondary)', marginBottom: 16 }}>
+            Vos 3 échéances les plus urgentes, basées sur vos réponses.
+          </p>
+          <div style={{ borderBottom: '1px solid var(--color-border)' }} />
+        </div>
 
         <div style={{
-          backgroundColor: 'var(--color-blanc)', borderRadius: 14, padding: 24,
-          boxShadow: 'var(--shadow-card)', marginBottom: 32,
+          backgroundColor: 'var(--color-blanc)', border: '1px solid var(--color-border)',
+          borderRadius: 14, padding: 24, marginBottom: 32,
         }}>
           {urgencyItems.length === 0 ? (
             <p style={{ fontSize: '0.85rem', color: 'var(--color-texte-muted)' }}>
@@ -275,7 +276,7 @@ export default function QuestionnaireBloc3() {
                 return (
                   <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <span style={{
-                      fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px',
+                      fontSize: '0.7rem', fontWeight: 500, padding: '4px 12px',
                       borderRadius: 20, backgroundColor: s.bg, color: s.color,
                       flexShrink: 0,
                     }}>
@@ -296,13 +297,7 @@ export default function QuestionnaireBloc3() {
           )}
         </div>
 
-        {/* Profil Climat reveal button */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 24 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-border-active)' }} />
-          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-border-active)' }} />
-          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-border-active)' }} />
-        </div>
-
+        {/* Profil Climat reveal */}
         <div style={{
           background: 'linear-gradient(135deg, #E8F0EB, #F5EDE4)',
           borderRadius: 14, padding: '28px 32px', marginBottom: 24, textAlign: 'center',
@@ -315,7 +310,6 @@ export default function QuestionnaireBloc3() {
           </h3>
           <button
             onClick={handleReveal}
-            className="font-display"
             style={{
               padding: '12px 28px', borderRadius: 8,
               backgroundColor: 'var(--color-primary)', color: '#fff',
@@ -330,36 +324,62 @@ export default function QuestionnaireBloc3() {
           </button>
         </div>
 
-        <button
-          onClick={() => navigate('/client/questionnaire/bloc4')}
-          className="font-display"
-          style={{
-            width: '100%', padding: '14px 28px', borderRadius: 8,
-            backgroundColor: 'var(--color-primary)', color: '#fff',
-            fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            transition: 'background-color 0.2s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
-        >
-          Passer au Bloc 4 <ChevronRight size={18} />
-        </button>
+        {/* Navigation */}
+        <div style={{ display: 'flex', gap: 12, maxWidth: 400, margin: '0 auto' }}>
+          <button
+            onClick={() => setShowFeedback(false)}
+            style={{
+              padding: '12px 20px', borderRadius: 8,
+              border: '1px solid var(--color-border)', backgroundColor: 'transparent',
+              color: 'var(--color-texte)', fontSize: '0.875rem', fontWeight: 500,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            <ChevronLeft size={16} /> Précédent
+          </button>
+          <button
+            onClick={() => navigate('/client/questionnaire/bloc4')}
+            style={{
+              flex: 1, padding: '14px 28px', borderRadius: 8,
+              backgroundColor: 'var(--color-primary)', color: '#fff',
+              fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
+          >
+            Passer au Bloc 4 <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
     )
   }
 
   // ── MAIN FORM ──────────────────────────────
   return (
-    <div style={{ maxWidth: 960 }}>
-      {/* Header */}
-      <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: 20, marginBottom: 48 }}>
-        <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, marginBottom: 4 }}>
-          Vos enjeux et votre vision
+    <div style={{ maxWidth: 680 }} className="animate-fade-in">
+      {/* Standardized header */}
+      <div style={{ marginBottom: 32 }}>
+        <p className="label-uppercase" style={{ marginBottom: 12 }}>QUESTIONNAIRE</p>
+        <h1 className="font-display" style={{ fontSize: '1.4rem', fontWeight: 400, color: 'var(--color-texte)', marginBottom: 8 }}>
+          Bloc 3 — Vos enjeux
         </h1>
-        <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)' }}>
-          Bloc 3 · ~10 min
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-texte-secondary)', margin: 0 }}>
+            Identifiez et hiérarchisez vos enjeux climat prioritaires.
+          </p>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '4px 12px', borderRadius: 20,
+            border: '1px solid var(--color-border)',
+            fontSize: '0.7rem', fontWeight: 500, color: 'var(--color-texte-secondary)',
+            whiteSpace: 'nowrap', flexShrink: 0,
+          }}>
+            <Clock size={11} /> ~12 min
+          </span>
+        </div>
+        <div style={{ borderBottom: '1px solid var(--color-border)' }} />
       </div>
 
       {/* Q21 — Moteurs */}
@@ -384,9 +404,9 @@ export default function QuestionnaireBloc3() {
                 style={{
                   padding: '8px 16px', borderRadius: 20,
                   border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                  backgroundColor: isSelected ? 'var(--color-primary-light)' : 'var(--color-subtle)',
-                  color: isSelected ? 'var(--color-primary)' : 'var(--color-texte)',
-                  fontSize: '0.82rem', fontFamily: 'var(--font-sans)', fontWeight: 400,
+                  backgroundColor: isSelected ? 'var(--color-primary)' : 'var(--color-fond)',
+                  color: isSelected ? '#fff' : 'var(--color-texte)',
+                  fontSize: '0.82rem', fontFamily: 'var(--font-sans)', fontWeight: isSelected ? 500 : 400,
                   cursor: isDisabled ? 'not-allowed' : 'pointer',
                   opacity: isDisabled ? 0.4 : 1,
                   transition: 'all 0.15s', outline: 'none',
@@ -452,7 +472,7 @@ export default function QuestionnaireBloc3() {
           Quel est le principal frein à l'action climat dans votre organisation ?
         </h2>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 560 }}>
           {[...FREINS, 'Autre'].map(f => {
             const isSelected = state.frein === f
             return (
@@ -487,13 +507,14 @@ export default function QuestionnaireBloc3() {
                     placeholder="Précisez votre frein principal..."
                     style={{
                       width: '100%', marginTop: 8, padding: '12px 16px',
-                      borderRadius: 10, border: '1px solid var(--color-border)',
+                      borderRadius: 8, border: '1px solid var(--color-border)',
                       fontSize: '0.85rem', fontFamily: 'var(--font-sans)',
                       resize: 'none', minHeight: 80, outline: 'none',
-                      transition: 'border-color 0.2s', color: 'var(--color-texte)',
+                      transition: 'border-color 0.2s, box-shadow 0.2s', color: 'var(--color-texte)',
+                      backgroundColor: 'var(--color-blanc)',
                     }}
-                    onFocus={e => (e.target.style.borderColor = 'var(--color-primary)')}
-                    onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
+                    onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(27,67,50,0.08)' }}
+                    onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
                   />
                 )}
               </div>
@@ -513,10 +534,10 @@ export default function QuestionnaireBloc3() {
         <div className="hidden sm:block" style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
             <thead>
-              <tr style={{ backgroundColor: 'var(--color-primary)' }}>
-                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 600, fontSize: '0.7rem' }}>Obligation</th>
+              <tr style={{ backgroundColor: 'var(--color-subtle)' }}>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: 'var(--color-texte-muted)', fontWeight: 600, fontSize: '0.7rem', textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>Obligation</th>
                 {REGULATORY_COLUMNS.map(col => (
-                  <th key={col} style={{ padding: '12px 8px', textAlign: 'center', color: '#fff', fontWeight: 600, fontSize: '0.7rem', minWidth: 80 }}>
+                  <th key={col} style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--color-texte-muted)', fontWeight: 600, fontSize: '0.7rem', minWidth: 80, textTransform: 'uppercase' as const, letterSpacing: '0.05em' }}>
                     {col}
                   </th>
                 ))}
@@ -531,6 +552,9 @@ export default function QuestionnaireBloc3() {
                     return (
                       <td key={col} style={{ textAlign: 'center', height: 48, borderBottom: '1px solid var(--color-border)', cursor: 'pointer',
                         backgroundColor: isSelected ? 'var(--color-primary-light)' : undefined,
+                        borderRadius: isSelected ? 6 : undefined,
+                        fontWeight: isSelected ? 500 : undefined,
+                        color: isSelected ? 'var(--color-primary)' : undefined,
                       }}
                         onClick={() => update('regulatory', { ...state.regulatory, [row.id]: col })}
                       >
@@ -618,10 +642,11 @@ export default function QuestionnaireBloc3() {
             placeholder="Pouvez-vous préciser brièvement ?"
             className="animate-fade-in"
             style={{
-              width: '100%', padding: '12px 16px', borderRadius: 10,
+              width: '100%', padding: '12px 16px', borderRadius: 8,
               border: '1px solid var(--color-border)', fontSize: '0.85rem',
               fontFamily: 'var(--font-sans)', resize: 'none', minHeight: 80,
               outline: 'none', transition: 'border-color 0.2s', color: 'var(--color-texte)',
+              backgroundColor: 'var(--color-blanc)',
             }}
             onFocus={e => (e.target.style.borderColor = 'var(--color-primary)')}
             onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
@@ -659,7 +684,7 @@ export default function QuestionnaireBloc3() {
       {/* Q27 — Confidential */}
       <div style={{
         marginBottom: 48, padding: '20px 24px', borderRadius: 10,
-        backgroundColor: '#FEF6E6', borderLeft: '4px solid var(--color-accent-warm)',
+        backgroundColor: '#FFF9F5', borderLeft: '3px solid var(--color-accent-warm)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <Lock size={18} style={{ color: 'var(--color-accent-warm)' }} />
@@ -677,12 +702,11 @@ export default function QuestionnaireBloc3() {
         />
       </div>
 
-      {/* Validate */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: '0.8rem', color: 'var(--color-texte-muted)' }}>Sauvegarde automatique</span>
+      {/* Navigation */}
+      <div style={{ display: 'flex', gap: 12, maxWidth: 400, margin: '0 auto' }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--color-texte-muted)', alignSelf: 'center', marginRight: 'auto' }}>Sauvegarde auto</span>
         <button
           onClick={handleValidate}
-          className="font-display"
           style={{
             padding: '12px 28px', borderRadius: 8,
             backgroundColor: 'var(--color-primary)', color: '#fff',
@@ -693,7 +717,7 @@ export default function QuestionnaireBloc3() {
           onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
           onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
         >
-          Valider le Bloc 3 <ChevronRight size={18} />
+          Valider ce bloc <ChevronRight size={18} />
         </button>
       </div>
     </div>

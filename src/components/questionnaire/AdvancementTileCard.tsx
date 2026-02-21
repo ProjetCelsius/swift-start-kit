@@ -16,26 +16,26 @@ interface Props {
 
 const statusConfig = {
   done: {
-    bg: 'var(--color-primary-light)',
     border: 'var(--color-primary)',
+    bg: 'linear-gradient(135deg, #E8F0EB 0%, #FFFFFF 100%)',
     text: 'var(--color-primary)',
-    icon: <Check size={16} />,
+    icon: <Check size={14} />,
     label: 'Réalisé',
     iconBg: 'var(--color-primary)',
   },
   in_progress: {
-    bg: 'var(--color-accent-warm-light)',
     border: 'var(--color-accent-warm)',
+    bg: 'linear-gradient(135deg, #F5EDE4 0%, #FFFFFF 100%)',
     text: 'var(--color-accent-warm)',
-    icon: <RefreshCw size={16} />,
+    icon: <RefreshCw size={14} />,
     label: 'En cours',
     iconBg: 'var(--color-accent-warm)',
   },
   not_started: {
-    bg: 'var(--color-blanc)',
     border: 'var(--color-border)',
+    bg: 'var(--color-blanc)',
     text: 'var(--color-texte-muted)',
-    icon: <X size={14} />,
+    icon: <X size={12} />,
     label: 'Pas encore',
     iconBg: 'var(--color-border-active)',
   },
@@ -51,12 +51,12 @@ export default function AdvancementTileCard({ tile, state, isExpanded, onCycle, 
         style={{
           width: '100%',
           textAlign: 'left',
-          padding: '16px 20px',
-          borderRadius: 14,
+          padding: '16px 16px',
+          borderRadius: 12,
           border: `1px solid ${config.border}`,
-          backgroundColor: config.bg,
+          background: config.bg,
           cursor: 'pointer',
-          transition: 'transform 0.1s, border-color 0.2s, background-color 0.2s',
+          transition: 'transform 0.1s, border-color 0.2s, background 0.2s',
           outline: 'none',
         }}
         onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.98)')}
@@ -64,13 +64,13 @@ export default function AdvancementTileCard({ tile, state, isExpanded, onCycle, 
         onMouseLeave={e => (e.currentTarget.style.transform = '')}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-          <p style={{ fontSize: '0.875rem', fontWeight: 500, lineHeight: 1.4, color: 'var(--color-texte)', margin: 0 }}>
+          <p style={{ fontSize: '0.875rem', fontWeight: 500, lineHeight: 1.4, color: 'var(--color-texte)', margin: 0, fontFamily: 'var(--font-sans)' }}>
             {tile.label}
           </p>
           <div style={{
             flexShrink: 0,
-            width: 24,
-            height: 24,
+            width: 22,
+            height: 22,
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
@@ -81,12 +81,17 @@ export default function AdvancementTileCard({ tile, state, isExpanded, onCycle, 
             {config.icon}
           </div>
         </div>
-        <span style={{ fontSize: '0.75rem', marginTop: 4, display: 'inline-block', color: config.text }}>
+        <span style={{ fontSize: '0.7rem', fontWeight: 500, marginTop: 4, display: 'inline-block', color: config.text }}>
           {config.label}
         </span>
       </button>
 
-      {isExpanded && (
+      {/* Slide-in comment textarea */}
+      <div style={{
+        maxHeight: isExpanded ? 120 : 0,
+        overflow: 'hidden',
+        transition: 'max-height 0.3s ease',
+      }}>
         <textarea
           value={state.comment}
           onChange={e => onCommentChange(e.target.value)}
@@ -103,13 +108,14 @@ export default function AdvancementTileCard({ tile, state, isExpanded, onCycle, 
             resize: 'none',
             minHeight: 60,
             outline: 'none',
-            transition: 'border-color 0.2s',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
             color: 'var(--color-texte)',
+            backgroundColor: 'var(--color-blanc)',
           }}
-          onFocus={e => (e.target.style.borderColor = 'var(--color-primary)')}
-          onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
+          onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(27,67,50,0.08)' }}
+          onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
         />
-      )}
+      </div>
     </div>
   )
 }
