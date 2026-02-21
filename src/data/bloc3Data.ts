@@ -4,23 +4,23 @@
 
 export const MOTEURS = [
   'Conviction personnelle du dirigeant',
-  'Pression réglementaire',
-  'Demande clients / donneurs d\'ordre',
-  'Attentes des salariés',
+  'Pression réglementaire (CSRD, BEGES, taxonomie)',
+  'Demande clients ou donneurs d\'ordre',
+  'Attractivité employeur',
   'Réduction des coûts',
+  'Accès financements ou marchés publics',
+  'Anticipation des risques physiques',
   'Image et réputation',
-  'Anticipation des risques',
-  'Accès aux financements verts',
 ] as const
 
 export const FREINS = [
   'Manque de budget',
-  'Manque de temps / ressources',
-  "Manque d'expertise interne",
-  'Pas de soutien de la direction',
-  'Sujet pas prioritaire pour le business',
-  'Complexité réglementaire',
+  'Manque de temps / priorités concurrentes',
+  'Manque de compétences internes',
+  'Manque d\'engagement de la direction',
+  'Complexité perçue du sujet',
   'Difficulté à mesurer le ROI',
+  'Résistance au changement des équipes',
 ] as const
 
 export interface RegulatoryRow {
@@ -29,12 +29,12 @@ export interface RegulatoryRow {
 }
 
 export const REGULATORY_ROWS: RegulatoryRow[] = [
-  { id: 'csrd', label: 'CSRD' },
+  { id: 'csrd', label: 'Reporting CSRD' },
+  { id: 'beges', label: 'Bilan GES réglementaire' },
   { id: 'taxonomie', label: 'Taxonomie européenne' },
-  { id: 'snbc', label: 'SNBC / Stratégie nationale' },
-  { id: 'loi_climat', label: 'Loi Climat et Résilience' },
   { id: 'vigilance', label: 'Devoir de vigilance' },
-  { id: 're2020', label: 'RE2020 / décret tertiaire' },
+  { id: 'donneurs', label: 'Exigences carbone donneurs d\'ordre' },
+  { id: 'affichage', label: 'Affichage environnemental produits' },
 ]
 
 export const REGULATORY_COLUMNS = [

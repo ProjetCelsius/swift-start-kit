@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Clock, Lock, ChevronRight, GripVertical, X } from 'lucide-react'
+import { Lock, ChevronRight, GripVertical, X } from 'lucide-react'
 import {
   MOTEURS, FREINS,
   REGULATORY_ROWS, REGULATORY_COLUMNS,
   type RegulatoryAnswer,
 } from '@/data/bloc3Data'
+import { computeFullProfil } from '@/utils/profilClimat'
 
 const STORAGE_KEY = 'boussole_bloc3'
 const MAX_CHARS = 500
@@ -41,51 +42,49 @@ function loadState(): Bloc3State {
   } catch { return defaultState }
 }
 
-// ── Section wrapper ──────────────────────────────────────
-function Section({ children, label }: { children: React.ReactNode; label: string }) {
-  return (
-    <div
-      className="rounded-xl p-6 mb-8"
-      style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-    >
-      <h2
-        className="text-sm font-semibold uppercase tracking-wider mb-5"
-        style={{ color: 'var(--color-celsius-900)', letterSpacing: '0.05em' }}
-      >
-        {label}
-      </h2>
-      {children}
-    </div>
-  )
+function loadBloc2Answers(): Record<number, number> {
+  try {
+    const raw = localStorage.getItem('boussole_bloc2')
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
 }
 
-// ── Char counter textarea ────────────────────────────────
-function CountedTextarea({ value, onChange, placeholder, maxChars = MAX_CHARS }: {
-  value: string; onChange: (v: string) => void; placeholder: string; maxChars?: number
+// ── Counted Textarea ─────────────────────────
+function CountedTextarea({ value, onChange, placeholder }: {
+  value: string; onChange: (v: string) => void; placeholder: string
 }) {
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
       <textarea
         value={value}
-        onChange={e => { if (e.target.value.length <= maxChars) onChange(e.target.value) }}
+        onChange={e => { if (e.target.value.length <= MAX_CHARS) onChange(e.target.value) }}
         placeholder={placeholder}
-        className="w-full px-4 py-3 rounded-lg border text-sm resize-none focus:outline-none transition-colors italic placeholder:not-italic"
-        style={{ borderColor: 'var(--color-border)', minHeight: '120px' }}
-        onFocus={e => e.target.style.borderColor = 'var(--color-celsius-900)'}
-        onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
+        style={{
+          width: '100%', minHeight: 120, padding: 16, borderRadius: 10,
+          border: '1px solid var(--color-border)', fontSize: '0.85rem',
+          fontFamily: 'var(--font-sans)', fontStyle: 'italic', resize: 'none',
+          outline: 'none', transition: 'border-color 0.2s', color: 'var(--color-texte)',
+        }}
+        onFocus={e => (e.target.style.borderColor = 'var(--color-primary)')}
+        onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
       />
-      <p className="text-right text-xs mt-1" style={{ color: 'var(--color-gris-400)' }}>
-        {value.length}/{maxChars}
-      </p>
+      <span style={{
+        position: 'absolute', bottom: 8, right: 12,
+        fontSize: '0.7rem', color: 'var(--color-texte-muted)',
+      }}>
+        {value.length} / {MAX_CHARS}
+      </span>
     </div>
   )
 }
 
-// ── Main Component ───────────────────────────────────────
+// ── Main Component ───────────────────────────
 export default function QuestionnaireBloc3() {
   const navigate = useNavigate()
   const [state, setState] = useState<Bloc3State>(loadState)
   const [showFeedback, setShowFeedback] = useState(false)
+  const [showOverlay, setShowOverlay] = useState(false)
+  const [revealStep, setRevealStep] = useState(0) // 0-4 for letter reveal
 
   const update = useCallback(<K extends keyof Bloc3State>(key: K, value: Bloc3State[K]) => {
     setState(prev => ({ ...prev, [key]: value }))
@@ -97,7 +96,14 @@ export default function QuestionnaireBloc3() {
     return () => clearTimeout(t)
   }, [state])
 
-  // ── Moteurs handlers ──
+  // Letter reveal animation
+  useEffect(() => {
+    if (showOverlay && revealStep < 4) {
+      const t = setTimeout(() => setRevealStep(s => s + 1), 200)
+      return () => clearTimeout(t)
+    }
+  }, [showOverlay, revealStep])
+
   function toggleMoteur(m: string) {
     setState(prev => {
       const has = prev.moteurs.includes(m)
@@ -120,65 +126,169 @@ export default function QuestionnaireBloc3() {
     })
   }
 
-  // ── Feedback view ──
-  if (showFeedback) {
-    // Load bloc1 to get company size
-    let effectif = ''
-    try {
-      const bloc1 = JSON.parse(localStorage.getItem('boussole_bloc1') ?? '{}')
-      effectif = bloc1?.company?.effectif ?? ''
-    } catch { /* */ }
-    const isLarge = ['251-500', '501-1000', '1001-5000', '5000+'].includes(effectif)
+  function handleValidate() {
+    setShowFeedback(true)
+  }
 
-    // Build urgency list
+  function handleReveal() {
+    setRevealStep(0)
+    setShowOverlay(true)
+  }
+
+  // ── Profil Climat calculation ──
+  const bloc2Answers = loadBloc2Answers()
+  const { code, profil } = computeFullProfil(
+    bloc2Answers,
+    state.moteurs,
+    state.perteMarche,
+    state.regulatory as Record<string, string>,
+  )
+  const letters = code.split('')
+
+  // ── OVERLAY ────────────────────────────────
+  if (showOverlay) {
+    return (
+      <div
+        style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          backgroundColor: 'rgba(27,67,50,0.95)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'fadeIn 0.8s ease-out',
+        }}
+      >
+        <div style={{ textAlign: 'center', maxWidth: 480, padding: '0 24px' }}>
+          <p className="label-uppercase" style={{ color: '#B87333', letterSpacing: '0.12em', marginBottom: 24, fontSize: '0.6rem' }}>
+            VOTRE PROFIL CLIMAT
+          </p>
+
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 24 }}>
+            {letters.map((letter, i) => (
+              <span
+                key={i}
+                className="font-display"
+                style={{
+                  fontSize: '4rem', fontWeight: 600, color: '#fff',
+                  letterSpacing: '0.15em',
+                  opacity: i < revealStep ? 1 : 0,
+                  transform: i < revealStep ? 'translateY(0)' : 'translateY(10px)',
+                  transition: 'opacity 0.3s ease, transform 0.3s ease',
+                }}
+              >
+                {letter}
+              </span>
+            ))}
+          </div>
+
+          {revealStep >= 4 && profil && (
+            <div className="animate-fade-in">
+              <h2 className="font-display" style={{ fontSize: '1.8rem', fontWeight: 500, color: '#fff', marginBottom: 12 }}>
+                {profil.name}
+              </h2>
+              <p style={{ fontSize: '1rem', fontStyle: 'italic', color: '#E8F0EB', marginBottom: 20, lineHeight: 1.5 }}>
+                « {profil.phrase} »
+              </p>
+              <span style={{
+                display: 'inline-block', padding: '6px 16px', borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff',
+                fontSize: '0.75rem', fontWeight: 500, marginBottom: 8,
+              }}>
+                Famille des {profil.family}
+              </span>
+              <p style={{ fontSize: '0.85rem', color: '#B0AB9F', marginTop: 8 }}>
+                Entreprise-type : {profil.entrepriseType}
+              </p>
+            </div>
+          )}
+
+          {revealStep >= 4 && (
+            <button
+              onClick={() => setShowOverlay(false)}
+              className="font-display"
+              style={{
+                marginTop: 32, padding: '12px 28px', borderRadius: 8,
+                backgroundColor: '#fff', color: 'var(--color-primary)',
+                fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
+              onMouseLeave={e => (e.currentTarget.style.transform = '')}
+            >
+              Découvrir la suite
+            </button>
+          )}
+        </div>
+
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+        `}</style>
+      </div>
+    )
+  }
+
+  // ── FEEDBACK ───────────────────────────────
+  if (showFeedback) {
+    // Build urgency list from Q23
     const urgencyItems = REGULATORY_ROWS.map(row => {
       const answer = state.regulatory[row.id]
-      let urgency: 'ready' | 'approaching' | 'urgent' | null = null
-      if (answer === 'Déjà concerné') urgency = 'ready'
-      else if (answer === 'Sous 12 mois' || answer === 'Sous 2-3 ans') urgency = 'approaching'
-      else if (answer === 'Je ne sais pas' && isLarge) urgency = 'urgent'
-      return { ...row, answer, urgency }
-    }).filter(r => r.urgency !== null)
+      let level: 'ready' | 'approaching' | 'urgent' | null = null
+      if (answer === 'Déjà concerné') level = 'ready'
+      else if (answer === 'Sous 12 mois') level = 'urgent'
+      else if (answer === 'Sous 2-3 ans') level = 'approaching'
+      return { ...row, answer, level }
+    }).filter(r => r.level !== null)
       .sort((a, b) => {
         const order = { urgent: 0, approaching: 1, ready: 2 }
-        return (order[a.urgency!] ?? 3) - (order[b.urgency!] ?? 3)
+        return (order[a.level!] ?? 3) - (order[b.level!] ?? 3)
       })
       .slice(0, 3)
 
     const urgencyStyle = {
-      ready: { bg: 'var(--color-celsius-100)', color: 'var(--color-celsius-900)', label: 'Prêt' },
-      approaching: { bg: 'var(--color-corail-100)', color: 'var(--color-corail-500)', label: 'En approche' },
-      urgent: { bg: 'var(--color-rouge-100)', color: 'var(--color-rouge-500)', label: 'Urgent' },
+      ready: { bg: 'var(--color-primary-light)', color: 'var(--color-primary)', label: 'Prêt' },
+      approaching: { bg: 'var(--color-accent-warm-light)', color: 'var(--color-accent-warm)', label: 'En approche' },
+      urgent: { bg: '#FEE2E2', color: '#DC4A4A', label: 'Urgent' },
     }
 
     return (
-      <div className="max-w-[640px] animate-fade-in">
-        <h1 className="text-2xl font-bold mb-2">Carte des échéances réglementaires</h1>
-        <p className="text-sm mb-6" style={{ color: 'var(--color-texte-secondary)' }}>
+      <div style={{ maxWidth: 960 }} className="animate-fade-in">
+        <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, marginBottom: 4 }}>
+          Carte des échéances réglementaires
+        </h1>
+        <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)', marginBottom: 28 }}>
           Vos 3 échéances les plus urgentes, basées sur vos réponses.
         </p>
 
-        <div
-          className="rounded-xl p-6 mb-8"
-          style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-        >
+        <div style={{
+          backgroundColor: 'var(--color-blanc)', borderRadius: 14, padding: 24,
+          boxShadow: 'var(--shadow-card)', marginBottom: 32,
+        }}>
           {urgencyItems.length === 0 ? (
-            <p className="text-sm" style={{ color: 'var(--color-gris-400)' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-texte-muted)' }}>
               Aucune échéance critique identifiée.
             </p>
           ) : (
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {urgencyItems.map(item => {
-                const s = urgencyStyle[item.urgency!]
+                const s = urgencyStyle[item.level!]
                 return (
-                  <div key={item.id} className="flex items-center gap-3">
-                    <span
-                      className="text-xs font-semibold px-3 py-1 rounded-full shrink-0"
-                      style={{ backgroundColor: s.bg, color: s.color }}
-                    >
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{
+                      fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px',
+                      borderRadius: 20, backgroundColor: s.bg, color: s.color,
+                      flexShrink: 0,
+                    }}>
                       {s.label}
                     </span>
-                    <span className="text-sm font-medium">{item.label}</span>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 500, color: 'var(--color-texte)' }}>
+                      {item.label}
+                    </span>
+                    {item.answer && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-texte-muted)', marginLeft: 'auto' }}>
+                        {item.answer}
+                      </span>
+                    )}
                   </div>
                 )
               })}
@@ -186,10 +296,52 @@ export default function QuestionnaireBloc3() {
           )}
         </div>
 
+        {/* Profil Climat reveal button */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 24 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-border-active)' }} />
+          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-border-active)' }} />
+          <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--color-border-active)' }} />
+        </div>
+
+        <div style={{
+          background: 'linear-gradient(135deg, #E8F0EB, #F5EDE4)',
+          borderRadius: 14, padding: '28px 32px', marginBottom: 24, textAlign: 'center',
+        }}>
+          <p className="label-uppercase" style={{ color: 'var(--color-accent-warm)', letterSpacing: '0.1em', marginBottom: 8, fontSize: '0.56rem' }}>
+            VOTRE PROFIL CLIMAT
+          </p>
+          <h3 className="font-display" style={{ fontSize: '1.3rem', fontWeight: 500, color: 'var(--color-primary)', marginBottom: 16 }}>
+            Votre profil est prêt.
+          </h3>
+          <button
+            onClick={handleReveal}
+            className="font-display"
+            style={{
+              padding: '12px 28px', borderRadius: 8,
+              backgroundColor: 'var(--color-primary)', color: '#fff',
+              fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
+          >
+            Révéler mon profil <ChevronRight size={18} />
+          </button>
+        </div>
+
         <button
           onClick={() => navigate('/questionnaire/4')}
-          className="w-full py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-          style={{ backgroundColor: 'var(--color-celsius-900)', boxShadow: 'var(--shadow-card)' }}
+          className="font-display"
+          style={{
+            width: '100%', padding: '14px 28px', borderRadius: 8,
+            backgroundColor: 'var(--color-primary)', color: '#fff',
+            fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            transition: 'background-color 0.2s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
         >
           Passer au Bloc 4 <ChevronRight size={18} />
         </button>
@@ -197,30 +349,30 @@ export default function QuestionnaireBloc3() {
     )
   }
 
-  // ── Main form (vertical scroll) ────────────────────────
+  // ── MAIN FORM ──────────────────────────────
   return (
-    <div className="max-w-[640px]">
+    <div style={{ maxWidth: 960 }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold">Bloc 3 : Vos enjeux et votre vision</h1>
-        <span
-          className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full shrink-0"
-          style={{ backgroundColor: 'var(--color-celsius-50)', color: 'var(--color-celsius-900)' }}
-        >
-          <Clock size={12} /> ~10 min
-        </span>
+      <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: 20, marginBottom: 48 }}>
+        <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, marginBottom: 4 }}>
+          Vos enjeux et votre vision
+        </h1>
+        <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)' }}>
+          Bloc 3 · ~10 min
+        </p>
       </div>
-      <p className="text-sm mb-8" style={{ color: 'var(--color-texte-secondary)' }}>
-        Identifiez ce qui motive et freine votre démarche, et partagez votre vision.
-      </p>
 
       {/* Q21 — Moteurs */}
-      <Section label="Q21 — Qu'est-ce qui motive votre démarche climat ?">
-        <p className="text-sm mb-4" style={{ color: 'var(--color-texte-secondary)' }}>
-          Sélectionnez jusqu'à 3 moteurs, puis classez-les par importance.
+      <div style={{ marginBottom: 48 }}>
+        <p className="label-uppercase" style={{ marginBottom: 8 }}>MOTIVATIONS</p>
+        <h2 className="font-display" style={{ fontSize: '1.2rem', fontWeight: 400, marginBottom: 8 }}>
+          Quels sont les principaux moteurs de votre démarche climat ?
+        </h2>
+        <p style={{ fontSize: '0.8rem', color: 'var(--color-texte-secondary)', marginBottom: 16 }}>
+          Sélectionnez 3 maximum, puis classez-les par ordre d'importance
         </p>
 
-        <div className="flex flex-wrap gap-2 mb-5">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
           {MOTEURS.map(m => {
             const isSelected = state.moteurs.includes(m)
             const isDisabled = !isSelected && state.moteurs.length >= 3
@@ -229,11 +381,15 @@ export default function QuestionnaireBloc3() {
                 key={m}
                 onClick={() => toggleMoteur(m)}
                 disabled={isDisabled}
-                className="px-3.5 py-2 rounded-full text-sm font-medium border transition-all duration-200 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
-                  backgroundColor: isSelected ? 'var(--color-celsius-100)' : 'var(--color-fond)',
-                  borderColor: isSelected ? 'var(--color-celsius-900)' : 'var(--color-border)',
-                  color: isSelected ? 'var(--color-celsius-900)' : 'var(--color-texte)',
+                  padding: '8px 16px', borderRadius: 20,
+                  border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                  backgroundColor: isSelected ? 'var(--color-primary-light)' : 'var(--color-subtle)',
+                  color: isSelected ? 'var(--color-primary)' : 'var(--color-texte)',
+                  fontSize: '0.82rem', fontFamily: 'var(--font-sans)', fontWeight: 400,
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  opacity: isDisabled ? 0.4 : 1,
+                  transition: 'all 0.15s', outline: 'none',
                 }}
               >
                 {m}
@@ -243,11 +399,11 @@ export default function QuestionnaireBloc3() {
         </div>
 
         {state.moteurs.length > 0 && (
-          <div>
-            <p className="text-xs font-medium mb-2" style={{ color: 'var(--color-texte-secondary)' }}>
+          <div className="animate-fade-in">
+            <p style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-texte-secondary)', marginBottom: 8 }}>
               Classement par importance (glissez pour réordonner) :
             </p>
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {state.moteurs.map((m, i) => (
                 <div
                   key={m}
@@ -256,21 +412,30 @@ export default function QuestionnaireBloc3() {
                   onDragOver={e => e.preventDefault()}
                   onDrop={e => {
                     e.preventDefault()
-                    const from = parseInt(e.dataTransfer.getData('text/plain'))
-                    moveMoteur(from, i)
+                    moveMoteur(parseInt(e.dataTransfer.getData('text/plain')), i)
                   }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg border cursor-grab active:cursor-grabbing transition-all"
-                  style={{ backgroundColor: 'var(--color-celsius-50)', borderColor: 'var(--color-celsius-100)' }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '10px 16px', borderRadius: 10,
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-blanc)',
+                    cursor: 'grab',
+                  }}
                 >
-                  <GripVertical size={14} style={{ color: 'var(--color-gris-400)' }} />
-                  <span
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                    style={{ backgroundColor: 'var(--color-celsius-900)' }}
-                  >
+                  <GripVertical size={14} style={{ color: 'var(--color-texte-muted)', flexShrink: 0 }} />
+                  <span style={{
+                    width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+                    backgroundColor: 'var(--color-primary)', color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.75rem', fontWeight: 500, fontFamily: 'var(--font-display)',
+                  }}>
                     {i + 1}
                   </span>
-                  <span className="text-sm font-medium flex-1">{m}</span>
-                  <button onClick={() => removeMoteur(i)} className="shrink-0" style={{ color: 'var(--color-gris-400)' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 500, flex: 1 }}>{m}</span>
+                  <button
+                    onClick={() => removeMoteur(i)}
+                    style={{ color: 'var(--color-texte-muted)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}
+                  >
                     <X size={14} />
                   </button>
                 </div>
@@ -278,89 +443,106 @@ export default function QuestionnaireBloc3() {
             </div>
           </div>
         )}
-      </Section>
+      </div>
 
       {/* Q22 — Frein principal */}
-      <Section label="Q22 — Quel est le principal frein à votre démarche ?">
-        <div className="space-y-2">
-          {FREINS.map(f => {
+      <div style={{ marginBottom: 48 }}>
+        <p className="label-uppercase" style={{ marginBottom: 8 }}>OBSTACLES</p>
+        <h2 className="font-display" style={{ fontSize: '1.2rem', fontWeight: 400, marginBottom: 16 }}>
+          Quel est le principal frein à l'action climat dans votre organisation ?
+        </h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[...FREINS, 'Autre'].map(f => {
             const isSelected = state.frein === f
             return (
-              <button
-                key={f}
-                onClick={() => update('frein', f)}
-                className="w-full text-left px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 active:scale-[0.98]"
-                style={{
-                  backgroundColor: isSelected ? 'var(--color-celsius-50)' : 'var(--color-blanc)',
-                  borderColor: isSelected ? 'var(--color-celsius-900)' : 'var(--color-border)',
-                }}
-              >
-                {f}
-              </button>
+              <div key={f}>
+                <button
+                  onClick={() => update('frein', f)}
+                  style={{
+                    width: '100%', textAlign: 'left', padding: '14px 18px',
+                    borderRadius: 10,
+                    border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                    backgroundColor: isSelected ? 'var(--color-fond)' : 'var(--color-blanc)',
+                    cursor: 'pointer', outline: 'none',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <div style={{
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                    border: `2px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border-active)'}`,
+                    backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.2s',
+                  }}>
+                    {isSelected && <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#fff' }} />}
+                  </div>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--color-texte)' }}>{f === 'Autre' ? 'Autre (champ libre)' : f}</span>
+                </button>
+                {f === 'Autre' && isSelected && (
+                  <textarea
+                    value={state.freinAutre}
+                    onChange={e => update('freinAutre', e.target.value)}
+                    placeholder="Précisez votre frein principal..."
+                    style={{
+                      width: '100%', marginTop: 8, padding: '12px 16px',
+                      borderRadius: 10, border: '1px solid var(--color-border)',
+                      fontSize: '0.85rem', fontFamily: 'var(--font-sans)',
+                      resize: 'none', minHeight: 80, outline: 'none',
+                      transition: 'border-color 0.2s', color: 'var(--color-texte)',
+                    }}
+                    onFocus={e => (e.target.style.borderColor = 'var(--color-primary)')}
+                    onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
+                  />
+                )}
+              </div>
             )
           })}
-          {/* Autre */}
-          <button
-            onClick={() => update('frein', 'Autre')}
-            className="w-full text-left px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 active:scale-[0.98]"
-            style={{
-              backgroundColor: state.frein === 'Autre' ? 'var(--color-celsius-50)' : 'var(--color-blanc)',
-              borderColor: state.frein === 'Autre' ? 'var(--color-celsius-900)' : 'var(--color-border)',
-            }}
-          >
-            Autre
-          </button>
-          {state.frein === 'Autre' && (
-            <textarea
-              value={state.freinAutre}
-              onChange={e => update('freinAutre', e.target.value)}
-              placeholder="Précisez votre frein principal..."
-              className="w-full px-4 py-3 rounded-lg border text-sm resize-none focus:outline-none transition-colors mt-1"
-              style={{ borderColor: 'var(--color-border)', minHeight: '80px' }}
-              onFocus={e => e.target.style.borderColor = 'var(--color-celsius-900)'}
-              onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
-            />
-          )}
         </div>
-      </Section>
+      </div>
 
       {/* Q23 — Échéances réglementaires */}
-      <Section label="Q23 — Échéances réglementaires">
-        <p className="text-sm mb-4" style={{ color: 'var(--color-texte-secondary)' }}>
-          Pour chaque réglementation, indiquez votre situation.
-        </p>
+      <div style={{ marginBottom: 48 }}>
+        <p className="label-uppercase" style={{ marginBottom: 8 }}>RÉGLEMENTATION</p>
+        <h2 className="font-display" style={{ fontSize: '1.2rem', fontWeight: 400, marginBottom: 16 }}>
+          À quelle échéance estimez-vous être concerné par ces obligations ?
+        </h2>
 
         {/* Desktop table */}
-        <div className="hidden sm:block overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="hidden sm:block" style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
             <thead>
-              <tr>
-                <th className="text-left pb-3 pr-2 font-medium" style={{ color: 'var(--color-texte-secondary)' }}></th>
+              <tr style={{ backgroundColor: 'var(--color-primary)' }}>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 600, fontSize: '0.7rem' }}>Obligation</th>
                 {REGULATORY_COLUMNS.map(col => (
-                  <th key={col} className="pb-3 px-1 text-center font-medium text-xs" style={{ color: 'var(--color-texte-secondary)', minWidth: '80px' }}>
+                  <th key={col} style={{ padding: '12px 8px', textAlign: 'center', color: '#fff', fontWeight: 600, fontSize: '0.7rem', minWidth: 80 }}>
                     {col}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {REGULATORY_ROWS.map(row => (
-                <tr key={row.id} className="border-t" style={{ borderColor: 'var(--color-border-light)' }}>
-                  <td className="py-3 pr-2 font-medium text-sm">{row.label}</td>
+              {REGULATORY_ROWS.map((row, ri) => (
+                <tr key={row.id} style={{ backgroundColor: ri % 2 === 0 ? 'var(--color-blanc)' : 'var(--color-fond)' }}>
+                  <td style={{ padding: '0 16px', height: 48, fontWeight: 500, borderBottom: '1px solid var(--color-border)' }}>{row.label}</td>
                   {REGULATORY_COLUMNS.map(col => {
                     const isSelected = state.regulatory[row.id] === col
                     return (
-                      <td key={col} className="py-3 px-1 text-center">
-                        <button
-                          onClick={() => update('regulatory', { ...state.regulatory, [row.id]: col })}
-                          className="w-5 h-5 rounded-full border-2 mx-auto flex items-center justify-center transition-all duration-200"
-                          style={{
-                            borderColor: isSelected ? 'var(--color-celsius-900)' : 'var(--color-gris-300)',
-                            backgroundColor: isSelected ? 'var(--color-celsius-900)' : 'transparent',
-                          }}
-                        >
-                          {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
-                        </button>
+                      <td key={col} style={{ textAlign: 'center', height: 48, borderBottom: '1px solid var(--color-border)', cursor: 'pointer',
+                        backgroundColor: isSelected ? 'var(--color-primary-light)' : undefined,
+                      }}
+                        onClick={() => update('regulatory', { ...state.regulatory, [row.id]: col })}
+                      >
+                        <div style={{
+                          width: 16, height: 16, borderRadius: '50%', margin: '0 auto',
+                          border: `2px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border-active)'}`,
+                          backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.15s',
+                        }}>
+                          {isSelected && <div style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#fff' }} />}
+                        </div>
                       </td>
                     )
                   })}
@@ -371,22 +553,24 @@ export default function QuestionnaireBloc3() {
         </div>
 
         {/* Mobile stacked */}
-        <div className="sm:hidden space-y-5">
+        <div className="sm:hidden" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {REGULATORY_ROWS.map(row => (
             <div key={row.id}>
-              <p className="text-sm font-medium mb-2">{row.label}</p>
-              <div className="flex flex-wrap gap-1.5">
+              <p style={{ fontSize: '0.85rem', fontWeight: 500, marginBottom: 8 }}>{row.label}</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {REGULATORY_COLUMNS.map(col => {
                   const isSelected = state.regulatory[row.id] === col
                   return (
                     <button
                       key={col}
                       onClick={() => update('regulatory', { ...state.regulatory, [row.id]: col })}
-                      className="px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 active:scale-[0.97]"
                       style={{
-                        backgroundColor: isSelected ? 'var(--color-celsius-100)' : 'var(--color-fond)',
-                        borderColor: isSelected ? 'var(--color-celsius-900)' : 'var(--color-border)',
-                        color: isSelected ? 'var(--color-celsius-900)' : 'var(--color-texte-secondary)',
+                        padding: '6px 12px', borderRadius: 8,
+                        border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                        backgroundColor: isSelected ? 'var(--color-primary-light)' : 'var(--color-subtle)',
+                        color: isSelected ? 'var(--color-primary)' : 'var(--color-texte-secondary)',
+                        fontSize: '0.75rem', fontWeight: 500,
+                        cursor: 'pointer', outline: 'none', transition: 'all 0.15s',
                       }}
                     >
                       {col}
@@ -397,22 +581,29 @@ export default function QuestionnaireBloc3() {
             </div>
           ))}
         </div>
-      </Section>
+      </div>
 
       {/* Q24 — Perte de marché */}
-      <Section label="Q24 — Avez-vous déjà perdu un marché à cause d'un manque de maturité climat ?">
-        <div className="flex gap-3 mb-3">
+      <div style={{ marginBottom: 48 }}>
+        <p className="label-uppercase" style={{ marginBottom: 8 }}>EXPÉRIENCE</p>
+        <h2 className="font-display" style={{ fontSize: '1.2rem', fontWeight: 400, marginBottom: 16 }}>
+          Avez-vous perdu un appel d'offres, un client ou un financement pour des raisons climat/RSE ?
+        </h2>
+
+        <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
           {['Oui', 'Non', 'Je ne sais pas'].map(opt => {
             const isSelected = state.perteMarche === opt
             return (
               <button
                 key={opt}
                 onClick={() => update('perteMarche', opt)}
-                className="flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition-all duration-200 active:scale-[0.98]"
                 style={{
-                  backgroundColor: isSelected ? 'var(--color-celsius-50)' : 'var(--color-blanc)',
-                  borderColor: isSelected ? 'var(--color-celsius-900)' : 'var(--color-border)',
-                  color: isSelected ? 'var(--color-celsius-900)' : 'var(--color-texte)',
+                  flex: 1, padding: '14px 24px', borderRadius: 10,
+                  border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                  backgroundColor: isSelected ? 'var(--color-fond)' : 'var(--color-blanc)',
+                  fontSize: '0.88rem', fontWeight: 500, cursor: 'pointer',
+                  outline: 'none', transition: 'all 0.2s',
+                  color: 'var(--color-texte)',
                 }}
               >
                 {opt}
@@ -425,77 +616,86 @@ export default function QuestionnaireBloc3() {
             value={state.perteDetail}
             onChange={e => update('perteDetail', e.target.value)}
             placeholder="Pouvez-vous préciser brièvement ?"
-            className="w-full px-4 py-3 rounded-lg border text-sm resize-none focus:outline-none transition-colors animate-fade-in"
-            style={{ borderColor: 'var(--color-border)', minHeight: '80px' }}
-            onFocus={e => e.target.style.borderColor = 'var(--color-celsius-900)'}
-            onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
+            className="animate-fade-in"
+            style={{
+              width: '100%', padding: '12px 16px', borderRadius: 10,
+              border: '1px solid var(--color-border)', fontSize: '0.85rem',
+              fontFamily: 'var(--font-sans)', resize: 'none', minHeight: 80,
+              outline: 'none', transition: 'border-color 0.2s', color: 'var(--color-texte)',
+            }}
+            onFocus={e => (e.target.style.borderColor = 'var(--color-primary)')}
+            onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
           />
         )}
-      </Section>
+      </div>
 
-      {/* Q25 — Open question */}
-      <Section label="Q25 — Votre priorité">
-        <p className="text-sm mb-3 font-medium">
-          Si vous pouviez changer une seule chose dans votre démarche climat, ce serait quoi ?
-        </p>
-        <CountedTextarea
-          value={state.q25}
-          onChange={v => update('q25', v)}
-          placeholder="Si vous pouviez changer une seule chose dans votre démarche climat, ce serait quoi ?"
-        />
-      </Section>
+      {/* Q25 & Q26 — Open questions */}
+      <div style={{ marginBottom: 48 }}>
+        <p className="label-uppercase" style={{ marginBottom: 8 }}>VISION</p>
 
-      {/* Q26 — Open question */}
-      <Section label="Q26 — Vos attentes">
-        <p className="text-sm mb-3 font-medium">
-          Qu'attendez-vous concrètement de ce diagnostic ?
-        </p>
-        <CountedTextarea
-          value={state.q26}
-          onChange={v => update('q26', v)}
-          placeholder="Qu'attendez-vous concrètement de ce diagnostic ?"
-        />
-      </Section>
+        <div style={{ marginBottom: 28 }}>
+          <h2 className="font-display" style={{ fontSize: '1.1rem', fontWeight: 400, fontStyle: 'italic', marginBottom: 12 }}>
+            Si vous aviez carte blanche et budget illimité, quelles seraient vos 3 premières actions climat ?
+          </h2>
+          <CountedTextarea
+            value={state.q25}
+            onChange={v => update('q25', v)}
+            placeholder="Décrivez vos 3 premières actions climat..."
+          />
+        </div>
+
+        <div>
+          <h2 className="font-display" style={{ fontSize: '1.1rem', fontWeight: 400, fontStyle: 'italic', marginBottom: 12 }}>
+            Quel scénario redoutez-vous le plus dans les 3 prochaines années ?
+          </h2>
+          <CountedTextarea
+            value={state.q26}
+            onChange={v => update('q26', v)}
+            placeholder="Décrivez le scénario que vous redoutez..."
+          />
+        </div>
+      </div>
 
       {/* Q27 — Confidential */}
-      <div
-        className="rounded-xl p-6 mb-8 border-l-4"
-        style={{
-          backgroundColor: 'var(--color-gold-100)',
-          borderLeftColor: 'var(--color-corail-500)',
-          boxShadow: 'var(--shadow-card)',
-        }}
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <Lock size={16} style={{ color: 'var(--color-corail-500)' }} />
-          <h2
-            className="text-sm font-semibold uppercase tracking-wider"
-            style={{ color: 'var(--color-corail-500)', letterSpacing: '0.05em' }}
-          >
-            Q27 — Question confidentielle
-          </h2>
+      <div style={{
+        marginBottom: 48, padding: '20px 24px', borderRadius: 10,
+        backgroundColor: '#FEF6E6', borderLeft: '4px solid var(--color-accent-warm)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <Lock size={18} style={{ color: 'var(--color-accent-warm)' }} />
+          <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-accent-warm)' }}>
+            Réponse confidentielle. Ne figurera pas dans le rapport partageable.
+          </span>
         </div>
-        <p className="text-xs mb-4" style={{ color: 'var(--color-texte-secondary)' }}>
-          Cette réponse est confidentielle. Elle ne figurera pas dans le rapport partageable et ne sera lue que par votre analyste.
-        </p>
-        <p className="text-sm mb-3 font-medium">
-          Y a-t-il un sujet que vous n'osez pas aborder en interne concernant votre démarche climat ?
-        </p>
+        <h2 className="font-display" style={{ fontSize: '1.1rem', fontWeight: 400, fontStyle: 'italic', marginBottom: 12 }}>
+          Qu'est-ce qui vous frustre le plus dans la démarche climat de votre entreprise ?
+        </h2>
         <CountedTextarea
           value={state.q27}
           onChange={v => update('q27', v)}
-          placeholder="Y a-t-il un sujet que vous n'osez pas aborder en interne concernant votre démarche climat ?"
+          placeholder="Partagez ce qui vous frustre..."
         />
       </div>
 
       {/* Validate */}
-      <button
-        onClick={() => setShowFeedback(true)}
-        className="w-full py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-        style={{ backgroundColor: 'var(--color-celsius-900)', boxShadow: 'var(--shadow-card)' }}
-      >
-        Valider et voir mes échéances <ChevronRight size={18} />
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--color-texte-muted)' }}>Sauvegarde automatique</span>
+        <button
+          onClick={handleValidate}
+          className="font-display"
+          style={{
+            padding: '12px 28px', borderRadius: 8,
+            backgroundColor: 'var(--color-primary)', color: '#fff',
+            fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 8,
+            transition: 'background-color 0.2s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
+        >
+          Valider le Bloc 3 <ChevronRight size={18} />
+        </button>
+      </div>
     </div>
   )
 }
