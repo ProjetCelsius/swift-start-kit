@@ -64,19 +64,10 @@ export default function DevToolbar() {
 
         <div className="w-px h-5" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }} />
 
-        {/* Diagnostic picker */}
-        <select
-          value={demo.activeDiagnosticId}
-          onChange={e => demo.setActiveDiagnosticId(e.target.value)}
-          className="text-[11px] px-2 py-1 rounded border-none focus:outline-none"
-          style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white' }}
-        >
-          {demo.diagnostics.map(d => (
-            <option key={d.id} value={d.id} style={{ backgroundColor: '#1A1A1A' }}>
-              {d.organization.name}
-            </option>
-          ))}
-        </select>
+        {/* Client name */}
+        <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
+          {demo.activeDiagnostic.organization.name}
+        </span>
 
         {/* Role */}
         <div className="flex gap-0.5">
