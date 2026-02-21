@@ -18,6 +18,7 @@ import {
   Lock,
 } from 'lucide-react'
 import { useAuth, MOCK_ANALYST } from '../../hooks/useAuth'
+import { useDemoIfAvailable } from '../../hooks/useDemo'
 
 interface NavItem {
   key: string
@@ -38,8 +39,8 @@ interface ClientSidebarProps {
 }
 
 export default function ClientSidebar({
-  diagnosticUnlocked = false,
-  surveyCount = 0,
+  diagnosticUnlocked: propUnlocked = false,
+  surveyCount: propSurveyCount = 0,
   hasNewJournal = false,
   hasNewMessages = false,
   questionnaireProgress = [],
@@ -47,6 +48,13 @@ export default function ClientSidebar({
   const { user } = useAuth()
   const location = useLocation()
   const analyst = MOCK_ANALYST
+  const demo = useDemoIfAvailable()
+  const isDemo = demo?.enabled ?? false
+  const diag = isDemo ? demo?.activeDiagnostic : null
+
+  const diagnosticUnlocked = isDemo && diag ? diag.diagnosticUnlocked : propUnlocked
+  const surveyCount = isDemo && diag ? diag.survey.respondents : propSurveyCount
+  const orgName = isDemo && diag ? diag.organization.name : (user?.organization_id ? 'TechVert Solutions' : 'Mon entreprise')
 
   const questionnaireSections: NavItem['children'] = [
     { key: 'bloc1', label: 'Votre démarche', path: '/questionnaire/1', status: getBlockStatus(1) },
@@ -103,7 +111,7 @@ export default function ClientSidebar({
       {/* Organisation */}
       <div className="px-5 pb-3">
         <div className="font-semibold text-sm truncate">
-          {user?.organization_id ? 'TechVert Solutions' : 'Mon entreprise'}
+          {orgName}
         </div>
       </div>
 

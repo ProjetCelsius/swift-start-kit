@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useDemoIfAvailable } from '@/hooks/useDemo'
 
 interface JournalEntry {
   id: string
@@ -65,13 +66,19 @@ function formatRelativeDate(date: Date): string {
 
 export default function JournalPage() {
   const [reply, setReply] = useState('')
+  const demo = useDemoIfAvailable()
+  const entries = demo?.enabled && demo.activeDiagnostic ? demo.activeDiagnostic.journal : MOCK_ENTRIES
 
   return (
     <div className="max-w-[640px]">
       <h1 className="text-2xl font-bold mb-6">Journal de bord</h1>
 
       <div className="space-y-4 mb-8">
-        {MOCK_ENTRIES.map(entry => (
+        {entries.length === 0 ? (
+          <p className="text-sm py-8 text-center" style={{ color: 'var(--color-texte-secondary)' }}>
+            Votre analyste n'a pas encore publié de note. Il le fera dès le début de l'analyse.
+          </p>
+        ) : entries.map(entry => (
           <div
             key={entry.id}
             className="rounded-xl p-5"
