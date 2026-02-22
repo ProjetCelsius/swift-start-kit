@@ -20,6 +20,7 @@ import AttentePage from './pages/client/AttentePage'
 import DiagnosticPage from './pages/client/DiagnosticPage'
 import OnboardingSetupPage from './pages/client/OnboardingSetupPage'
 import EntretiensPage from './pages/client/EntretiensPage'
+import QuestionnaireRsePage from './pages/client/QuestionnaireRsePage'
 import AdminLayout from './components/layout/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminDiagnosticDetail from './pages/admin/AdminDiagnosticDetail'
@@ -75,6 +76,7 @@ function AppRoutes() {
           <Route path="/client/sondage" element={<SondageSuiviPage />} />
           <Route path="/client/attente" element={<AttentePage />} />
           <Route path="/client/entretiens" element={<EntretiensPage />} />
+          <Route path="/client/questionnaire-rse" element={<QuestionnaireRsePage />} />
           <Route path="/client/diagnostic" element={<DiagnosticPage />} />
           <Route path="/client/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
           <Route path="/client/journal" element={<JournalPage />} />
