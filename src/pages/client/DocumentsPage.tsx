@@ -1,13 +1,22 @@
-import { useState, useRef, useCallback } from 'react'
-import { Upload, FileText, FileSpreadsheet, Image, Trash2, Check, BarChart3, FileCheck, Briefcase, Building2, DollarSign } from 'lucide-react'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { Upload, FileText, FileSpreadsheet, Image, Check, BarChart3, FileCheck, Briefcase, Building2, DollarSign, X } from 'lucide-react'
 
-const SUGGESTED_DOCS = [
-  { icon: <BarChart3 size={20} style={{ color: '#1B4332' }} />, title: 'Bilan Carbone ou Bilan GES existant', description: 'Dernier bilan réalisé, même ancien' },
-  { icon: <FileCheck size={20} style={{ color: '#1B4332' }} />, title: 'Rapport RSE / DPEF / rapport extra-financier', description: 'Le plus récent disponible' },
-  { icon: <FileText size={20} style={{ color: '#1B4332' }} />, title: 'Politique ou charte environnementale', description: 'Document interne formalisant vos engagements' },
-  { icon: <Briefcase size={20} style={{ color: '#1B4332' }} />, title: 'Plan d\'action climat existant', description: 'Feuille de route, trajectoire, objectifs chiffrés' },
-  { icon: <Building2 size={20} style={{ color: '#1B4332' }} />, title: 'Organigramme', description: 'Pour comprendre la structure décisionnelle' },
-  { icon: <DollarSign size={20} style={{ color: '#1B4332' }} />, title: 'Budget RSE/climat', description: 'Répartition des investissements climat' },
+interface DocCategory {
+  id: string
+  icon: React.ReactNode
+  title: string
+  description: string
+}
+
+// TODO: In production, these categories should be dynamically loaded from the setup configuration
+// (what the analyst checked during launch call Tab 1). For now, all 6 are shown in demo mode.
+const SUGGESTED_DOCS: DocCategory[] = [
+  { id: 'bilan', icon: <BarChart3 size={20} style={{ color: '#1B4332' }} />, title: 'Bilan Carbone ou Bilan GES existant', description: 'Dernier bilan réalisé, même ancien' },
+  { id: 'rapport', icon: <FileCheck size={20} style={{ color: '#1B4332' }} />, title: 'Rapport RSE / DPEF / rapport extra-financier', description: 'Le plus récent disponible' },
+  { id: 'politique', icon: <FileText size={20} style={{ color: '#1B4332' }} />, title: 'Politique ou charte environnementale', description: 'Document interne formalisant vos engagements' },
+  { id: 'plan', icon: <Briefcase size={20} style={{ color: '#1B4332' }} />, title: "Plan d'action climat existant", description: 'Feuille de route, trajectoire, objectifs chiffrés' },
+  { id: 'organigramme', icon: <Building2 size={20} style={{ color: '#1B4332' }} />, title: 'Organigramme', description: 'Pour comprendre la structure décisionnelle' },
+  { id: 'budget', icon: <DollarSign size={20} style={{ color: '#1B4332' }} />, title: 'Budget RSE/climat', description: 'Répartition des investissements climat' },
 ]
 
 interface UploadedFile {
@@ -16,39 +25,74 @@ interface UploadedFile {
   size: string
   date: string
   type: 'pdf' | 'excel' | 'image' | 'other'
+  categoryId: string | null // null = uncategorized
 }
 
-// Mock files for demo
-const MOCK_FILES: UploadedFile[] = []
+function getFileType(file: File): 'pdf' | 'excel' | 'image' | 'other' {
+  if (file.name.endsWith('.pdf')) return 'pdf'
+  if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) return 'excel'
+  if (file.type.startsWith('image/')) return 'image'
+  return 'other'
+}
+
+function formatSize(size: number): string {
+  return size > 1024 * 1024 ? `${(size / (1024 * 1024)).toFixed(1)} Mo` : `${(size / 1024).toFixed(0)} Ko`
+}
 
 function getFileIcon(type: string) {
-  if (type === 'pdf') return <FileText size={20} style={{ color: '#7A766D' }} />
-  if (type === 'excel') return <FileSpreadsheet size={20} style={{ color: '#7A766D' }} />
-  if (type === 'image') return <Image size={20} style={{ color: '#7A766D' }} />
-  return <FileText size={20} style={{ color: '#7A766D' }} />
+  if (type === 'pdf') return <FileText size={16} style={{ color: '#7A766D' }} />
+  if (type === 'excel') return <FileSpreadsheet size={16} style={{ color: '#7A766D' }} />
+  if (type === 'image') return <Image size={16} style={{ color: '#7A766D' }} />
+  return <FileText size={16} style={{ color: '#7A766D' }} />
+}
+
+function truncate(str: string, max: number) {
+  if (str.length <= max) return str
+  const ext = str.lastIndexOf('.') > 0 ? str.slice(str.lastIndexOf('.')) : ''
+  return str.slice(0, max - ext.length - 1) + '…' + ext
 }
 
 export default function DocumentsPage() {
-  const [files, setFiles] = useState<UploadedFile[]>(MOCK_FILES)
+  const [files, setFiles] = useState<UploadedFile[]>([])
   const [notes, setNotes] = useState('')
   const [dragOver, setDragOver] = useState(false)
-  const fileInput = useRef<HTMLInputElement>(null)
+  const [validated, setValidated] = useState(false)
+  const [saveIndicator, setSaveIndicator] = useState(false)
+  const generalInput = useRef<HTMLInputElement>(null)
+  const categoryInputs = useRef<Record<string, HTMLInputElement | null>>({})
 
-  const handleFiles = useCallback((fileList: FileList) => {
+  // Debounced save indicator for notes
+  useEffect(() => {
+    if (!notes) return
+    setSaveIndicator(false)
+    const t = setTimeout(() => setSaveIndicator(true), 800)
+    return () => clearTimeout(t)
+  }, [notes])
+
+  const addFiles = useCallback((fileList: FileList, categoryId: string | null) => {
     const newFiles: UploadedFile[] = Array.from(fileList).map(f => ({
       id: Math.random().toString(36).slice(2),
       name: f.name,
-      size: f.size > 1024 * 1024 ? `${(f.size / (1024 * 1024)).toFixed(1)} Mo` : `${(f.size / 1024).toFixed(0)} Ko`,
+      size: formatSize(f.size),
       date: new Date().toLocaleDateString('fr-FR'),
-      type: f.name.endsWith('.pdf') ? 'pdf' : f.name.endsWith('.xlsx') || f.name.endsWith('.xls') ? 'excel' : f.type.startsWith('image/') ? 'image' : 'other',
+      type: getFileType(f),
+      categoryId,
     }))
     setFiles(prev => [...prev, ...newFiles])
+    setValidated(false)
   }, [])
 
-  const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id))
+  const removeFile = (id: string) => {
+    setFiles(prev => prev.filter(f => f.id !== id))
+    setValidated(false)
+  }
+
+  const filesForCategory = (catId: string) => files.filter(f => f.categoryId === catId)
+  const uncategorizedFiles = files.filter(f => f.categoryId === null)
+  const totalFiles = files.length
 
   return (
-    <div style={{ maxWidth: 960 }}>
+    <div style={{ maxWidth: 960, paddingBottom: 100 }}>
       <div style={{ marginBottom: 32 }}>
         <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, color: '#2A2A28', marginBottom: 8 }}>
           Documents & informations
@@ -58,17 +102,17 @@ export default function DocumentsPage() {
         </p>
       </div>
 
-      {/* Upload zone */}
+      {/* General upload zone */}
       <div
         onDragOver={e => { e.preventDefault(); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
-        onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files) }}
-        onClick={() => fileInput.current?.click()}
+        onDrop={e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files, null) }}
+        onClick={() => generalInput.current?.click()}
         style={{
           border: `2px dashed ${dragOver ? '#1B4332' : '#EDEAE3'}`,
           borderRadius: 14, padding: 40, textAlign: 'center', cursor: 'pointer',
           backgroundColor: dragOver ? '#E8F0EB' : 'transparent',
-          transition: 'all 0.15s', marginBottom: 16,
+          transition: 'all 0.15s', marginBottom: 24,
         }}
         onMouseEnter={e => { if (!dragOver) { e.currentTarget.style.borderColor = '#B87333'; e.currentTarget.style.backgroundColor = '#F5EDE4' } }}
         onMouseLeave={e => { if (!dragOver) { e.currentTarget.style.borderColor = '#EDEAE3'; e.currentTarget.style.backgroundColor = 'transparent' } }}
@@ -80,39 +124,27 @@ export default function DocumentsPage() {
         <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#B0AB9F' }}>
           PDF, Excel, Word, images · 50 Mo max par fichier
         </p>
-        <input ref={fileInput} type="file" multiple hidden onChange={e => { if (e.target.files) handleFiles(e.target.files) }} />
+        <input ref={generalInput} type="file" multiple hidden onChange={e => { if (e.target.files) addFiles(e.target.files, null) }} />
       </div>
 
-      {/* Uploaded files list */}
-      {files.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 32 }}>
-          {files.map(file => (
-            <div key={file.id} style={{
-              display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-              backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 10,
-            }}>
-              {getFileIcon(file.type)}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.85rem', color: '#2A2A28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {file.name}
-                </div>
-              </div>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F', flexShrink: 0 }}>{file.size}</span>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: '#B0AB9F', flexShrink: 0 }}>{file.date}</span>
-              <button
-                onClick={() => removeFile(file.id)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, opacity: 0.5, transition: 'opacity 0.15s' }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
-              >
-                <Trash2 size={16} style={{ color: '#DC4A4A' }} />
-              </button>
-            </div>
-          ))}
+      {/* Uncategorized files */}
+      {uncategorizedFiles.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{
+            fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.56rem',
+            letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#B0AB9F', marginBottom: 10,
+          }}>
+            AUTRES DOCUMENTS
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {uncategorizedFiles.map(file => (
+              <FilePill key={file.id} file={file} onRemove={removeFile} />
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Suggested documents */}
+      {/* Document categories */}
       <div style={{ marginBottom: 32 }}>
         <div style={{
           fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.56rem',
@@ -121,31 +153,57 @@ export default function DocumentsPage() {
           DOCUMENTS UTILES
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-          {SUGGESTED_DOCS.map((doc, i) => {
-            const isUploaded = files.some(f => f.name.toLowerCase().includes(doc.title.split(' ')[0].toLowerCase()))
+          {SUGGESTED_DOCS.map(doc => {
+            const catFiles = filesForCategory(doc.id)
+            const hasFiles = catFiles.length > 0
             return (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 18px',
-                backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3', borderRadius: 10,
-              }}>
-                <div style={{ flexShrink: 0, marginTop: 2 }}>{doc.icon}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.85rem', color: '#2A2A28', marginBottom: 2 }}>
-                    {doc.title}
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#B0AB9F' }}>
-                    {doc.description}
+              <div
+                key={doc.id}
+                style={{
+                  padding: '14px 18px',
+                  backgroundColor: hasFiles ? '#E8F0EB' : '#FFFFFF',
+                  border: '1px solid #EDEAE3',
+                  borderLeft: hasFiles ? '3px solid #1B4332' : '1px solid #EDEAE3',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+                onClick={() => categoryInputs.current[doc.id]?.click()}
+                onMouseEnter={e => { if (!hasFiles) e.currentTarget.style.backgroundColor = '#F7F5F0' }}
+                onMouseLeave={e => { if (!hasFiles) e.currentTarget.style.backgroundColor = '#FFFFFF' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ flexShrink: 0, marginTop: 2 }}>{doc.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.85rem', color: '#2A2A28' }}>
+                        {doc.title}
+                      </span>
+                      {hasFiles && (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 3, padding: '1px 8px',
+                          borderRadius: 10, backgroundColor: '#1B4332', flexShrink: 0,
+                          fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.62rem', color: '#fff',
+                        }}>
+                          <Check size={9} /> {catFiles.length}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#B0AB9F', marginBottom: hasFiles ? 10 : 0 }}>
+                      {doc.description}
+                    </div>
+                    {/* File pills for this category */}
+                    {catFiles.map(file => (
+                      <FilePill key={file.id} file={file} onRemove={removeFile} compact />
+                    ))}
                   </div>
                 </div>
-                {isUploaded && (
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 10px',
-                    borderRadius: 12, backgroundColor: '#E8F0EB', flexShrink: 0,
-                    fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.7rem', color: '#1B4332',
-                  }}>
-                    <Check size={10} /> Reçu
-                  </span>
-                )}
+                <input
+                  ref={el => { categoryInputs.current[doc.id] = el }}
+                  type="file" multiple hidden
+                  onClick={e => e.stopPropagation()}
+                  onChange={e => { if (e.target.files) addFiles(e.target.files, doc.id); e.target.value = '' }}
+                />
               </div>
             )
           })}
@@ -182,12 +240,104 @@ export default function DocumentsPage() {
             {notes.length}
           </span>
         </div>
+        {saveIndicator && (
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#1B4332', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Check size={12} /> Sauvegardé
+          </p>
+        )}
       </div>
 
-      {/* Auto-save indicator */}
-      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#B0AB9F' }}>
-        ✓ Sauvegarde automatique
-      </p>
+      {/* ═══════ VALIDATION BAR ═══════ */}
+      <div style={{
+        backgroundColor: '#FFFFFF', borderTop: '1px solid #EDEAE3',
+        padding: '20px 28px', borderRadius: '0 0 14px 14px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginTop: 8,
+      }}>
+        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: validated ? '#1B4332' : '#7A766D', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {validated ? (
+            <><Check size={14} style={{ color: '#1B4332' }} /> {totalFiles} document{totalFiles > 1 ? 's' : ''} validé{totalFiles > 1 ? 's' : ''} le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</>
+          ) : (
+            <>{totalFiles} document{totalFiles > 1 ? 's' : ''} ajouté{totalFiles > 1 ? 's' : ''} · En attente de validation</>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {validated ? (
+            <>
+              <span style={{
+                padding: '12px 24px', borderRadius: 9,
+                backgroundColor: '#E8F0EB', color: '#1B4332',
+                fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.82rem',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
+                <Check size={14} /> Corpus validé
+              </span>
+              <button
+                onClick={() => setValidated(false)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D',
+                  textDecoration: 'underline',
+                }}
+              >
+                Modifier
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setValidated(true)}
+              style={{
+                padding: '14px 28px', borderRadius: 9,
+                backgroundColor: '#1B4332', color: '#fff',
+                fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.82rem',
+                border: 'none', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                transition: 'background-color 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#2D6A4F')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1B4332')}
+            >
+              Valider le corpus documentaire →
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── File Pill ── */
+function FilePill({ file, onRemove, compact }: { file: UploadedFile; onRemove: (id: string) => void; compact?: boolean }) {
+  return (
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: compact ? '5px 8px' : '8px 12px',
+        backgroundColor: compact ? 'rgba(255,255,255,0.7)' : '#FFFFFF',
+        border: '1px solid #EDEAE3', borderRadius: 8,
+        marginBottom: compact ? 4 : 0,
+      }}
+      onClick={e => e.stopPropagation()}
+    >
+      {getFileIcon(file.type)}
+      <span style={{
+        fontFamily: 'var(--font-sans)', fontSize: compact ? '0.75rem' : '0.82rem',
+        fontWeight: 500, color: '#2A2A28', flex: 1, minWidth: 0,
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {truncate(file.name, 30)}
+      </span>
+      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: '#B0AB9F', flexShrink: 0 }}>
+        {file.size}
+      </span>
+      <button
+        onClick={e => { e.stopPropagation(); onRemove(file.id) }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, opacity: 0.4, transition: 'opacity 0.15s', flexShrink: 0 }}
+        onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+        onMouseLeave={e => (e.currentTarget.style.opacity = '0.4')}
+      >
+        <X size={14} style={{ color: '#DC4A4A' }} />
+      </button>
     </div>
   )
 }
