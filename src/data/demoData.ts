@@ -93,6 +93,8 @@ export interface DemoDiagnosticSection {
 export interface DemoDocuments {
   files: { name: string; size: string; date: string; type: 'pdf' | 'excel' | 'image' | 'other' }[]
   notes: string
+  corpus_validated?: boolean
+  validation_date?: string
 }
 
 export interface DemoDiagnostic {
@@ -141,7 +143,7 @@ const DIAG_A: DemoDiagnostic = {
     sites: '2 (Paris, Lyon)',
     rseStartYear: 2022,
     contact: { name: 'Marie Delcourt', title: 'Directrice RSE', email: 'marie.delcourt@novatech.fr' },
-    analyst: { name: 'Guillaume Perrault', title: 'Analyste climat senior', initials: 'GP' },
+    analyst: { name: 'Guillaume Pakula', title: 'Analyste climat senior', initials: 'GP' },
   },
   bloc1: {
     tiles: {
@@ -197,7 +199,7 @@ const DIAG_A: DemoDiagnostic = {
     dailyResponses: [],
   },
   dg: { received: false },
-  documents: { files: [], notes: '' },
+  documents: { files: [], notes: '', corpus_validated: false },
   journal: [
     {
       id: 'ja1', author: 'analyst', authorName: 'Guillaume',
@@ -219,7 +221,7 @@ const DIAG_A: DemoDiagnostic = {
       text: "Bonjour Guillaume, est-ce que je peux remplir les blocs dans le désordre ?",
     },
     {
-      id: 'ma2', author: 'analyst', authorName: 'Guillaume Perrault',
+      id: 'ma2', author: 'analyst', authorName: 'Guillaume Pakula',
       date: new Date(Date.now() - 2 * 86400_000 + 3600_000),
       text: "Vous pouvez tout à fait ! Seul le Bloc 1 devait être fait en premier (c'est chose faite).",
     },
@@ -252,7 +254,7 @@ const DIAG_B: DemoDiagnostic = {
     sites: '4 (Toulouse, Bordeaux, Marseille, Lille)',
     rseStartYear: 2019,
     contact: { name: 'Jean-Marc Fournier', title: 'Directeur Développement Durable', email: 'jm.fournier@meridien-group.com' },
-    analyst: { name: 'Guillaume Perrault', title: 'Analyste climat senior', initials: 'GP' },
+    analyst: { name: 'Guillaume Pakula', title: 'Analyste climat senior', initials: 'GP' },
   },
   bloc1: {
     tiles: {
@@ -338,6 +340,8 @@ const DIAG_B: DemoDiagnostic = {
       { name: 'Organigramme RSE.xlsx', size: '0.3 Mo', date: '05/02/2025', type: 'excel' },
     ],
     notes: 'La stratégie climat 2030 est en cours de révision suite aux nouvelles exigences CSRD. Document à jour prévu pour mars 2025.',
+    corpus_validated: true,
+    validation_date: '2026-02-08',
   },
   journal: [
     {
@@ -366,7 +370,7 @@ const DIAG_B: DemoDiagnostic = {
       text: "Guillaume, le DG a bien répondu au questionnaire. Par contre il a demandé que la partie scope 3 reste confidentielle.",
     },
     {
-      id: 'mb2', author: 'analyst', authorName: 'Guillaume Perrault',
+      id: 'mb2', author: 'analyst', authorName: 'Guillaume Pakula',
       date: new Date(Date.now() - 5 * 86400_000 + 7200_000),
       text: "Bien noté Jean-Marc. La confidentialité sera respectée dans le diagnostic. Ces éléments n'apparaîtront que dans la section DG confidentielle.",
     },
@@ -404,7 +408,7 @@ const DIAG_C: DemoDiagnostic = {
     sites: '12 (Paris, Lyon, Bordeaux, Nice, Strasbourg, + 7 régions)',
     rseStartYear: 2020,
     contact: { name: 'Sophie Duval-Martin', title: 'Directrice Générale', email: 'sophie@maison-duval.fr' },
-    analyst: { name: 'Guillaume Perrault', title: 'Analyste climat senior', initials: 'GP' },
+    analyst: { name: 'Guillaume Pakula', title: 'Analyste climat senior', initials: 'GP' },
   },
   bloc1: {
     tiles: {
@@ -492,6 +496,8 @@ const DIAG_C: DemoDiagnostic = {
       { name: 'Budget RSE 2024-2025.xlsx', size: '0.6 Mo', date: '25/01/2025', type: 'excel' },
     ],
     notes: 'La certification Clef Verte est en cours de renouvellement pour les 4 derniers établissements. Dossiers complets attendus pour avril 2025.',
+    corpus_validated: true,
+    validation_date: '2026-01-20',
   },
   journal: [
     {
@@ -526,7 +532,7 @@ const DIAG_C: DemoDiagnostic = {
       text: "Guillaume, le taux de réponse au sondage est impressionnant. L'équipe est vraiment mobilisée !",
     },
     {
-      id: 'mc2', author: 'analyst', authorName: 'Guillaume Perrault',
+      id: 'mc2', author: 'analyst', authorName: 'Guillaume Pakula',
       date: new Date(Date.now() - 10 * 86400_000 + 3600_000),
       text: "Oui, 45 réponses pour un objectif de 40, c'est excellent ! Les verbatims sont très riches aussi. Ça va nourrir le diagnostic.",
     },

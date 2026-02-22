@@ -29,7 +29,22 @@ export default function SectionLayout({ sectionNumber, children, showAnalyst }: 
   const nextSection = sectionNumber < 9 ? sectionNumber + 1 : null
 
   return (
-    <div className="max-w-[760px]">
+    <div className="max-w-[760px] section-fade-in">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 mb-3">
+        <button
+          onClick={() => navigate('/client/synthesis')}
+          className="hover:underline"
+          style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#B0AB9F' }}
+        >
+          Diagnostic
+        </button>
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#E5E1D8' }}>›</span>
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#7A766D' }}>
+          Section {sectionNumber} : {SECTION_TITLES[sectionNumber - 1]}
+        </span>
+      </div>
+
       {/* Top bar */}
       <p className="text-xs mb-2" style={{ fontFamily: 'var(--font-sans)', color: '#B0AB9F' }}>
         Section {sectionNumber} sur 9
@@ -115,6 +130,11 @@ export default function SectionLayout({ sectionNumber, children, showAnalyst }: 
           </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes sectionFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .section-fade-in { animation: sectionFadeIn 0.2s ease-out; }
+      `}</style>
     </div>
   )
 }

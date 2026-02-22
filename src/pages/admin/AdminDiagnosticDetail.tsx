@@ -77,11 +77,11 @@ const MOCK_DG_ANSWERS = [
 ]
 
 const MOCK_JOURNAL = [
-  { id: '1', author: 'analyst' as const, name: 'Claire Dubois', initials: 'CD', date: '14 fév.', text: 'Questionnaire complété, 23 répondants au sondage. Je lance l\'analyse.', badge: 'Étape : Analyse', internal: false },
-  { id: '2', author: 'analyst' as const, name: 'Claire Dubois', initials: 'CD', date: '12 fév.', text: 'Les écarts de perception sur P3 (objectifs clairs) sont significatifs : 7.0 RSE vs 3.2 terrain. À creuser dans la synthèse.', badge: null, internal: true },
-  { id: '3', author: 'analyst' as const, name: 'Claire Dubois', initials: 'CD', date: '10 fév.', text: 'Appel de lancement réalisé. Bon échange avec le responsable RSE. L\'historique de la démarche est solide depuis 2019.', badge: 'Étape : Questionnaire', internal: false },
-  { id: '4', author: 'client' as const, name: 'Julien Marchand', initials: 'JM', date: '11 fév.', text: 'Merci Claire, j\'ai hâte de voir les résultats. N\'hésitez pas si vous avez des questions sur nos réponses.', badge: null, internal: false },
-  { id: '5', author: 'analyst' as const, name: 'Claire Dubois', initials: 'CD', date: '8 fév.', text: 'Note interne : le Q27 mentionne un décalage entre discours et budget. À intégrer dans la synthèse avec diplomatie.', badge: null, internal: true },
+  { id: '1', author: 'analyst' as const, name: 'Guillaume Pakula', initials: 'GP', date: '14 fév.', text: 'Questionnaire complété, 23 répondants au sondage. Je lance l\'analyse.', badge: 'Étape : Analyse', internal: false },
+  { id: '2', author: 'analyst' as const, name: 'Guillaume Pakula', initials: 'GP', date: '12 fév.', text: 'Les écarts de perception sur P3 (objectifs clairs) sont significatifs : 7.0 RSE vs 3.2 terrain. À creuser dans la synthèse.', badge: null, internal: true },
+  { id: '3', author: 'analyst' as const, name: 'Guillaume Pakula', initials: 'GP', date: '10 fév.', text: 'Appel de lancement réalisé. Bon échange avec le responsable RSE. L\'historique de la démarche est solide depuis 2019.', badge: 'Étape : Questionnaire', internal: false },
+  { id: '4', author: 'client' as const, name: 'Julien Marchand', initials: 'JM', date: '11 fév.', text: 'Merci Guillaume, j\'ai hâte de voir les résultats. N\'hésitez pas si vous avez des questions sur nos réponses.', badge: null, internal: false },
+  { id: '5', author: 'analyst' as const, name: 'Guillaume Pakula', initials: 'GP', date: '8 fév.', text: 'Note interne : le Q27 mentionne un décalage entre discours et budget. À intégrer dans la synthèse avec diplomatie.', badge: null, internal: true },
 ]
 
 export default function AdminDiagnosticDetail() {

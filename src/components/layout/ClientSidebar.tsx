@@ -172,7 +172,7 @@ function deriveSteps(demoStatus: DemoStatus | undefined, analyst: { first_name: 
       subItems: s === 'analysis' ? [{ label: `${analyst.first_name} travaille sur votre diagnostic`, info: true }] : undefined,
     },
     {
-      id: 'restitution', num: 6, label: 'Restitution',
+      id: 'restitution', num: 6, label: 'Votre diagnostic',
       status: s === 'delivered' ? 'done' : s === 'ready_for_restitution' ? 'current' : 'upcoming',
       meta: s === 'delivered' ? 'Fait ✓' : s === 'ready_for_restitution' ? 'À planifier' : 'Verrouillé',
       // Sub-items will be rendered with reading states, not green checks

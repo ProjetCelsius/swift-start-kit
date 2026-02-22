@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useDemo } from '@/hooks/useDemo'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ChevronUp, ChevronDown, Unlock } from 'lucide-react'
+import { ChevronUp, ChevronDown, Unlock, RotateCcw } from 'lucide-react'
 import { useDiagnosticReading } from '@/hooks/useDiagnosticReading'
 import type { DemoStatus, DemoRole } from '@/data/demoData'
 
@@ -25,7 +25,7 @@ export default function DevToolbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const [expanded, setExpanded] = useState(false)
-  const { unlockAll } = useDiagnosticReading()
+  const { unlockAll, resetProgress } = useDiagnosticReading()
 
   if (!demo.enabled) {
     return (
@@ -134,6 +134,16 @@ export default function DevToolbar() {
           title="Débloquer toutes les sections du diagnostic"
         >
           <Unlock size={10} /> Débloquer sections
+        </button>
+
+        {/* Reset reading progress */}
+        <button
+          onClick={resetProgress}
+          className="text-[9px] font-medium px-2 py-0.5 rounded transition-colors flex items-center gap-1"
+          style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
+          title="Remettre la lecture à l'état initial"
+        >
+          <RotateCcw size={10} /> Reset lecture
         </button>
 
         {/* Current info */}
