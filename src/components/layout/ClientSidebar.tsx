@@ -193,6 +193,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
   const steps = useMemo(() => deriveSteps(demoStatus, analyst), [demoStatus, analyst])
 
   const isDashboard = location.pathname === '/client/dashboard'
+  const isAppelLancement = location.pathname === '/client/appel-lancement'
 
   return (
     <aside
@@ -313,7 +314,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                 {/* Step header */}
                 {(() => {
                   const stepRoutes: Record<string, string> = {
-                    appel: '/client/questionnaire/bloc1',
+                    appel: '/client/appel-lancement',
                     questionnaire: '/client/questionnaire/bloc1',
                     sondage: '/client/perception',
                     documents: '/client/documents',
@@ -321,6 +322,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                     restitution: '/client/diagnostic/1',
                   }
                   const isClickable = step.status === 'done' || step.status === 'current' || step.status === 'parallel' || isOptional
+                  const isStepActive = step.id === 'appel' && isAppelLancement
                   return (
                     <button
                       onClick={() => {
@@ -334,6 +336,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                         background: 'none', border: 'none',
                         cursor: isClickable ? 'pointer' : 'default',
                         borderRadius: 6,
+                        backgroundColor: isStepActive ? '#E8F0EB' : 'transparent',
                       }}
                     >
                       {/* Circle */}
