@@ -351,7 +351,7 @@ export default function ClientHomeDashboard() {
           allBlocsDone={allBlocsDone}
           sondPerDone={sondPerDone}
           doneCount={doneCount}
-          
+          corpusValidated={corpusValidated || false}
           navigate={navigate}
         />
       </div>
@@ -526,29 +526,49 @@ export default function ClientHomeDashboard() {
         <div
           onClick={() => navigate('/client/documents')}
           style={{
-            backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px dashed #EDEAE3',
+            backgroundColor: '#FFFFFF', borderRadius: 16,
+            border: corpusValidated ? '1px solid #2D6A4F' : '1px dashed #EDEAE3',
             padding: '20px 20px', display: 'flex', flexDirection: 'column',
             cursor: 'pointer', transition: 'border-color 0.15s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = '#B87333')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = '#EDEAE3')}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = corpusValidated ? '#1B4332' : '#B87333')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = corpusValidated ? '#2D6A4F' : '#EDEAE3')}
         >
           <div className="flex items-center gap-3 mb-2">
             <div style={{
-              width: 36, height: 36, borderRadius: 9, backgroundColor: '#F0EDE6',
+              width: 36, height: 36, borderRadius: 9,
+              backgroundColor: corpusValidated ? '#E8F0EB' : '#F0EDE6',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
-              <FolderOpen size={18} color="#7A766D" />
+              {corpusValidated
+                ? <Check size={18} color="#1B4332" />
+                : <FolderOpen size={18} color="#7A766D" />
+              }
             </div>
             <div style={{ flex: 1 }}>
               <div className="font-display" style={{ fontSize: '1.05rem', fontWeight: 500, color: '#2A2A28' }}>Documents</div>
             </div>
+            {corpusValidated && (
+              <span style={{
+                padding: '3px 10px', borderRadius: 6,
+                backgroundColor: '#E8F0EB', fontFamily: 'var(--font-sans)',
+                fontSize: '0.6rem', fontWeight: 600, color: '#1B4332',
+              }}>
+                ✓ Corpus validé
+              </span>
+            )}
           </div>
           <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D', lineHeight: 1.5, marginBottom: 8 }}>
-            Transmettez les documents utiles à votre analyste.
+            {corpusValidated
+              ? 'Vos documents ont été transmis et validés par votre analyste.'
+              : 'Transmettez les documents utiles à votre analyste.'
+            }
           </p>
-          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#B0AB9F', fontStyle: 'italic' }}>
-            0 fichier envoyé · Optionnel
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: corpusValidated ? '#1B4332' : '#B0AB9F', fontStyle: 'italic' }}>
+            {corpusValidated
+              ? `${demo?.activeDiagnostic.documents?.files?.length || 0} fichier(s) · Validé`
+              : `${demo?.activeDiagnostic.documents?.files?.length || 0} fichier envoyé · Optionnel`
+            }
           </p>
         </div>
       </div>
@@ -676,8 +696,8 @@ function MiniRadarSVG() {
 }
 
 // ── Diagnostic Teaser Block (3 states) ──
-function DiagnosticTeaser({ diagnosticUnlocked, isAnalysis, allBlocsDone, sondPerDone, doneCount, navigate }: {
-  diagnosticUnlocked: boolean; isAnalysis: boolean; allBlocsDone: boolean; sondPerDone: number; doneCount: number; navigate: ReturnType<typeof useNavigate>
+function DiagnosticTeaser({ diagnosticUnlocked, isAnalysis, allBlocsDone, sondPerDone, doneCount, corpusValidated, navigate }: {
+  diagnosticUnlocked: boolean; isAnalysis: boolean; allBlocsDone: boolean; sondPerDone: number; doneCount: number; corpusValidated: boolean; navigate: ReturnType<typeof useNavigate>
 }) {
   const d = mockDiagnostic
 
@@ -886,15 +906,15 @@ function DiagnosticTeaser({ diagnosticUnlocked, isAnalysis, allBlocsDone, sondPe
   }
 
   // ── STATE C: Verrouillé ──
-  const completedSteps = 1 + (allBlocsDone ? 1 : 0) + (sondPerDone === 3 ? 1 : 0)
+  const completedSteps = 1 + (allBlocsDone ? 1 : 0) + (sondPerDone === 3 ? 1 : 0) + (corpusValidated ? 1 : 0)
   const totalSteps = 5
   const progressPct = (completedSteps / totalSteps) * 100
-  const stepPills = [
-    { label: 'Lancement', status: 'done' as const },
-    { label: 'Questionnaire', status: allBlocsDone ? 'done' as const : doneCount > 0 ? 'current' as const : 'pending' as const },
-    { label: 'Sondages', status: sondPerDone === 3 ? 'done' as const : sondPerDone > 0 ? 'current' as const : 'pending' as const },
-    { label: 'Documents', status: 'pending' as const },
-    { label: 'Analyse', status: 'pending' as const },
+  const stepPills: { label: string; status: 'done' | 'current' | 'pending'; route?: string }[] = [
+    { label: 'Lancement', status: 'done', route: '/client/appel-lancement' },
+    { label: 'Questionnaire', status: allBlocsDone ? 'done' : doneCount > 0 ? 'current' : 'pending', route: '/client/questionnaire/bloc1' },
+    { label: 'Sondages', status: sondPerDone === 3 ? 'done' : sondPerDone > 0 ? 'current' : 'pending', route: '/client/perception' },
+    { label: 'Documents', status: corpusValidated ? 'done' : 'pending', route: '/client/documents' },
+    { label: 'Analyse', status: 'pending' },
   ]
 
   return (
@@ -947,18 +967,25 @@ function DiagnosticTeaser({ diagnosticUnlocked, isAnalysis, allBlocsDone, sondPe
         {/* Step pills */}
         <div className="flex items-center gap-1.5" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
           {stepPills.map((pill) => (
-            <span key={pill.label} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '4px 10px', borderRadius: 6,
-              backgroundColor: pill.status === 'done' ? '#E8F0EB' : pill.status === 'current' ? '#F5EDE4' : '#F0EDE6',
-              border: `1px solid ${pill.status === 'done' ? 'rgba(45,106,79,0.13)' : pill.status === 'current' ? 'rgba(184,115,51,0.13)' : '#EDEAE3'}`,
-              fontFamily: 'var(--font-sans)', fontSize: '0.62rem', fontWeight: 500,
-              color: pill.status === 'done' ? '#1B4332' : pill.status === 'current' ? '#B87333' : '#B0AB9F',
-            }}>
+            <button
+              key={pill.label}
+              onClick={pill.route ? (e) => { e.stopPropagation(); navigate(pill.route!) } : undefined}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '4px 10px', borderRadius: 6, border: 'none',
+                cursor: pill.route ? 'pointer' : 'default',
+                backgroundColor: pill.status === 'done' ? '#E8F0EB' : pill.status === 'current' ? '#F5EDE4' : '#F0EDE6',
+                fontFamily: 'var(--font-sans)', fontSize: '0.62rem', fontWeight: 500,
+                color: pill.status === 'done' ? '#1B4332' : pill.status === 'current' ? '#B87333' : '#B0AB9F',
+                transition: 'opacity 0.15s',
+              }}
+              onMouseEnter={e => { if (pill.route) e.currentTarget.style.opacity = '0.7' }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+            >
               {pill.status === 'done' ? <><Check size={10} /> {pill.label}</> :
                pill.status === 'current' ? <>◉ {pill.label}</> :
                pill.label}
-            </span>
+            </button>
           ))}
         </div>
       </div>
