@@ -5,14 +5,25 @@ import { ArrowLeft, Check, ChevronRight, Copy, ExternalLink, FileText, User, Use
 export default function EntretiensPage() {
   const navigate = useNavigate()
   const [dgLinkCopied, setDgLinkCopied] = useState(false)
-  const [rseStatus] = useState<'not_started' | 'in_progress' | 'done'>('not_started')
-  const [dgStatus] = useState<'not_sent' | 'sent' | 'done'>('not_sent')
+  const rseStatus: 'not_started' | 'in_progress' | 'done' = (() => {
+    if (localStorage.getItem('rse-questionnaire-done') === 'true') return 'done'
+    const saved = localStorage.getItem('rse-questionnaire-answers')
+    if (saved && Object.keys(JSON.parse(saved)).length > 0) return 'in_progress'
+    return 'not_started'
+  })()
+  const [dgSent, setDgSent] = useState(() => localStorage.getItem('dg-link-sent') === 'true')
+  const dgDone = localStorage.getItem('dg-questionnaire-done') === 'true'
+  const dgStatus: 'not_sent' | 'sent' | 'done' = dgDone ? 'done' : dgSent ? 'sent' : 'not_sent'
 
   const dgLink = `${window.location.origin}/dg/demo`
 
   function copyLink() {
     navigator.clipboard.writeText(dgLink)
     setDgLinkCopied(true)
+    if (!dgSent) {
+      setDgSent(true)
+      localStorage.setItem('dg-link-sent', 'true')
+    }
     setTimeout(() => setDgLinkCopied(false), 2000)
   }
 
@@ -93,13 +104,14 @@ export default function EntretiensPage() {
                 <button
                   onClick={() => navigate('/client/questionnaire-rse')}
                   style={{
-                    width: '100%', padding: '12px 0', borderRadius: 10, backgroundColor: '#1B4332',
+                    width: '100%', padding: '12px 0', borderRadius: 10,
+                    backgroundColor: rseStatus === 'in_progress' ? '#B87333' : '#1B4332',
                     color: '#fff', fontWeight: 600, fontSize: '0.85rem', border: 'none', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     fontFamily: 'var(--font-sans)',
                   }}
                 >
-                  Répondre <ChevronRight size={16} />
+                  {rseStatus === 'in_progress' ? 'Reprendre' : 'Répondre'} <ChevronRight size={16} />
                 </button>
                 <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: '#B0AB9F', textAlign: 'center', marginTop: 8 }}>
                   Durée estimée : 3 minutes
