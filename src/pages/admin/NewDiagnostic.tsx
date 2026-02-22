@@ -5,7 +5,7 @@ import { Check, CheckCircle } from 'lucide-react'
 const SECTORS = ['Industrie manufacturière', 'Numérique', 'Construction', 'Transport & Logistique', 'Agroalimentaire', 'Énergie', 'Services', 'Commerce', 'Santé', 'Autre']
 const HEADCOUNTS = ['1-10', '11-50', '51-250', '251-500', '501-1000', '1001-5000', '>5000']
 const REVENUES = ['<1M', '1-10M', '10-50M', '50-200M', '200M-1Md', '>1Md']
-const ANALYSTS = ['Claire Dubois', 'Thomas Martin']
+const ANALYSTS = ['Guillaume Pakula', 'Thomas Martin']
 
 const inputStyle: React.CSSProperties = {
   width: '100%', height: 44, padding: '0 14px', borderRadius: 8,

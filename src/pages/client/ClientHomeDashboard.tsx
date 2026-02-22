@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Check, Users, Lock, Compass, User, FolderOpen } from 'lucide-react'
+import { ChevronRight, Check, Users, Lock, Compass, User, FolderOpen, Search, Zap, Calendar } from 'lucide-react'
 import { useAuth, MOCK_ANALYST } from '../../hooks/useAuth'
 import { useDemoIfAvailable } from '../../hooks/useDemo'
 import ProtocolModal, { useProtocolModal } from '../../components/ProtocolModal'
 import guillaumePhoto from '../../assets/guillaume-photo.png'
+import { mockDiagnostic } from '@/data/mockDiagnosticData'
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'
 import type { DemoStatus } from '@/data/demoData'
 
 // ── Types ──────
@@ -343,126 +345,250 @@ export default function ClientHomeDashboard() {
 
       {/* ═══════ DIAGNOSTIC TEASER ═══════ */}
       <div className="dash-fadein" style={{ animationDelay: '100ms', marginBottom: 20 }}>
-        <div
-          className="diagnostic-teaser-card"
-          style={{
-            position: 'relative', minHeight: diagnosticUnlocked ? 'auto' : 260, borderRadius: 18,
-            overflow: 'hidden',
-            border: diagnosticUnlocked ? '1px solid #EDEAE3' : '1px solid #E5E1D8',
-            backgroundColor: diagnosticUnlocked ? '#FFFFFF' : '#F0EDE6',
-            transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
-          }}>
-          {diagnosticUnlocked ? (
-            <div style={{ padding: '32px 36px' }}>
-              <div className="font-display" style={{ fontSize: '1.3rem', color: '#2A2A28', fontWeight: 400, marginBottom: 12 }}>
-                Votre diagnostic est prêt
-              </div>
-              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 20 }}>
-                9 sections d'analyse personnalisées vous attendent.
-              </p>
+        {diagnosticUnlocked ? (
+          <>
+            {/* A. Score snapshot card */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '180px 1fr 220px', gap: 16, marginBottom: 16,
+            }}>
+              {/* Score ring */}
+              <button
+                onClick={() => navigate('/client/diagnostic/3')}
+                style={{
+                  backgroundColor: '#FFFFFF', borderRadius: 14, border: '1px solid #EDEAE3',
+                  padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', transition: 'box-shadow 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(42,42,40,0.06)')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+              >
+                <div style={{ position: 'relative', width: 80, height: 80, marginBottom: 8 }}>
+                  <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="#F0EDE6" strokeWidth="6" />
+                    <circle cx="50" cy="50" r="42" fill="none" stroke={mockDiagnostic.section3.globalGrade === 'A' ? '#1B4332' : '#5B8C6E'} strokeWidth="6"
+                      strokeDasharray={`${mockDiagnostic.section3.globalScore * 2.64} ${264 - mockDiagnostic.section3.globalScore * 2.64}`}
+                      strokeLinecap="round" />
+                  </svg>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="font-display" style={{ fontSize: '1.6rem', fontWeight: 500, color: '#5B8C6E', lineHeight: 1 }}>
+                      {mockDiagnostic.section3.globalGrade}
+                    </span>
+                  </div>
+                </div>
+                <span className="font-display" style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2A2A28' }}>
+                  {mockDiagnostic.section3.globalScore}/100
+                </span>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', color: '#7A766D' }}>Score maturité</span>
+              </button>
+
+              {/* Mini radar */}
+              <button
+                onClick={() => navigate('/client/diagnostic/3')}
+                style={{
+                  backgroundColor: '#FFFFFF', borderRadius: 14, border: '1px solid #EDEAE3',
+                  padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', transition: 'box-shadow 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(42,42,40,0.06)')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+              >
+                <div style={{ width: '100%', height: 150 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart data={mockDiagnostic.section3.dimensions.map(dim => ({
+                      subject: dim.name.replace('et ', '& '),
+                      value: dim.score,
+                    }))}>
+                      <PolarGrid stroke="#EDEAE3" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fill: '#7A766D' }} />
+                      <Radar dataKey="value" stroke="#1B4332" strokeWidth={1.5} fill="#1B4332" fillOpacity={0.12} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              </button>
+
+              {/* Profil Climat */}
               <button
                 onClick={() => navigate('/client/synthesis')}
                 style={{
-                  padding: '11px 24px', borderRadius: 8, backgroundColor: '#1B4332', color: '#fff',
-                  fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.85rem',
-                  border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+                  backgroundColor: '#FFFFFF', borderRadius: 14, border: '1px solid #EDEAE3',
+                  padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                  cursor: 'pointer', textAlign: 'left', transition: 'box-shadow 0.15s',
                 }}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(42,42,40,0.06)')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
               >
-                Consulter le diagnostic <ChevronRight size={16} />
+                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.48rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#B0AB9F', marginBottom: 6 }}>
+                  PROFIL CLIMAT
+                </div>
+                <div className="font-display" style={{ fontSize: '1.2rem', fontWeight: 500, color: '#1B4332', letterSpacing: '0.05em', marginBottom: 4 }}>
+                  {mockDiagnostic.client.profilClimat.code}
+                </div>
+                <div className="font-display" style={{ fontSize: '0.82rem', fontWeight: 500, color: '#2A2A28', marginBottom: 4 }}>
+                  {mockDiagnostic.client.profilClimat.name}
+                </div>
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.7rem', color: '#7A766D', fontStyle: 'italic', lineHeight: 1.4, marginBottom: 6 }}>
+                  {mockDiagnostic.client.profilClimat.phrase}
+                </p>
+                <span style={{
+                  display: 'inline-block', padding: '2px 8px', borderRadius: 10,
+                  backgroundColor: '#E8F0EB', fontFamily: 'var(--font-sans)', fontSize: '0.58rem',
+                  fontWeight: 500, color: '#1B4332', alignSelf: 'flex-start',
+                }}>
+                  {mockDiagnostic.client.profilClimat.family}
+                </span>
               </button>
             </div>
-          ) : (
-            <>
-              {/* Abstract blurred visualization */}
-              <div style={{ position: 'absolute', inset: 0, filter: 'blur(14px)', opacity: 0.5, pointerEvents: 'none' }}>
-                <div style={{ position: 'absolute', width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(27,67,50,0.3) 0%, transparent 70%)', top: 20, left: '10%' }} />
-                <div style={{ position: 'absolute', width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(184,115,51,0.25) 0%, transparent 70%)', top: 40, right: '15%' }} />
-                <div style={{ position: 'absolute', width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,106,79,0.2) 0%, transparent 70%)', bottom: 30, left: '40%' }} />
-              </div>
 
-              {/* Overlay */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ backgroundColor: 'rgba(240,237,230,0.7)' }}>
-                {isAnalysis ? (
-                  <>
-                    <div style={{
-                      width: 52, height: 52, borderRadius: '50%', marginBottom: 14,
-                      background: 'linear-gradient(135deg, #F5EDE4, #F0EDE6)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      animation: 'analysisPulse 2s ease-in-out infinite',
-                    }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: '50%', backgroundColor: '#1B4332',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.65rem', color: '#FFFFFF',
-                      }}>GP</div>
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.8rem', color: '#B87333', marginBottom: 6 }}>
-                      Analyse en cours
-                    </div>
-                  </>
-                ) : (
+            {/* B. 3 insight cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+              {[
+                { icon: <Search size={16} color="#B87333" />, title: 'Écart de perception majeur', detail: '3.8 points sur « Objectifs clairs »', route: '/client/diagnostic/4' },
+                { icon: <Zap size={16} color="#1B4332" />, title: 'Priorité n°1', detail: 'Reporting trimestriel COMEX', route: '/client/diagnostic/2' },
+                { icon: <Calendar size={16} color="#DC4A4A" />, title: 'Prochaine échéance', detail: 'CSRD — Juin 2026', route: '/client/diagnostic/7' },
+              ].map((card, i) => (
+                <button
+                  key={i}
+                  onClick={() => navigate(card.route)}
+                  style={{
+                    backgroundColor: '#FFFFFF', borderRadius: 12, border: '1px solid #EDEAE3',
+                    padding: '16px 14px', textAlign: 'left', cursor: 'pointer',
+                    transition: 'box-shadow 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(42,42,40,0.06)')}
+                  onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+                >
+                  <div style={{ width: 28, height: 28, borderRadius: 7, backgroundColor: '#F0EDE6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                    {card.icon}
+                  </div>
+                  <div className="font-display" style={{ fontSize: '0.82rem', fontWeight: 500, color: '#2A2A28', marginBottom: 3 }}>
+                    {card.title}
+                  </div>
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#7A766D', lineHeight: 1.4 }}>
+                    {card.detail}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            {/* C. CTA bar */}
+            <div style={{ textAlign: 'center' }}>
+              <button
+                onClick={() => navigate('/client/synthesis')}
+                style={{
+                  padding: '12px 28px', borderRadius: 10, backgroundColor: '#1B4332', color: '#fff',
+                  fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.88rem',
+                  border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
+                  transition: 'transform 0.1s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.01)')}
+                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+              >
+                Consulter votre diagnostic complet <ChevronRight size={16} />
+              </button>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#B0AB9F', marginTop: 8 }}>
+                9 sections d'analyse personnalisées vous attendent
+              </p>
+            </div>
+          </>
+        ) : (
+          <div
+            className="diagnostic-teaser-card"
+            style={{
+              position: 'relative', minHeight: 260, borderRadius: 18,
+              overflow: 'hidden',
+              border: '1px solid #E5E1D8',
+              backgroundColor: '#F0EDE6',
+              transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
+            }}>
+            {/* Abstract blurred visualization */}
+            <div style={{ position: 'absolute', inset: 0, filter: 'blur(14px)', opacity: 0.5, pointerEvents: 'none' }}>
+              <div style={{ position: 'absolute', width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(27,67,50,0.3) 0%, transparent 70%)', top: 20, left: '10%' }} />
+              <div style={{ position: 'absolute', width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(184,115,51,0.25) 0%, transparent 70%)', top: 40, right: '15%' }} />
+              <div style={{ position: 'absolute', width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,106,79,0.2) 0%, transparent 70%)', bottom: 30, left: '40%' }} />
+            </div>
+
+            {/* Overlay */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ backgroundColor: 'rgba(240,237,230,0.7)' }}>
+              {isAnalysis ? (
+                <>
                   <div style={{
                     width: 52, height: 52, borderRadius: '50%', marginBottom: 14,
                     background: 'linear-gradient(135deg, #F5EDE4, #F0EDE6)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    animation: 'analysisPulse 2s ease-in-out infinite',
                   }}>
-                    <Lock size={22} color="#B87333" strokeWidth={1.5} />
+                    <div style={{
+                      width: 30, height: 30, borderRadius: '50%', backgroundColor: '#1B4332',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.65rem', color: '#FFFFFF',
+                    }}>GP</div>
                   </div>
-                )}
-
-                <div className="font-display" style={{ fontSize: '1.2rem', fontWeight: 500, color: '#2A2A28', marginBottom: 6, textAlign: 'center' }}>
-                  Votre diagnostic en 9 sections
+                  <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.8rem', color: '#B87333', marginBottom: 6 }}>
+                    Analyse en cours
+                  </div>
+                </>
+              ) : (
+                <div style={{
+                  width: 52, height: 52, borderRadius: '50%', marginBottom: 14,
+                  background: 'linear-gradient(135deg, #F5EDE4, #F0EDE6)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Lock size={22} color="#B87333" strokeWidth={1.5} />
                 </div>
-                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#7A766D', marginBottom: 16, textAlign: 'center' }}>
-                  {isAnalysis ? 'Guillaume est en train d\'analyser vos résultats.' : 'Complétez les étapes pour déverrouiller votre analyse complète.'}
-                </p>
+              )}
 
-                {/* Progress bar */}
-                <div style={{ width: 200, height: 6, borderRadius: 3, backgroundColor: '#E5E1D8', overflow: 'hidden', marginBottom: 8 }}>
-                  <div style={{
-                    height: '100%', borderRadius: 3,
-                    background: 'linear-gradient(90deg, #B87333, #1B4332)',
-                    width: `${(() => {
-                      const pillsDone = [allBlocsDone, sondPerDone === 3].filter(Boolean).length
-                      return (pillsDone / 2) * 100
-                    })()}%`,
-                    transition: 'width 0.5s ease',
-                  }} />
-                </div>
-
-                {/* Step pills — updated */}
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
-                  {[
-                    { label: 'Questionnaire', done: allBlocsDone, route: '/client/questionnaire/bloc1', detail: allBlocsDone ? 'Terminé' : `${doneCount}/${blocs.length} blocs` },
-                    { label: 'Sondages & Perception', done: sondPerDone === 3, route: '/client/perception', detail: sondPerDone === 3 ? 'Terminé' : `${sondPerDone}/3` },
-                    { label: 'Documents', done: false, route: '/client/documents', detail: 'Optionnel', muted: true },
-                  ].map((pill, i) => (
-                    <button
-                      key={i}
-                      onClick={() => navigate(pill.route)}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 5,
-                        padding: '5px 14px', borderRadius: 20,
-                        backgroundColor: pill.done ? '#E8F0EB' : pill.muted ? '#F0EDE6' : '#F5EDE4',
-                        border: `1px solid ${pill.done ? '#2D6A4F33' : pill.muted ? '#EDEAE3' : '#B8733333'}`,
-                        fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 500,
-                        color: pill.done ? '#1B4332' : pill.muted ? '#B0AB9F' : '#B87333',
-                        cursor: 'pointer', transition: 'all 0.15s',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)' }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
-                    >
-                      {pill.done ? <Check size={10} /> : <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: pill.muted ? '#B0AB9F' : '#B87333', flexShrink: 0 }} />}
-                      <span>{pill.label}</span>
-                      <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>· {pill.detail}</span>
-                      <ChevronRight size={10} style={{ opacity: 0.5 }} />
-                    </button>
-                  ))}
-                </div>
+              <div className="font-display" style={{ fontSize: '1.2rem', fontWeight: 500, color: '#2A2A28', marginBottom: 6, textAlign: 'center' }}>
+                Votre diagnostic en 9 sections
               </div>
-            </>
-          )}
-        </div>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#7A766D', marginBottom: 16, textAlign: 'center' }}>
+                {isAnalysis ? 'Guillaume est en train d\'analyser vos résultats.' : 'Complétez les étapes pour déverrouiller votre analyse complète.'}
+              </p>
+
+              {/* Progress bar */}
+              <div style={{ width: 200, height: 6, borderRadius: 3, backgroundColor: '#E5E1D8', overflow: 'hidden', marginBottom: 8 }}>
+                <div style={{
+                  height: '100%', borderRadius: 3,
+                  background: 'linear-gradient(90deg, #B87333, #1B4332)',
+                  width: `${(() => {
+                    const pillsDone = [allBlocsDone, sondPerDone === 3].filter(Boolean).length
+                    return (pillsDone / 2) * 100
+                  })()}%`,
+                  transition: 'width 0.5s ease',
+                }} />
+              </div>
+
+              {/* Step pills */}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+                {[
+                  { label: 'Questionnaire', done: allBlocsDone, route: '/client/questionnaire/bloc1', detail: allBlocsDone ? 'Terminé' : `${doneCount}/${blocs.length} blocs` },
+                  { label: 'Sondages & Perception', done: sondPerDone === 3, route: '/client/perception', detail: sondPerDone === 3 ? 'Terminé' : `${sondPerDone}/3` },
+                  { label: 'Documents', done: false, route: '/client/documents', detail: 'Optionnel', muted: true },
+                ].map((pill, i) => (
+                  <button
+                    key={i}
+                    onClick={() => navigate(pill.route)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      padding: '5px 14px', borderRadius: 20,
+                      backgroundColor: pill.done ? '#E8F0EB' : pill.muted ? '#F0EDE6' : '#F5EDE4',
+                      border: `1px solid ${pill.done ? '#2D6A4F33' : pill.muted ? '#EDEAE3' : '#B8733333'}`,
+                      fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 500,
+                      color: pill.done ? '#1B4332' : pill.muted ? '#B0AB9F' : '#B87333',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)' }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
+                  >
+                    {pill.done ? <Check size={10} /> : <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: pill.muted ? '#B0AB9F' : '#B87333', flexShrink: 0 }} />}
+                    <span>{pill.label}</span>
+                    <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>· {pill.detail}</span>
+                    <ChevronRight size={10} style={{ opacity: 0.5 }} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ═══════ THREE-COLUMN LAYOUT ═══════ */}

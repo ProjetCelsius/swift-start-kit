@@ -82,9 +82,9 @@ export default function AdminLayout() {
               width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1B4332',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '0.6rem', fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif',
-            }}>CD</div>
+            }}>GP</div>
             <div>
-              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', color: '#E8F0EB', fontWeight: 500 }}>Claire Dubois</p>
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', color: '#E8F0EB', fontWeight: 500 }}>Guillaume Pakula</p>
               <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.65rem', color: '#7A766D' }}>Analyste senior</p>
             </div>
           </div>

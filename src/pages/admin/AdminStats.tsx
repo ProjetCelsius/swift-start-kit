@@ -34,7 +34,7 @@ const DIMENSION_BARS = [
 ]
 
 const ANALYSTS = [
-  { name: 'Claire Dubois', diagnostics: 3, delay: '11j', survey: '74%' },
+  { name: 'Guillaume Pakula', diagnostics: 3, delay: '11j', survey: '74%' },
   { name: 'Thomas Martin', diagnostics: 2, delay: '14j', survey: '65%' },
 ]
 
