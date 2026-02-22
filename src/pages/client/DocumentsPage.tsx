@@ -94,11 +94,59 @@ export default function DocumentsPage() {
   return (
     <div style={{ maxWidth: 960, paddingBottom: 100 }}>
       <div style={{ marginBottom: 32 }}>
-        <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, color: '#2A2A28', marginBottom: 8 }}>
-          Documents & informations
-        </h1>
-        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.9rem', color: '#7A766D', lineHeight: 1.5 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, color: '#2A2A28', margin: 0 }}>
+            Documents & informations
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {validated ? (
+              <>
+                <span style={{
+                  padding: '12px 24px', borderRadius: 9,
+                  backgroundColor: '#E8F0EB', color: '#1B4332',
+                  fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.82rem',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}>
+                  <Check size={14} /> Corpus validé
+                </span>
+                <button
+                  onClick={() => setValidated(false)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Modifier
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setValidated(true)}
+                style={{
+                  padding: '12px 24px', borderRadius: 9,
+                  backgroundColor: '#1B4332', color: '#fff',
+                  fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.82rem',
+                  border: 'none', cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#2D6A4F')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1B4332')}
+              >
+                Valider le corpus →
+              </button>
+            )}
+          </div>
+        </div>
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.9rem', color: '#7A766D', lineHeight: 1.5, marginBottom: 4 }}>
           Transmettez les documents utiles à votre analyste. Cette étape est facultative et peut être complétée à tout moment.
+        </p>
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: validated ? '#1B4332' : '#B0AB9F' }}>
+          {validated
+            ? <><Check size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />{totalFiles} document{totalFiles > 1 ? 's' : ''} validé{totalFiles > 1 ? 's' : ''}</>
+            : <>{totalFiles} document{totalFiles > 1 ? 's' : ''} ajouté{totalFiles > 1 ? 's' : ''} · En attente de validation</>
+          }
         </p>
       </div>
 
@@ -247,61 +295,6 @@ export default function DocumentsPage() {
         )}
       </div>
 
-      {/* ═══════ VALIDATION BAR ═══════ */}
-      <div style={{
-        backgroundColor: '#FFFFFF', borderTop: '1px solid #EDEAE3',
-        padding: '20px 28px', borderRadius: '0 0 14px 14px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginTop: 8,
-      }}>
-        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: validated ? '#1B4332' : '#7A766D', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {validated ? (
-            <><Check size={14} style={{ color: '#1B4332' }} /> {totalFiles} document{totalFiles > 1 ? 's' : ''} validé{totalFiles > 1 ? 's' : ''} le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</>
-          ) : (
-            <>{totalFiles} document{totalFiles > 1 ? 's' : ''} ajouté{totalFiles > 1 ? 's' : ''} · En attente de validation</>
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {validated ? (
-            <>
-              <span style={{
-                padding: '12px 24px', borderRadius: 9,
-                backgroundColor: '#E8F0EB', color: '#1B4332',
-                fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.82rem',
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-              }}>
-                <Check size={14} /> Corpus validé
-              </span>
-              <button
-                onClick={() => setValidated(false)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D',
-                  textDecoration: 'underline',
-                }}
-              >
-                Modifier
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setValidated(true)}
-              style={{
-                padding: '14px 28px', borderRadius: 9,
-                backgroundColor: '#1B4332', color: '#fff',
-                fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.82rem',
-                border: 'none', cursor: 'pointer',
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                transition: 'background-color 0.2s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#2D6A4F')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1B4332')}
-            >
-              Valider le corpus documentaire →
-            </button>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

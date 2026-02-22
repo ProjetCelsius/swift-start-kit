@@ -235,27 +235,59 @@ export default function QuestionnaireBloc4() {
 
   // ── DONE ──
   if (phase === 'done') {
+    // Save responses to localStorage
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     return (
       <div style={{ maxWidth: 680 }} className="animate-fade-in">
         <div style={{
           backgroundColor: 'var(--color-blanc)', border: '1px solid var(--color-border)',
-          borderRadius: 14, padding: 32, textAlign: 'center',
+          borderRadius: 14, padding: 40, textAlign: 'center',
         }}>
-          <p style={{ fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--color-texte-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
-            Vos réponses sont enregistrées. Les résultats seront révélés dans votre diagnostic.
+          <div style={{
+            width: 52, height: 52, borderRadius: '50%', backgroundColor: '#E8F0EB',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+          }}>
+            <CheckCircle size={26} style={{ color: '#1B4332' }} />
+          </div>
+          <h2 className="font-display" style={{ fontSize: '1.3rem', fontWeight: 500, marginBottom: 8 }}>
+            Perception RSE terminée
+          </h2>
+          <p style={{ fontSize: '0.9rem', color: 'var(--color-texte-secondary)', lineHeight: 1.6, marginBottom: 32, maxWidth: 440, margin: '0 auto 32px' }}>
+            Vos réponses sont enregistrées. Les résultats seront confrontés aux réponses de vos équipes dans votre diagnostic.
           </p>
-          <button
-            onClick={() => navigate('/client/dashboard')}
-            style={{
-              padding: '12px 28px', borderRadius: 8, backgroundColor: 'var(--color-primary)',
-              color: '#fff', fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
-              display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'background-color 0.2s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
-          >
-            Retour au tableau de bord <ChevronRight size={18} />
-          </button>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 340, margin: '0 auto' }}>
+            <button
+              onClick={() => navigate('/client/sondage')}
+              style={{
+                padding: '14px 28px', borderRadius: 9, backgroundColor: '#1B4332',
+                color: '#fff', fontWeight: 600, fontSize: '0.9rem', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                transition: 'background-color 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#2D6A4F')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1B4332')}
+            >
+              Lancer le sondage interne →
+            </button>
+            <button
+              onClick={() => navigate('/client/entretiens')}
+              style={{
+                padding: '14px 28px', borderRadius: 9, backgroundColor: 'transparent',
+                color: '#1B4332', fontWeight: 500, fontSize: '0.9rem',
+                border: '1.5px solid #1B4332', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                transition: 'background-color 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#E8F0EB')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              Remplir l'entretien direction →
+            </button>
+          </div>
+          <p style={{ fontSize: '0.75rem', color: 'var(--color-texte-muted)', marginTop: 16, fontStyle: 'italic' }}>
+            Ces étapes peuvent être faites dans n'importe quel ordre.
+          </p>
         </div>
       </div>
     )

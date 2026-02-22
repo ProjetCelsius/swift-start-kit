@@ -291,7 +291,7 @@ export default function ClientHomeDashboard() {
                   onClick={() => {
                     if (isLocked) return
                     const routes: Record<number, string> = {
-                      1: '/client/questionnaire/bloc1',
+                      1: '/client/appel-lancement',
                       2: '/client/questionnaire/bloc1',
                       3: '/client/perception',
                       4: '/client/documents',

@@ -18,6 +18,7 @@ import MessagesPage from './pages/client/MessagesPage'
 import SondageSuiviPage from './pages/client/SondageSuiviPage'
 import AnalystProfilePage from './pages/client/AnalystProfilePage'
 import AttentePage from './pages/client/AttentePage'
+import AppelLancementPage from './pages/client/AppelLancementPage'
 import DiagnosticPage from './pages/client/DiagnosticPage'
 // OnboardingSetupPage removed — replaced by /setup/:diagnosticId
 import EntretiensPage from './pages/client/EntretiensPage'
@@ -37,6 +38,8 @@ import {
 function AppRoutes() {
   const { user, loading } = useAuth()
   const demo = useDemoIfAvailable()
+  // Force re-render when active diagnostic changes
+  const demoKey = demo?.enabled ? demo.activeDiagnosticId : 'none'
   const isDemo = demo?.enabled ?? false
   const isAuthenticated = isDemo || !!user
 
@@ -60,7 +63,7 @@ function AppRoutes() {
         <Route path="/login" element={isAuthenticated ? <Navigate to="/client/dashboard" /> : <Login />} />
         
         {/* Espace Client */}
-        <Route element={isAuthenticated ? <ClientLayout /> : <Navigate to="/login" />}>
+        <Route element={isAuthenticated ? <ClientLayout key={demoKey} /> : <Navigate to="/login" />}>
           <Route path="/" element={<Navigate to="/client/dashboard" replace />} />
           <Route path="/client" element={<Navigate to="/client/dashboard" replace />} />
           <Route path="/client/dashboard" element={<ClientHomeDashboard />} />
@@ -77,6 +80,7 @@ function AppRoutes() {
           <Route path="/client/questionnaire/:blockId" element={<QuestionnaireBlock />} />
           <Route path="/client/sondage" element={<SondageSuiviPage />} />
           <Route path="/client/attente" element={<AttentePage />} />
+          <Route path="/client/appel-lancement" element={<AppelLancementPage />} />
           <Route path="/client/entretiens" element={<EntretiensPage />} />
           <Route path="/client/questionnaire-rse" element={<QuestionnaireRsePage />} />
           <Route path="/client/perception" element={<QuestionnaireBloc4 />} />
