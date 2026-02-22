@@ -18,7 +18,7 @@ import SondageSuiviPage from './pages/client/SondageSuiviPage'
 import AnalystProfilePage from './pages/client/AnalystProfilePage'
 import AttentePage from './pages/client/AttentePage'
 import DiagnosticPage from './pages/client/DiagnosticPage'
-import OnboardingSetupPage from './pages/client/OnboardingSetupPage'
+// OnboardingSetupPage removed — replaced by /setup/:diagnosticId
 import EntretiensPage from './pages/client/EntretiensPage'
 import QuestionnaireRsePage from './pages/client/QuestionnaireRsePage'
 import AdminLayout from './components/layout/AdminLayout'
@@ -63,7 +63,7 @@ function AppRoutes() {
           <Route path="/" element={<Navigate to="/client/dashboard" replace />} />
           <Route path="/client" element={<Navigate to="/client/dashboard" replace />} />
           <Route path="/client/dashboard" element={<ClientHomeDashboard />} />
-          <Route path="/client/onboarding" element={<OnboardingSetupPage />} />
+          <Route path="/client/onboarding" element={<Navigate to="/client/dashboard" replace />} />
           <Route path="/client/questionnaire" element={<QuestionnairePage />} />
           <Route path="/client/questionnaire/bloc1" element={<QuestionnaireBloc1 />} />
           <Route path="/client/questionnaire/bloc2" element={<QuestionnaireBloc2 />} />
