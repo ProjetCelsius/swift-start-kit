@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Check, Users, Lock, Compass, User } from 'lucide-react'
+import { ChevronRight, Check, Users, Lock, Compass, User, FolderOpen } from 'lucide-react'
 import { useAuth, MOCK_ANALYST } from '../../hooks/useAuth'
 import { useDemoIfAvailable } from '../../hooks/useDemo'
 import ProtocolModal, { useProtocolModal } from '../../components/ProtocolModal'
@@ -16,99 +16,120 @@ interface QuestionnaireBloc {
   progress?: string
 }
 
-type StepStatus = 'done' | 'active' | 'parallel' | 'locked'
+type StepStatus = 'done' | 'active' | 'parallel' | 'locked' | 'optional'
 interface JourneyStep {
   num: number
   label: string
   detail: string
   status: StepStatus
+  dashed?: boolean
 }
 
 // ── Derive state from demo status ──────
 function deriveFromStatus(status: DemoStatus | undefined) {
   const s = status || 'questionnaire'
 
+  // 3 blocs now (no more Perception in questionnaire)
   const blocConfigs: Record<string, QuestionnaireBloc[]> = {
     onboarding: [
       { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'todo' },
       { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'todo' },
       { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'todo' },
-      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'todo' },
     ],
     questionnaire: [
       { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
       { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
       { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'active', progress: '3/7' },
-      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'todo' },
     ],
     survey_pending: [
       { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
       { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
       { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'done' },
-      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'active', progress: '5/8' },
     ],
     analysis: [
       { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
       { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
       { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'done' },
-      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'done' },
     ],
     ready_for_restitution: [
       { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
       { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
       { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'done' },
-      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'done' },
     ],
     delivered: [
       { label: 'Votre démarche', route: '/client/questionnaire/bloc1', status: 'done' },
       { label: 'Votre maturité', route: '/client/questionnaire/bloc2', status: 'done' },
       { label: 'Vos enjeux', route: '/client/questionnaire/bloc3', status: 'done' },
-      { label: 'La perception', route: '/client/questionnaire/bloc4', status: 'done' },
     ],
   }
+
+  // Perception RSE status (separate from questionnaire now)
+  const perceptionStatus: Record<string, 'done' | 'todo' | 'in_progress'> = {
+    onboarding: 'todo', questionnaire: 'todo', survey_pending: 'in_progress',
+    analysis: 'done', ready_for_restitution: 'done', delivered: 'done',
+  }
+
+  // 6-step stepper
+  const isPostAnalysis = s === 'analysis' || s === 'ready_for_restitution' || s === 'delivered'
+  const isPostQuestionnaire = s === 'survey_pending' || isPostAnalysis
+  const allQDone = isPostQuestionnaire
+
+  const doneBlocs = (blocConfigs[s] || blocConfigs.questionnaire).filter(b => b.status === 'done').length
+
+  // Sondages & Perception progress
+  const perSt = perceptionStatus[s] || 'todo'
+  const sondageDone = isPostAnalysis
+  const entretienDone = isPostAnalysis
+  const sondPerDone = [perSt === 'done', sondageDone, entretienDone].filter(Boolean).length
 
   const stepConfigs: Record<string, JourneyStep[]> = {
     onboarding: [
       { num: 1, label: 'Lancement', detail: 'Aujourd\'hui', status: 'active' },
       { num: 2, label: 'Questionnaire', detail: '~2 jours', status: 'locked' },
-      { num: 3, label: 'Sondages', detail: '~3 jours', status: 'locked' },
-      { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
-      { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
+      { num: 3, label: 'Sondages &\nPerception', detail: '~3 jours', status: 'locked' },
+      { num: 4, label: 'Documents', detail: 'Optionnel', status: 'optional', dashed: true },
+      { num: 5, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
+      { num: 6, label: 'Restitution', detail: 'J+7', status: 'locked' },
     ],
     questionnaire: [
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
-      { num: 2, label: 'Questionnaire', detail: '2/4 blocs', status: 'active' },
-      { num: 3, label: 'Sondages', detail: '12 réponses', status: 'parallel' },
-      { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
-      { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
+      { num: 2, label: 'Questionnaire', detail: `${doneBlocs}/3 blocs`, status: 'active' },
+      { num: 3, label: 'Sondages &\nPerception', detail: '12 réponses', status: 'parallel' },
+      { num: 4, label: 'Documents', detail: 'Optionnel', status: 'optional', dashed: true },
+      { num: 5, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
+      { num: 6, label: 'Restitution', detail: 'J+7', status: 'locked' },
     ],
     survey_pending: [
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
-      { num: 2, label: 'Questionnaire', detail: '3/4 blocs', status: 'active' },
-      { num: 3, label: 'Sondages', detail: '12/30', status: 'parallel' },
-      { num: 4, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
-      { num: 5, label: 'Restitution', detail: 'J+7', status: 'locked' },
+      { num: 2, label: 'Questionnaire', detail: `${doneBlocs}/3 blocs`, status: allQDone ? 'done' : 'active' },
+      { num: 3, label: 'Sondages &\nPerception', detail: '12/30', status: 'parallel' },
+      { num: 4, label: 'Documents', detail: 'Optionnel', status: 'optional', dashed: true },
+      { num: 5, label: 'Analyse', detail: '< 1 sem.', status: 'locked' },
+      { num: 6, label: 'Restitution', detail: 'J+7', status: 'locked' },
     ],
     analysis: [
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
-      { num: 3, label: 'Sondages', detail: 'Terminé', status: 'done' },
-      { num: 4, label: 'Analyse', detail: 'En cours', status: 'active' },
-      { num: 5, label: 'Restitution', detail: 'Bientôt', status: 'locked' },
+      { num: 3, label: 'Sondages &\nPerception', detail: 'Terminé', status: 'done' },
+      { num: 4, label: 'Documents', detail: '3 fichiers', status: 'optional', dashed: true },
+      { num: 5, label: 'Analyse', detail: 'En cours', status: 'active' },
+      { num: 6, label: 'Restitution', detail: 'Bientôt', status: 'locked' },
     ],
     ready_for_restitution: [
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
-      { num: 3, label: 'Sondages', detail: 'Terminé', status: 'done' },
-      { num: 4, label: 'Analyse', detail: 'Terminé', status: 'done' },
-      { num: 5, label: 'Restitution', detail: 'À planifier', status: 'active' },
+      { num: 3, label: 'Sondages &\nPerception', detail: 'Terminé', status: 'done' },
+      { num: 4, label: 'Documents', detail: '3 fichiers', status: 'optional', dashed: true },
+      { num: 5, label: 'Analyse', detail: 'Terminé', status: 'done' },
+      { num: 6, label: 'Restitution', detail: 'À planifier', status: 'active' },
     ],
     delivered: [
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
-      { num: 3, label: 'Sondages', detail: 'Terminé', status: 'done' },
-      { num: 4, label: 'Analyse', detail: 'Terminé', status: 'done' },
-      { num: 5, label: 'Restitution', detail: 'Fait', status: 'done' },
+      { num: 3, label: 'Sondages &\nPerception', detail: 'Terminé', status: 'done' },
+      { num: 4, label: 'Documents', detail: '5 fichiers', status: 'optional', dashed: true },
+      { num: 5, label: 'Analyse', detail: 'Terminé', status: 'done' },
+      { num: 6, label: 'Restitution', detail: 'Fait', status: 'done' },
     ],
   }
 
@@ -151,14 +172,10 @@ function deriveFromStatus(status: DemoStatus | undefined) {
   const header = headerConfigs[s] || headerConfigs.questionnaire
   const survey = surveyConfigs[s] || surveyConfigs.questionnaire
 
-  // Count completed steps for teaser
-  const completedSteps = (() => {
-    if (s === 'delivered') return 5
-    if (s === 'ready_for_restitution') return 4
-    if (s === 'analysis') return 3
-    // questionnaire/survey: lancement done + some blocs
-    return 2
-  })()
+  // Profil Climat visibility
+  const bloc2Done = (blocConfigs[s] || blocConfigs.questionnaire).filter(b => b.label === 'Votre maturité' && b.status === 'done').length > 0
+  const bloc3Done = (blocConfigs[s] || blocConfigs.questionnaire).filter(b => b.label === 'Vos enjeux' && b.status === 'done').length > 0
+  const profilClimatState: 'hidden' | 'teaser' | 'full' = !bloc2Done ? 'hidden' : !bloc3Done ? 'teaser' : 'full'
 
   return {
     blocs: blocConfigs[s] || blocConfigs.questionnaire,
@@ -170,9 +187,11 @@ function deriveFromStatus(status: DemoStatus | undefined) {
     analystMessage: analystMessages[s] || analystMessages.questionnaire,
     diagnosticUnlocked: s === 'delivered',
     dgStatus: dgStatus[s] || 'not_started',
-    completedSteps,
     isAnalysis: s === 'analysis',
     allSubmitted: s === 'analysis' || s === 'ready_for_restitution' || s === 'delivered',
+    perceptionDone: perSt === 'done',
+    sondPerDone,
+    profilClimatState,
   }
 }
 
@@ -187,7 +206,7 @@ export default function ClientHomeDashboard() {
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
   const derived = useMemo(() => deriveFromStatus(demoStatus), [demoStatus])
 
-  const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked, dgStatus, isAnalysis } = derived
+  const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked, dgStatus, isAnalysis, perceptionDone, sondPerDone, profilClimatState } = derived
   const doneCount = blocs.filter(b => b.status === 'done').length
   const allBlocsDone = blocs.every(b => b.status === 'done')
   const activeBloc = blocs.find(b => b.status === 'active')
@@ -246,7 +265,7 @@ export default function ClientHomeDashboard() {
         {/* Separator */}
         <div style={{ height: 1, backgroundColor: '#F0EDE6', marginBottom: 16 }} />
 
-        {/* ── HORIZONTAL STEPPER ── */}
+        {/* ── HORIZONTAL STEPPER (6 steps) ── */}
         <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em', fontSize: '0.5rem' }}>VOTRE PARCOURS</div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '8px 0 4px' }}>
           {steps.map((step, i) => {
@@ -254,12 +273,18 @@ export default function ClientHomeDashboard() {
             const isActive = step.status === 'active'
             const isParallel = step.status === 'parallel'
             const isLocked = step.status === 'locked'
+            const isOptional = step.status === 'optional'
             return (
               <React.Fragment key={i}>
                 {i > 0 && (
                   <div style={{
-                    flex: 1, height: 2, maxWidth: 64, marginTop: 14,
-                    backgroundColor: isDone || (isActive && steps[i - 1].status === 'done') ? '#1B4332' : '#E5E1D8',
+                    flex: 1, height: 2, maxWidth: 48, marginTop: 14,
+                    ...(step.dashed || steps[i - 1]?.dashed ? {
+                      backgroundImage: 'repeating-linear-gradient(to right, #E5E1D8 0, #E5E1D8 4px, transparent 4px, transparent 8px)',
+                      backgroundSize: '8px 2px',
+                    } : {
+                      backgroundColor: isDone || (isActive && steps[i - 1].status === 'done') ? '#1B4332' : '#E5E1D8',
+                    }),
                   }} />
                 )}
                 <button
@@ -268,14 +293,15 @@ export default function ClientHomeDashboard() {
                     const routes: Record<number, string> = {
                       1: '/client/questionnaire/bloc1',
                       2: '/client/questionnaire/bloc1',
-                      3: '/client/sondage',
-                      4: '/client/dashboard',
-                      5: '/client/diagnostic/1',
+                      3: '/client/perception',
+                      4: '/client/documents',
+                      5: '/client/dashboard',
+                      6: '/client/diagnostic/1',
                     }
                     navigate(routes[step.num] || '/client/dashboard')
                   }}
                   style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 80,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 70,
                     background: 'none', border: 'none', padding: 0,
                     cursor: isLocked ? 'default' : 'pointer',
                     transition: 'opacity 0.15s',
@@ -284,20 +310,24 @@ export default function ClientHomeDashboard() {
                   onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
                 >
                   <div style={{
-                    width: 30, height: 30, borderRadius: '50%',
+                    width: 28, height: 28, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: isDone ? '#1B4332' : isActive ? '#FFFFFF' : isParallel ? '#F5EDE4' : '#FFFFFF',
-                    border: isDone ? 'none' : isActive ? '2px solid #1B4332' : isParallel ? '1.5px dashed #B87333' : '1.5px solid #E5E1D8',
-                    color: isDone ? '#FFFFFF' : isActive ? '#1B4332' : isParallel ? '#B87333' : '#B0AB9F',
-                    fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.75rem',
+                    backgroundColor: isDone ? '#1B4332' : isActive ? '#FFFFFF' : isParallel ? '#F5EDE4' : isOptional ? '#FFFFFF' : '#FFFFFF',
+                    border: isDone ? 'none' : isActive ? '2px solid #1B4332' : isParallel ? '1.5px dashed #B87333' : isOptional ? '1.5px dashed #EDEAE3' : '1.5px solid #E5E1D8',
+                    color: isDone ? '#FFFFFF' : isActive ? '#1B4332' : isParallel ? '#B87333' : isOptional ? '#B0AB9F' : '#B0AB9F',
+                    fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.7rem',
                   }}>
-                    {isDone ? <Check size={14} /> : step.num}
+                    {isDone ? <Check size={13} /> : isOptional ? <FolderOpen size={12} /> : step.num}
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.65rem', color: isDone ? '#1B4332' : isLocked ? '#B0AB9F' : '#2A2A28' }}>
+                    <div style={{
+                      fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.6rem',
+                      color: isDone ? '#1B4332' : isLocked ? '#B0AB9F' : isOptional ? '#7A766D' : '#2A2A28',
+                      whiteSpace: 'pre-line', lineHeight: 1.2,
+                    }}>
                       {step.label}
                     </div>
-                    <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.58rem', color: isDone ? '#2D6A4F' : isActive ? '#B87333' : '#B0AB9F' }}>
+                    <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.52rem', color: isDone ? '#2D6A4F' : isActive ? '#B87333' : '#B0AB9F' }}>
                       {step.detail}
                     </div>
                   </div>
@@ -307,6 +337,66 @@ export default function ClientHomeDashboard() {
           })}
         </div>
       </div>
+
+      {/* ═══════ PROFIL CLIMAT CARD ═══════ */}
+      {profilClimatState !== 'hidden' && (
+        <div className="dash-fadein" style={{ animationDelay: '50ms', marginBottom: 20 }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #E8F0EB, #F5EDE4)',
+            borderRadius: 14, padding: '20px 24px',
+          }}>
+            <div style={{
+              fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.56rem',
+              letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#B87333', marginBottom: 8,
+            }}>
+              VOTRE PROFIL CLIMAT
+            </div>
+
+            {profilClimatState === 'teaser' ? (
+              <>
+                <div className="font-display" style={{ fontSize: '1.1rem', fontWeight: 500, color: '#1B4332', marginBottom: 8 }}>
+                  Votre profil se dessine...
+                </div>
+                <div className="font-display" style={{ fontSize: '2rem', fontWeight: 600, color: '#1B4332', marginBottom: 8, letterSpacing: '0.1em' }}>
+                  S · M · <span style={{ color: '#E5E1D8', animation: 'profilPulse 2s ease-in-out infinite' }}>?</span> · <span style={{ color: '#E5E1D8', animation: 'profilPulse 2s ease-in-out infinite 0.3s' }}>?</span>
+                </div>
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#7A766D', marginBottom: 8 }}>
+                  Complétez le Bloc 3 pour découvrir votre profil complet.
+                </p>
+                <button
+                  onClick={() => navigate('/client/questionnaire/bloc3')}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                    fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.82rem', color: '#1B4332',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Continuer le questionnaire →
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="font-display" style={{ fontSize: '1.8rem', fontWeight: 600, color: '#1B4332', marginBottom: 4, letterSpacing: '0.1em' }}>
+                  S · M · F · D
+                </div>
+                <div className="font-display" style={{ fontSize: '1rem', fontWeight: 500, color: '#2A2A28', marginBottom: 4 }}>
+                  Les fondations sont là
+                </div>
+                <p style={{ fontFamily: 'var(--font-sans)', fontStyle: 'italic', fontSize: '0.85rem', color: '#7A766D', marginBottom: 8 }}>
+                  « On fait les choses dans les règles, et on les fait bien. »
+                </p>
+                <span style={{
+                  display: 'inline-block', padding: '4px 12px', borderRadius: 16,
+                  backgroundColor: 'rgba(27,67,50,0.1)',
+                  fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.7rem', color: '#1B4332',
+                }}>
+                  Famille des Méthodiques
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ═══════ DIAGNOSTIC TEASER ═══════ */}
       <div className="dash-fadein" style={{ animationDelay: '100ms', marginBottom: 20 }}>
@@ -320,13 +410,12 @@ export default function ClientHomeDashboard() {
             transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
           }}>
           {diagnosticUnlocked ? (
-            /* UNLOCKED STATE */
             <div style={{ padding: '32px 36px' }}>
               <div className="font-display" style={{ fontSize: '1.3rem', color: '#2A2A28', fontWeight: 400, marginBottom: 12 }}>
                 Votre diagnostic est prêt
               </div>
               <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 20 }}>
-                9 sections d'analyse personnalisées vous attendent. Découvrez votre profil de maturité climat, les écarts de perception, et nos recommandations concrètes.
+                9 sections d'analyse personnalisées vous attendent.
               </p>
               <button
                 onClick={() => navigate('/client/diagnostic')}
@@ -340,28 +429,17 @@ export default function ClientHomeDashboard() {
               </button>
             </div>
           ) : (
-            /* LOCKED STATE with abstract blobs */
             <>
               {/* Abstract blurred visualization */}
               <div style={{ position: 'absolute', inset: 0, filter: 'blur(14px)', opacity: 0.5, pointerEvents: 'none' }}>
                 <div style={{ position: 'absolute', width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(27,67,50,0.3) 0%, transparent 70%)', top: 20, left: '10%' }} />
                 <div style={{ position: 'absolute', width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(184,115,51,0.25) 0%, transparent 70%)', top: 40, right: '15%' }} />
                 <div style={{ position: 'absolute', width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,106,79,0.2) 0%, transparent 70%)', bottom: 30, left: '40%' }} />
-                <div style={{ position: 'absolute', width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(184,115,51,0.15) 0%, transparent 70%)', bottom: 10, right: '5%' }} />
-                {/* Geometric SVG shapes */}
-                <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-                  <rect x="15%" y="25%" width="80" height="60" rx="8" fill="rgba(27,67,50,0.08)" />
-                  <circle cx="70%" cy="35%" r="40" fill="rgba(184,115,51,0.08)" />
-                  <polygon points="50,80 80,140 20,140" fill="rgba(45,106,79,0.06)" transform="translate(200, 20)" />
-                  <line x1="10%" y1="60%" x2="40%" y2="40%" stroke="rgba(27,67,50,0.1)" strokeWidth="2" />
-                  <line x1="60%" y1="70%" x2="85%" y2="30%" stroke="rgba(184,115,51,0.1)" strokeWidth="2" />
-                </svg>
               </div>
 
               {/* Overlay */}
               <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ backgroundColor: 'rgba(240,237,230,0.7)' }}>
                 {isAnalysis ? (
-                  /* Analysis in progress — show analyst avatar */
                   <>
                     <div style={{
                       width: 52, height: 52, borderRadius: '50%', marginBottom: 14,
@@ -373,21 +451,17 @@ export default function ClientHomeDashboard() {
                         width: 30, height: 30, borderRadius: '50%', backgroundColor: '#1B4332',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.65rem', color: '#FFFFFF',
-                      }}>
-                        GP
-                      </div>
+                      }}>GP</div>
                     </div>
                     <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.8rem', color: '#B87333', marginBottom: 6 }}>
                       Analyse en cours
                     </div>
                   </>
                 ) : (
-                  /* Lock icon */
                   <div style={{
                     width: 52, height: 52, borderRadius: '50%', marginBottom: 14,
                     background: 'linear-gradient(135deg, #F5EDE4, #F0EDE6)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
                   }}>
                     <Lock size={22} color="#B87333" strokeWidth={1.5} />
                   </div>
@@ -397,9 +471,7 @@ export default function ClientHomeDashboard() {
                   Votre diagnostic en 9 sections
                 </div>
                 <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#7A766D', marginBottom: 16, textAlign: 'center' }}>
-                  {isAnalysis
-                    ? 'Guillaume est en train d\'analyser vos résultats.'
-                    : 'Complétez les étapes pour déverrouiller votre analyse complète.'}
+                  {isAnalysis ? 'Guillaume est en train d\'analyser vos résultats.' : 'Complétez les étapes pour déverrouiller votre analyse complète.'}
                 </p>
 
                 {/* Progress bar */}
@@ -408,25 +480,19 @@ export default function ClientHomeDashboard() {
                     height: '100%', borderRadius: 3,
                     background: 'linear-gradient(90deg, #B87333, #1B4332)',
                     width: `${(() => {
-                      const pillsDone = [allBlocsDone, surveyCount >= surveyTarget, dgStatus === 'done'].filter(Boolean).length
-                      return (pillsDone / 3) * 100
+                      const pillsDone = [allBlocsDone, sondPerDone === 3].filter(Boolean).length
+                      return (pillsDone / 2) * 100
                     })()}%`,
                     transition: 'width 0.5s ease',
                   }} />
                 </div>
-                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#7A766D', marginBottom: 14 }}>
-                  {(() => {
-                    const pillsDone = [allBlocsDone, surveyCount >= surveyTarget, dgStatus === 'done'].filter(Boolean).length
-                    return `${pillsDone} / 3 étapes complétées`
-                  })()}
-                </div>
 
-                {/* Step pills */}
+                {/* Step pills — updated */}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
-                {[
-                    { label: 'Questionnaire', done: allBlocsDone, active: !allBlocsDone, route: '/client/questionnaire/bloc1', detail: allBlocsDone ? 'Terminé' : `${doneCount}/${blocs.length} blocs` },
-                    { label: 'Sondage interne', done: surveyCount >= surveyTarget, active: surveyCount < surveyTarget, route: '/client/sondage', detail: surveyCount >= surveyTarget ? 'Terminé' : `${surveyCount}/${surveyTarget}` },
-                    { label: 'Entretien DG', done: dgStatus === 'done', active: dgStatus !== 'done', route: '/client/entretiens', detail: dgStatus === 'done' ? 'Terminé' : 'À compléter' },
+                  {[
+                    { label: 'Questionnaire', done: allBlocsDone, route: '/client/questionnaire/bloc1', detail: allBlocsDone ? 'Terminé' : `${doneCount}/${blocs.length} blocs` },
+                    { label: 'Sondages & Perception', done: sondPerDone === 3, route: '/client/perception', detail: sondPerDone === 3 ? 'Terminé' : `${sondPerDone}/3` },
+                    { label: 'Documents', done: false, route: '/client/documents', detail: 'Optionnel', muted: true },
                   ].map((pill, i) => (
                     <button
                       key={i}
@@ -434,16 +500,16 @@ export default function ClientHomeDashboard() {
                       style={{
                         display: 'inline-flex', alignItems: 'center', gap: 5,
                         padding: '5px 14px', borderRadius: 20,
-                        backgroundColor: pill.done ? '#E8F0EB' : '#F5EDE4',
-                        border: `1px solid ${pill.done ? '#2D6A4F33' : '#B8733333'}`,
+                        backgroundColor: pill.done ? '#E8F0EB' : pill.muted ? '#F0EDE6' : '#F5EDE4',
+                        border: `1px solid ${pill.done ? '#2D6A4F33' : pill.muted ? '#EDEAE3' : '#B8733333'}`,
                         fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 500,
-                        color: pill.done ? '#1B4332' : '#B87333',
+                        color: pill.done ? '#1B4332' : pill.muted ? '#B0AB9F' : '#B87333',
                         cursor: 'pointer', transition: 'all 0.15s',
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(42,42,40,0.08)' }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)' }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
                     >
-                      {pill.done ? <Check size={10} /> : <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#B87333', flexShrink: 0 }} />}
+                      {pill.done ? <Check size={10} /> : <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: pill.muted ? '#B0AB9F' : '#B87333', flexShrink: 0 }} />}
                       <span>{pill.label}</span>
                       <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>· {pill.detail}</span>
                       <ChevronRight size={10} style={{ opacity: 0.5 }} />
@@ -456,15 +522,14 @@ export default function ClientHomeDashboard() {
         </div>
       </div>
 
-      {/* ═══════ TWO-COLUMN LAYOUT ═══════ */}
-      <div className="dash-fadein" style={{ animationDelay: '200ms', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      {/* ═══════ THREE-COLUMN LAYOUT ═══════ */}
+      <div className="dash-fadein" style={{ animationDelay: '200ms', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
 
-        {/* ── LEFT: SONDAGES CARD ── */}
+        {/* ── SONDAGES & PERCEPTION CARD ── */}
         <div style={{
           backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
           padding: '20px 20px', display: 'flex', flexDirection: 'column',
         }}>
-          {/* Header */}
           <div className="flex items-center gap-3 mb-2">
             <div style={{
               width: 36, height: 36, borderRadius: 9, backgroundColor: '#E8F0EB',
@@ -473,97 +538,63 @@ export default function ClientHomeDashboard() {
               <Users size={18} color="#1B4332" />
             </div>
             <div style={{ flex: 1 }}>
-              <div className="font-display" style={{ fontSize: '1.05rem', fontWeight: 500, color: '#2A2A28' }}>Sondages</div>
+              <div className="font-display" style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2A2A28' }}>Sondages & Perception</div>
             </div>
             <span style={{
               padding: '3px 10px', borderRadius: 12,
-              backgroundColor: surveyCount >= surveyTarget ? '#E8F0EB' : '#F5EDE4',
+              backgroundColor: sondPerDone === 3 ? '#E8F0EB' : '#F5EDE4',
               fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 600,
-              color: surveyCount >= surveyTarget ? '#1B4332' : '#B87333',
+              color: sondPerDone === 3 ? '#1B4332' : '#B87333',
             }}>
-              {surveyCount}/{surveyTarget}
+              {sondPerDone}/3
             </span>
           </div>
 
           <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D', lineHeight: 1.5, marginBottom: 14 }}>
-            Croisez les perspectives de vos équipes et de votre direction.
+            Croisez les perspectives.
           </p>
 
+          {/* Perception RSE sub-item */}
+          <SubItemButton
+            onClick={() => navigate('/client/perception')}
+            icon={<User size={14} color="#B87333" />}
+            iconBg="#F5EDE4"
+            label="Perception RSE"
+            detail={perceptionDone ? 'Terminé' : 'À faire'}
+            statusColor={perceptionDone ? '#1B4332' : '#B87333'}
+            mb={8}
+          />
+
           {/* Sondage interne sub-item */}
-          <button
+          <SubItemButton
             onClick={() => navigate('/client/sondage')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-              borderRadius: 10, border: '1px solid #EDEAE3', backgroundColor: '#FFFFFF',
-              cursor: 'pointer', marginBottom: 8,
-              transition: 'background-color 0.15s', textAlign: 'left', width: '100%',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#F7F5F0' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#FFFFFF' }}
-          >
-            <div style={{
-              width: 32, height: 32, borderRadius: 8, backgroundColor: '#F5EDE4',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <User size={14} color="#B87333" />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.78rem', color: '#2A2A28' }}>Sondage interne</div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', color: '#B0AB9F' }}>
-                {surveyCount > 0 ? `${surveyCount} réponses sur ${surveyTarget}` : 'Pas encore de réponses'}
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 600, color: surveyCount >= surveyTarget ? '#1B4332' : '#B87333' }}>
-                {surveyCount}/{surveyTarget}
-              </span>
-              <div style={{ width: 50, height: 3, borderRadius: 2, backgroundColor: '#E5E1D8', overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 2, backgroundColor: surveyCount >= surveyTarget ? '#1B4332' : '#B87333', width: `${Math.min((surveyCount / surveyTarget) * 100, 100)}%` }} />
-              </div>
-            </div>
-          </button>
+            icon={<Users size={14} color="#1B4332" />}
+            iconBg="#E8F0EB"
+            label="Sondage interne"
+            detail={surveyCount >= surveyTarget ? 'Terminé' : `${surveyCount}/${surveyTarget}`}
+            statusColor={surveyCount >= surveyTarget ? '#1B4332' : '#B87333'}
+            mb={8}
+          />
 
           {/* Entretien direction sub-item */}
-          <button
+          <SubItemButton
             onClick={() => navigate('/client/entretiens')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-              borderRadius: 10, border: '1px solid #EDEAE3', backgroundColor: '#FFFFFF',
-              cursor: 'pointer', textAlign: 'left', width: '100%',
-              transition: 'background-color 0.15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#F7F5F0' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#FFFFFF' }}
-          >
-            <div style={{
-              width: 32, height: 32, borderRadius: 8, backgroundColor: '#E8F0EB',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <Users size={14} color="#1B4332" />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.78rem', color: '#2A2A28' }}>Entretien direction</div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.65rem', color: '#B0AB9F' }}>Questionnaire envoyé</div>
-            </div>
-            <span style={{
-              fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 500,
-              color: dgStatus === 'done' ? '#1B4332' : '#B87333',
-            }}>
-              {dgStatus === 'done' ? 'Terminé' : 'En attente'}
-            </span>
-          </button>
+            icon={<User size={14} color="#1B4332" />}
+            iconBg="#E8F0EB"
+            label="Entretien direction"
+            detail={dgStatus === 'done' ? 'Terminé' : 'En attente'}
+            statusColor={dgStatus === 'done' ? '#1B4332' : '#B87333'}
+          />
         </div>
 
-        {/* ── RIGHT: QUESTIONNAIRE CARD ── */}
+        {/* ── QUESTIONNAIRE CARD ── */}
         <div style={{
           backgroundColor: '#FFFFFF', borderRadius: 16,
           border: allBlocsDone ? '1px solid #EDEAE3' : '2px solid #B87333',
           overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          boxShadow: allBlocsDone ? 'none' : undefined,
           animation: allBlocsDone ? 'none' : 'questionnaireGlow 3s ease-in-out infinite',
           position: 'relative',
         }}>
-          {/* Shimmer bar */}
           {!allBlocsDone && (
             <div style={{
               height: 3, width: '100%',
@@ -574,7 +605,6 @@ export default function ClientHomeDashboard() {
           )}
 
           <div style={{ padding: '20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-            {/* Header */}
             <div className="flex items-center justify-between mb-3">
               <div className="font-display" style={{ fontSize: '1.05rem', fontWeight: 500, color: '#2A2A28' }}>Questionnaire</div>
               <span className="font-display" style={{ fontSize: '1.1rem', fontWeight: 500, color: allBlocsDone ? '#1B4332' : '#B87333' }}>
@@ -582,7 +612,6 @@ export default function ClientHomeDashboard() {
               </span>
             </div>
 
-            {/* Progress bar */}
             <div style={{ height: 4, borderRadius: 2, backgroundColor: '#E5E1D8', overflow: 'hidden', marginBottom: 14 }}>
               <div style={{
                 height: '100%', borderRadius: 2,
@@ -592,7 +621,6 @@ export default function ClientHomeDashboard() {
               }} />
             </div>
 
-            {/* Bloc list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
               {blocs.map((bloc, i) => {
                 const isDone = bloc.status === 'done'
@@ -629,7 +657,7 @@ export default function ClientHomeDashboard() {
                     </div>
                     <span style={{
                       fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 500,
-                      color: isDone ? '#1B4332' : isActive ? '#B87333' : '#B87333',
+                      color: isDone ? '#1B4332' : '#B87333',
                     }}>
                       {isDone ? 'Terminé ›' : isActive ? `${bloc.progress} ›` : 'À faire ›'}
                     </span>
@@ -638,7 +666,6 @@ export default function ClientHomeDashboard() {
               })}
             </div>
 
-            {/* CTA button */}
             {!allBlocsDone && activeBloc ? (
               <button
                 onClick={() => navigate(activeBloc.route)}
@@ -663,6 +690,36 @@ export default function ClientHomeDashboard() {
             ) : null}
           </div>
         </div>
+
+        {/* ── DOCUMENTS CARD ── */}
+        <div
+          onClick={() => navigate('/client/documents')}
+          style={{
+            backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px dashed #EDEAE3',
+            padding: '20px 20px', display: 'flex', flexDirection: 'column',
+            cursor: 'pointer', transition: 'border-color 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = '#B87333')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = '#EDEAE3')}
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div style={{
+              width: 36, height: 36, borderRadius: 9, backgroundColor: '#F0EDE6',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <FolderOpen size={18} color="#7A766D" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div className="font-display" style={{ fontSize: '1.05rem', fontWeight: 500, color: '#2A2A28' }}>Documents</div>
+            </div>
+          </div>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D', lineHeight: 1.5, marginBottom: 8 }}>
+            Transmettez les documents utiles à votre analyste.
+          </p>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.72rem', color: '#B0AB9F', fontStyle: 'italic' }}>
+            0 fichier envoyé · Optionnel
+          </p>
+        </div>
       </div>
 
       <style>{`
@@ -680,11 +737,49 @@ export default function ClientHomeDashboard() {
           0%, 100% { transform: scale(1); opacity: 1; }
           50% { transform: scale(1.05); opacity: 0.8; }
         }
+        @keyframes profilPulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.7; }
+        }
         .diagnostic-teaser-card:hover {
           box-shadow: 0 4px 20px rgba(42,42,40,0.08), 0 0 0 1px rgba(184,115,51,0.12);
           border-color: #D5CFC5 !important;
         }
       `}</style>
     </div>
+  )
+}
+
+// ── Reusable sub-item button ──
+function SubItemButton({ onClick, icon, iconBg, label, detail, statusColor, mb }: {
+  onClick: () => void; icon: React.ReactNode; iconBg: string; label: string; detail: string; statusColor: string; mb?: number
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+        borderRadius: 10, border: '1px solid #EDEAE3', backgroundColor: '#FFFFFF',
+        cursor: 'pointer', textAlign: 'left', width: '100%',
+        transition: 'background-color 0.15s', marginBottom: mb || 0,
+      }}
+      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#F7F5F0' }}
+      onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#FFFFFF' }}
+    >
+      <div style={{
+        width: 32, height: 32, borderRadius: 8, backgroundColor: iconBg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>
+        {icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.78rem', color: '#2A2A28' }}>{label}</div>
+      </div>
+      <span style={{
+        fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 500, color: statusColor,
+      }}>
+        {detail}
+      </span>
+    </button>
   )
 }
