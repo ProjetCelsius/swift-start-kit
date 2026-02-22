@@ -274,26 +274,29 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
         </NavLink>
       </div>
 
-      {/* ── SYNTHÈSE DU DIAGNOSTIC (only when diagnostic ready) ── */}
-      {isDiagnosticReady && (
-        <div className="px-3 mb-2">
-          <NavLink
-            to="/client/synthesis"
-            onClick={onNavigate}
-            className="flex items-center gap-2.5"
-            style={{
-              padding: '7px 10px', borderRadius: 6,
-              backgroundColor: isSynthesis ? '#E8F0EB' : 'transparent',
-              color: isSynthesis ? '#1B4332' : '#2A2A28',
-              fontFamily: 'var(--font-sans)', fontSize: '0.82rem', fontWeight: isSynthesis ? 500 : 400,
-              transition: 'background-color 0.15s',
-            }}
-          >
-            <BarChart3 size={15} />
-            Synthèse du diagnostic
-          </NavLink>
-        </div>
-      )}
+      {/* ── SYNTHÈSE DU DIAGNOSTIC (always visible, styled by status) ── */}
+      <div className="px-3 mb-2">
+        <NavLink
+          to="/client/synthesis"
+          onClick={onNavigate}
+          className="flex items-center gap-2.5"
+          style={{
+            padding: '7px 10px', borderRadius: 6,
+            backgroundColor: isSynthesis ? '#E8F0EB' : 'transparent',
+            color: isSynthesis ? '#1B4332' : isDiagnosticReady ? '#2A2A28' : '#B0AB9F',
+            fontFamily: 'var(--font-sans)', fontSize: '0.82rem',
+            fontWeight: isSynthesis ? 500 : 400,
+            opacity: isDiagnosticReady ? 1 : demoStatus === 'analysis' ? 0.8 : 0.5,
+            transition: 'background-color 0.15s',
+          }}
+        >
+          <BarChart3 size={15} />
+          Synthèse du diagnostic
+          {demoStatus === 'analysis' && (
+            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#B87333', marginLeft: 'auto', flexShrink: 0 }} />
+          )}
+        </NavLink>
+      </div>
 
       {/* ── VERTICAL JOURNEY ── */}
       <div className="flex-1 px-3 overflow-y-auto">
