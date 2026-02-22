@@ -59,7 +59,7 @@ const DIAG_SECTIONS = [
 // ── Derive sidebar steps from demo status ──────
 import type { DemoStatus } from '@/data/demoData'
 
-function deriveSteps(demoStatus: DemoStatus | undefined, analyst: { first_name: string }): JourneyStep[] {
+function deriveSteps(demoStatus: DemoStatus | undefined, analyst: { first_name: string }, corpusValidated?: boolean): JourneyStep[] {
   const s = demoStatus || 'questionnaire'
 
   // Determine bloc statuses (now 3 blocs for questionnaire)
@@ -103,7 +103,7 @@ function deriveSteps(demoStatus: DemoStatus | undefined, analyst: { first_name: 
 
   const doneBlocs = Object.values(bs).filter(v => v === 'done').length
 
-  // Documents count (mock)
+  // Documents count and validation from demo data
   const docsCount: Record<string, number> = {
     onboarding: 0, questionnaire: 0, survey_pending: 0,
     analysis: 3, ready_for_restitution: 3, delivered: 5,
@@ -160,9 +160,9 @@ function deriveSteps(demoStatus: DemoStatus | undefined, analyst: { first_name: 
     },
     {
       id: 'documents', num: 4, label: 'Documents',
-      status: 'optional' as StepStatus,
-      meta: (docsCount[s] || 0) > 0 ? `${docsCount[s]} fichier${(docsCount[s] || 0) > 1 ? 's' : ''} envoyé${(docsCount[s] || 0) > 1 ? 's' : ''}` : 'À compléter à tout moment',
-      dashed: true,
+      status: corpusValidated ? 'done' as StepStatus : 'optional' as StepStatus,
+      meta: corpusValidated ? 'Corpus validé ✓' : (docsCount[s] || 0) > 0 ? `${docsCount[s]} fichier${(docsCount[s] || 0) > 1 ? 's' : ''} envoyé${(docsCount[s] || 0) > 1 ? 's' : ''}` : 'À compléter à tout moment',
+      dashed: !corpusValidated,
       subItems: [],
     },
     {
@@ -197,7 +197,8 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
   const { progress: readProgress } = useDiagnosticReading()
 
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
-  const steps = useMemo(() => deriveSteps(demoStatus, analyst), [demoStatus, analyst])
+  const corpusValidated = demo?.enabled ? demo.activeDiagnostic.documents?.corpus_validated : false
+  const steps = useMemo(() => deriveSteps(demoStatus, analyst, corpusValidated), [demoStatus, analyst, corpusValidated])
 
   const isDashboard = location.pathname === '/client/dashboard'
   const isAppelLancement = location.pathname === '/client/appel-lancement'
