@@ -1,12 +1,10 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, ChevronLeft, Copy, Mail, Link2, Rocket, CheckCircle, Minus, HelpCircle, XCircle, Clock } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Rocket, CheckCircle, Minus, HelpCircle, XCircle, Clock } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import {
   PERCEPTION_AFFIRMATIONS,
   POPULATION_PROFILES,
-  SURVEY_TEMPLATE,
-  getRecommendedRespondents,
 } from '@/data/bloc4Data'
 
 const STORAGE_KEY = 'boussole_bloc4'
@@ -24,11 +22,6 @@ interface Bloc4State {
   predScores: (number | null)[]
   population: number[]
   manualMode: boolean
-  surveyCount: string
-  distinguishLevels: boolean
-  surveyMessage: string
-  dgEmail: string
-  linkGenerated: boolean
 }
 
 const defaultState: Bloc4State = {
@@ -36,11 +29,6 @@ const defaultState: Bloc4State = {
   predScores: Array(8).fill(null),
   population: [20, 20, 20, 20, 20],
   manualMode: false,
-  surveyCount: '',
-  distinguishLevels: false,
-  surveyMessage: SURVEY_TEMPLATE,
-  dgEmail: '',
-  linkGenerated: false,
 }
 
 function loadState(): Bloc4State {
@@ -131,20 +119,11 @@ function PopulationDonut({ values }: { values: number[] }) {
 export default function QuestionnaireBloc4() {
   const navigate = useNavigate()
   const [state, setState] = useState<Bloc4State>(loadState)
-  const [phase, setPhase] = useState<'intro' | 'self' | 'transition' | 'pred' | 'population' | 'survey' | 'done'>('intro')
+  const [phase, setPhase] = useState<'intro' | 'self' | 'transition' | 'pred' | 'population' | 'done'>('intro')
   const [questionIndex, setQuestionIndex] = useState(0)
   const [fadeKey, setFadeKey] = useState(0)
-  const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
-    const t = setTimeout(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(state)), 500)
-    return () => clearTimeout(t)
-  }, [state])
 
-  const effectif = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('boussole_bloc1') ?? '{}')?.company?.effectif ?? '' }
-    catch { return '' }
-  }, [])
 
   const update = useCallback(<K extends keyof Bloc4State>(key: K, value: Bloc4State[K]) => {
     setState(prev => ({ ...prev, [key]: value }))
@@ -199,10 +178,8 @@ export default function QuestionnaireBloc4() {
     setState(prev => { const arr = [...prev.population]; arr[index] = Math.max(0, Math.min(100, value)); return { ...prev, population: arr } })
   }
 
-  function copyLink() {
-    navigator.clipboard.writeText('https://boussole-climat.app/sondage/abc123')
-    setCopied(true); setTimeout(() => setCopied(false), 2000)
-  }
+
+
 
   const isSelf = phase === 'self'
   const scores = isSelf ? state.selfScores : state.predScores
@@ -284,180 +261,6 @@ export default function QuestionnaireBloc4() {
     )
   }
 
-  // ── SURVEY ──
-  if (phase === 'survey') {
-    const rec = getRecommendedRespondents(effectif)
-    return (
-      <div style={{ maxWidth: 680 }} className="animate-fade-in">
-        <p className="label-uppercase" style={{ marginBottom: 8 }}>SONDAGE INTERNE</p>
-        <h1 className="font-display" style={{ fontSize: '1.2rem', fontWeight: 400, marginBottom: 24 }}>
-          Lancez le sondage interne
-        </h1>
-
-        {/* Recommendation */}
-        <div style={{
-          backgroundColor: 'var(--color-primary-light)', border: '1px solid var(--color-primary)',
-          borderRadius: 14, padding: 20, marginBottom: 24,
-        }}>
-          <p style={{ fontSize: '0.9rem', color: 'var(--color-texte)' }}>
-            Nous recommandons <strong>{rec}</strong> pour obtenir des résultats exploitables.
-          </p>
-        </div>
-
-        {/* Config form */}
-        <div style={{
-          backgroundColor: 'var(--color-blanc)', border: '1px solid var(--color-border)',
-          borderRadius: 14, padding: 24, marginBottom: 24,
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, marginBottom: 6, fontFamily: 'var(--font-sans)' }}>
-                Nombre estimé de collaborateurs à sonder
-              </label>
-              <input
-                type="number" min="1" value={state.surveyCount}
-                onChange={e => update('surveyCount', e.target.value)}
-                placeholder="Ex: 25"
-                style={{
-                  width: '100%', height: 48, padding: '0 14px', borderRadius: 8,
-                  border: '1px solid var(--color-border)', fontSize: '0.875rem',
-                  fontFamily: 'var(--font-sans)', outline: 'none',
-                  transition: 'border-color 0.2s, box-shadow 0.2s',
-                }}
-                onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(27,67,50,0.08)' }}
-                onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 500 }}>Distinguer direction / managers / terrain</label>
-              <button
-                onClick={() => update('distinguishLevels', !state.distinguishLevels)}
-                style={{
-                  width: 48, height: 24, borderRadius: 12, position: 'relative', border: 'none', cursor: 'pointer',
-                  backgroundColor: state.distinguishLevels ? 'var(--color-primary)' : 'var(--color-border-active)',
-                  transition: 'background-color 0.2s',
-                }}
-              >
-                <div style={{
-                  width: 20, height: 20, borderRadius: '50%', backgroundColor: '#fff',
-                  position: 'absolute', top: 2,
-                  left: state.distinguishLevels ? 26 : 2,
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.15)', transition: 'left 0.2s',
-                }} />
-              </button>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, marginBottom: 6 }}>Message d'invitation</label>
-              <textarea
-                value={state.surveyMessage}
-                onChange={e => update('surveyMessage', e.target.value)}
-                style={{
-                  width: '100%', minHeight: 100, padding: 14, borderRadius: 8,
-                  border: '1px solid var(--color-border)', fontSize: '0.85rem',
-                  fontFamily: 'var(--font-sans)', resize: 'none', outline: 'none',
-                  transition: 'border-color 0.2s, box-shadow 0.2s',
-                  backgroundColor: 'var(--color-blanc)',
-                }}
-                onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(27,67,50,0.08)' }}
-                onBlur={e => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {!state.linkGenerated ? (
-          <button
-            onClick={() => update('linkGenerated', true)}
-            style={{
-              width: '100%', padding: '14px 28px', borderRadius: 8,
-              backgroundColor: 'var(--color-primary)', color: '#fff',
-              fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}
-          >
-            <Link2 size={18} /> Générer le lien de sondage
-          </button>
-        ) : (
-          <div className="animate-fade-in">
-            <div style={{
-              backgroundColor: 'var(--color-subtle)', borderRadius: 8, padding: '12px 16px',
-              display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16,
-            }}>
-              <Link2 size={16} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
-              <code style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                https://boussole-climat.app/sondage/abc123
-              </code>
-            </div>
-            <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
-              <button onClick={copyLink} style={{
-                flex: 1, padding: '10px 16px', borderRadius: 8,
-                border: `1px solid var(--color-primary)`,
-                backgroundColor: copied ? 'var(--color-primary)' : 'transparent',
-                color: copied ? '#fff' : 'var(--color-primary)',
-                fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                transition: 'all 0.2s',
-              }}>
-                <Copy size={14} /> {copied ? 'Copié !' : 'Copier le lien'}
-              </button>
-              <button style={{
-                flex: 1, padding: '10px 16px', borderRadius: 8,
-                border: '1px solid var(--color-accent-warm)',
-                color: 'var(--color-accent-warm)', backgroundColor: 'transparent',
-                fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              }}>
-                <Mail size={14} /> Envoyer par email
-              </button>
-            </div>
-
-            {/* DG questionnaire */}
-            <div style={{
-              backgroundColor: 'var(--color-blanc)', border: '1px solid var(--color-border)',
-              borderRadius: 14, padding: 20, marginBottom: 24,
-            }}>
-              <p style={{ fontSize: '0.85rem', fontWeight: 500, marginBottom: 10 }}>Envoyer le questionnaire DG</p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="email" value={state.dgEmail}
-                  onChange={e => update('dgEmail', e.target.value)}
-                  placeholder="email@entreprise.com"
-                  style={{
-                    flex: 1, height: 48, padding: '0 14px', borderRadius: 8,
-                    border: '1px solid var(--color-border)', fontSize: '0.85rem',
-                    fontFamily: 'var(--font-sans)', outline: 'none',
-                  }}
-                />
-                <button style={{
-                  padding: '0 20px', borderRadius: 8, backgroundColor: 'var(--color-primary)',
-                  color: '#fff', fontSize: '0.85rem', fontWeight: 500, border: 'none', cursor: 'pointer',
-                }}>
-                  Envoyer
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setPhase('done')}
-              style={{
-                width: '100%', padding: '14px 28px', borderRadius: 8,
-                backgroundColor: 'var(--color-primary)', color: '#fff',
-                fontWeight: 500, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                transition: 'background-color 0.2s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
-            >
-              Terminer <ChevronRight size={18} />
-            </button>
-          </div>
-        )}
-      </div>
-    )
-  }
 
   // ── POPULATION MAP ──
   if (phase === 'population') {
@@ -551,7 +354,7 @@ export default function QuestionnaireBloc4() {
 
         <div style={{ display: 'flex', gap: 12, maxWidth: 400, margin: '0 auto' }}>
           <button
-            onClick={() => setPhase('survey')}
+            onClick={() => setPhase('done')}
             disabled={state.manualMode && popTotal !== 100}
             style={{
               flex: 1, padding: '14px 28px', borderRadius: 8,
