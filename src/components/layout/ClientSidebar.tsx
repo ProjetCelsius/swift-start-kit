@@ -12,6 +12,7 @@ import {
   LogOut,
   LayoutGrid,
   FolderOpen,
+  BarChart3,
 } from 'lucide-react'
 import celsiusLogo from '@/assets/celsius-logo.svg'
 import clientAvatar from '@/assets/client-avatar.jpg'
@@ -19,6 +20,7 @@ import guillaumePhoto from '@/assets/guillaume-photo.png'
 import { MOCK_ANALYST } from '../../hooks/useAuth'
 import { useAuth } from '../../hooks/useAuth'
 import { useDemoIfAvailable } from '../../hooks/useDemo'
+import { useDiagnosticReading } from '../../hooks/useDiagnosticReading'
 import HelpPanel from '../questionnaire/HelpPanel'
 import { MonComptePanel, ChangePasswordPanel, ExportDataPanel, AideSupportPanel } from './AccountPanels'
 
@@ -44,14 +46,14 @@ interface SubItem {
 
 const DIAG_SECTIONS = [
   { label: 'Synthèse éditoriale', slug: '1' },
-  { label: 'Ce que nous ferions à votre place', slug: '2' },
+  { label: 'Nos recommandations', slug: '2' },
   { label: 'Score de maturité', slug: '3' },
   { label: 'Écarts de perception', slug: '4' },
-  { label: 'Capital humain climat', slug: '5' },
-  { label: 'Empreinte contextualisée', slug: '6' },
-  { label: 'Vos échéances clés', slug: '7' },
-  { label: 'Profil d\'avancement', slug: '8' },
-  { label: 'Prochaines étapes', slug: '9' },
+  { label: 'Moyens & ressources', slug: '5' },
+  { label: 'Empreinte carbone', slug: '6' },
+  { label: 'Échéancier réglementaire', slug: '7' },
+  { label: 'Cartographie', slug: '8' },
+  { label: 'Feuille de route', slug: '9' },
 ]
 
 // ── Derive sidebar steps from demo status ──────
@@ -128,6 +130,8 @@ function deriveSteps(demoStatus: DemoStatus | undefined, analyst: { first_name: 
     return ''
   }
 
+  const isDiagnosticReady = s === 'ready_for_restitution' || s === 'delivered'
+
   const steps: JourneyStep[] = [
     {
       id: 'appel', num: 1, label: 'Appel de lancement',
@@ -171,10 +175,12 @@ function deriveSteps(demoStatus: DemoStatus | undefined, analyst: { first_name: 
       id: 'restitution', num: 6, label: 'Restitution',
       status: s === 'delivered' ? 'done' : s === 'ready_for_restitution' ? 'current' : 'upcoming',
       meta: s === 'delivered' ? 'Fait ✓' : s === 'ready_for_restitution' ? 'À planifier' : 'Verrouillé',
-      subItems: (s === 'delivered' || s === 'ready_for_restitution') ? DIAG_SECTIONS.map(sec => ({
+      // Sub-items will be rendered with reading states, not green checks
+      subItems: isDiagnosticReady ? DIAG_SECTIONS.map(sec => ({
         label: sec.label,
         path: `/client/diagnostic/${sec.slug}`,
-        status: (s === 'delivered' ? 'done' : 'todo') as 'done' | 'todo',
+        // status is irrelevant here, reading states are used instead
+        status: 'todo' as const,
       })) : undefined,
     },
   ]
@@ -188,12 +194,15 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
   const analyst = MOCK_ANALYST
   const demo = useDemoIfAvailable()
   const [helpOpen, setHelpOpen] = useState(false)
+  const { progress: readProgress } = useDiagnosticReading()
 
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
   const steps = useMemo(() => deriveSteps(demoStatus, analyst), [demoStatus, analyst])
 
   const isDashboard = location.pathname === '/client/dashboard'
   const isAppelLancement = location.pathname === '/client/appel-lancement'
+  const isSynthesis = location.pathname === '/client/synthesis'
+  const isDiagnosticReady = demoStatus === 'ready_for_restitution' || demoStatus === 'delivered'
 
   return (
     <aside
@@ -247,7 +256,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
       </div>
 
       {/* ── VUE D'ENSEMBLE ── */}
-      <div className="px-3 mb-2">
+      <div className="px-3 mb-1">
         <NavLink
           to="/client/dashboard"
           onClick={onNavigate}
@@ -265,6 +274,27 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
         </NavLink>
       </div>
 
+      {/* ── SYNTHÈSE DU DIAGNOSTIC (only when diagnostic ready) ── */}
+      {isDiagnosticReady && (
+        <div className="px-3 mb-2">
+          <NavLink
+            to="/client/synthesis"
+            onClick={onNavigate}
+            className="flex items-center gap-2.5"
+            style={{
+              padding: '7px 10px', borderRadius: 6,
+              backgroundColor: isSynthesis ? '#E8F0EB' : 'transparent',
+              color: isSynthesis ? '#1B4332' : '#2A2A28',
+              fontFamily: 'var(--font-sans)', fontSize: '0.82rem', fontWeight: isSynthesis ? 500 : 400,
+              transition: 'background-color 0.15s',
+            }}
+          >
+            <BarChart3 size={15} />
+            Synthèse du diagnostic
+          </NavLink>
+        </div>
+      )}
+
       {/* ── VERTICAL JOURNEY ── */}
       <div className="flex-1 px-3 overflow-y-auto">
         <div className="px-3 pt-1 pb-2" style={{
@@ -279,6 +309,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
             const isOptional = step.status === 'optional'
             const showSubs = step.status === 'done' || step.status === 'current' || step.status === 'parallel' || isOptional
             const isLast = i === steps.length - 1
+            const isRestitution = step.id === 'restitution'
 
             // Determine line segment style between this step and next
             const lineSegment = !isLast ? (() => {
@@ -319,7 +350,7 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                     sondage: '/client/perception',
                     documents: '/client/documents',
                     analyse: '/client/dashboard',
-                    restitution: '/client/diagnostic/1',
+                    restitution: '/client/synthesis',
                   }
                   const isClickable = step.status === 'done' || step.status === 'current' || step.status === 'parallel' || isOptional
                   const isStepActive = step.id === 'appel' && isAppelLancement
@@ -391,6 +422,67 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                       }
 
                       const isActivePath = sub.path && location.pathname === sub.path
+
+                      // For restitution sub-items, use reading states instead of green checks
+                      if (isRestitution && isDiagnosticReady) {
+                        const sectionSlug = sub.path?.split('/').pop() || ''
+                        const readState = readProgress[sectionSlug] || 'locked'
+                        const isReadLocked = readState === 'locked'
+                        const isNouveau = readState === 'nouveau'
+
+                        // Dot color based on reading state
+                        const dotColor = readState === 'lu' ? '#7A766D' : isNouveau ? '#B87333' : '#E5E1D8'
+
+                        return (
+                          <button
+                            key={si}
+                            onClick={() => {
+                              if (isReadLocked || !sub.path) return
+                              navigate(sub.path)
+                              onNavigate?.()
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                              padding: '5px 10px', borderRadius: 6, border: 'none',
+                              backgroundColor: isActivePath ? '#E8F0EB' : 'transparent',
+                              cursor: isReadLocked ? 'default' : 'pointer',
+                              opacity: isReadLocked ? 0.4 : 1,
+                              transition: 'background-color 0.15s', textAlign: 'left',
+                            }}
+                            onMouseEnter={e => { if (!isReadLocked && !isActivePath) e.currentTarget.style.backgroundColor = '#F0EDE6' }}
+                            onMouseLeave={e => { if (!isActivePath) e.currentTarget.style.backgroundColor = 'transparent' }}
+                          >
+                            {/* Section number */}
+                            <span style={{
+                              fontFamily: 'var(--font-sans)', fontSize: '0.55rem', fontWeight: 600,
+                              color: isReadLocked ? '#E5E1D8' : '#B0AB9F', width: 12, textAlign: 'right', flexShrink: 0,
+                            }}>
+                              {sectionSlug}
+                            </span>
+
+                            {/* Dot — cuivre for nouveau, neutral for lu */}
+                            {isNouveau && (
+                              <span style={{
+                                width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+                                backgroundColor: dotColor,
+                                animation: 'sidebarPulse 2s ease-in-out infinite',
+                              }} />
+                            )}
+                            {isReadLocked && <Lock size={10} style={{ color: '#B0AB9F', flexShrink: 0 }} />}
+
+                            <span style={{
+                              fontFamily: 'var(--font-sans)', fontSize: '0.72rem',
+                              fontWeight: isActivePath ? 500 : 400,
+                              color: isActivePath ? '#1B4332' : isReadLocked ? '#B0AB9F' : '#2A2A28',
+                              flex: 1,
+                            }}>
+                              {sub.label}
+                            </span>
+                          </button>
+                        )
+                      }
+
+                      // Default sub-item rendering (questionnaire, sondage, etc.)
                       const isLocked = step.id === 'restitution' && step.status === 'upcoming'
                       const dotColor = sub.status === 'done' ? '#1B4332' : sub.status === 'in_progress' ? '#B87333' : '#E5E1D8'
 

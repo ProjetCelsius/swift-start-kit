@@ -19,7 +19,7 @@ import SondageSuiviPage from './pages/client/SondageSuiviPage'
 import AnalystProfilePage from './pages/client/AnalystProfilePage'
 import AttentePage from './pages/client/AttentePage'
 import AppelLancementPage from './pages/client/AppelLancementPage'
-import DiagnosticPage from './pages/client/DiagnosticPage'
+import DiagnosticSynthesis from './pages/client/DiagnosticSynthesis'
 // OnboardingSetupPage removed — replaced by /setup/:diagnosticId
 import EntretiensPage from './pages/client/EntretiensPage'
 import QuestionnaireRsePage from './pages/client/QuestionnaireRsePage'
@@ -85,7 +85,8 @@ function AppRoutes() {
           <Route path="/client/questionnaire-rse" element={<QuestionnaireRsePage />} />
           <Route path="/client/perception" element={<QuestionnaireBloc4 />} />
           <Route path="/client/documents" element={<DocumentsPage />} />
-          <Route path="/client/diagnostic" element={<DiagnosticPage />} />
+          <Route path="/client/synthesis" element={<DiagnosticSynthesis />} />
+          <Route path="/client/diagnostic" element={<DiagnosticSynthesis />} />
           <Route path="/client/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
           <Route path="/client/journal" element={<JournalPage />} />
           <Route path="/client/messages" element={<MessagesPage />} />

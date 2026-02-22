@@ -10,7 +10,7 @@ export const mockDiagnostic = {
     sector: "Industrie manufacturière",
     employees: 800,
     revenue: "50-200M",
-    analyst: { name: "Claire Dubois", initials: "CD", title: "Analyste climat senior" },
+    analyst: { name: "Guillaume Pakula", initials: "GP", title: "Analyste climat senior" },
     profilClimat: { code: "SMFD", name: "Les fondations sont là", phrase: "On fait les choses dans les règles, et on les fait bien.", family: "Les Méthodiques", entrepriseType: "Saint-Gobain" }
   },
 
