@@ -27,7 +27,7 @@ interface JourneyStep {
 }
 
 // ── Derive state from demo status ──────
-function deriveFromStatus(status: DemoStatus | undefined) {
+function deriveFromStatus(status: DemoStatus | undefined, corpusValidated?: boolean) {
   const s = status || 'questionnaire'
 
   // 3 blocs now (no more Perception in questionnaire)
@@ -112,7 +112,7 @@ function deriveFromStatus(status: DemoStatus | undefined) {
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
       { num: 3, label: 'Sondages &\nPerception', detail: 'Terminé', status: 'done' },
-      { num: 4, label: 'Documents', detail: '3 fichiers', status: 'optional', dashed: true },
+      { num: 4, label: 'Documents', detail: corpusValidated ? 'Validé ✓' : '3 fichiers', status: corpusValidated ? 'done' : 'optional', dashed: !corpusValidated },
       { num: 5, label: 'Analyse', detail: 'En cours', status: 'active' },
       { num: 6, label: 'Restitution', detail: 'Bientôt', status: 'locked' },
     ],
@@ -120,7 +120,7 @@ function deriveFromStatus(status: DemoStatus | undefined) {
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
       { num: 3, label: 'Sondages &\nPerception', detail: 'Terminé', status: 'done' },
-      { num: 4, label: 'Documents', detail: '3 fichiers', status: 'optional', dashed: true },
+      { num: 4, label: 'Documents', detail: corpusValidated ? 'Validé ✓' : '3 fichiers', status: corpusValidated ? 'done' : 'optional', dashed: !corpusValidated },
       { num: 5, label: 'Analyse', detail: 'Terminé', status: 'done' },
       { num: 6, label: 'Restitution', detail: 'À planifier', status: 'active' },
     ],
@@ -128,7 +128,7 @@ function deriveFromStatus(status: DemoStatus | undefined) {
       { num: 1, label: 'Lancement', detail: 'Fait', status: 'done' },
       { num: 2, label: 'Questionnaire', detail: 'Terminé', status: 'done' },
       { num: 3, label: 'Sondages &\nPerception', detail: 'Terminé', status: 'done' },
-      { num: 4, label: 'Documents', detail: '5 fichiers', status: 'optional', dashed: true },
+      { num: 4, label: 'Documents', detail: corpusValidated ? 'Validé ✓' : '5 fichiers', status: corpusValidated ? 'done' : 'optional', dashed: !corpusValidated },
       { num: 5, label: 'Analyse', detail: 'Terminé', status: 'done' },
       { num: 6, label: 'Restitution', detail: 'Fait', status: 'done' },
     ],
@@ -186,7 +186,7 @@ function deriveFromStatus(status: DemoStatus | undefined) {
     surveyCount: survey.count,
     surveyTarget: survey.target,
     analystMessage: analystMessages[s] || analystMessages.questionnaire,
-    diagnosticUnlocked: s === 'delivered',
+    diagnosticUnlocked: s === 'delivered' || s === 'ready_for_restitution',
     dgStatus: dgStatus[s] || 'not_started',
     isAnalysis: s === 'analysis',
     allSubmitted: s === 'analysis' || s === 'ready_for_restitution' || s === 'delivered',
@@ -205,7 +205,8 @@ export default function ClientHomeDashboard() {
   const protocol = useProtocolModal()
 
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
-  const derived = useMemo(() => deriveFromStatus(demoStatus), [demoStatus])
+  const corpusValidated = demo?.enabled ? demo.activeDiagnostic.documents?.corpus_validated : false
+  const derived = useMemo(() => deriveFromStatus(demoStatus, corpusValidated), [demoStatus, corpusValidated])
 
   const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked, dgStatus, isAnalysis, perceptionDone, sondPerDone } = derived
   const doneCount = blocs.filter(b => b.status === 'done').length
