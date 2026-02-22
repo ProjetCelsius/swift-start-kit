@@ -206,7 +206,7 @@ export default function ClientHomeDashboard() {
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
   const derived = useMemo(() => deriveFromStatus(demoStatus), [demoStatus])
 
-  const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked, dgStatus, isAnalysis, perceptionDone, sondPerDone, profilClimatState } = derived
+  const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked, dgStatus, isAnalysis, perceptionDone, sondPerDone } = derived
   const doneCount = blocs.filter(b => b.status === 'done').length
   const allBlocsDone = blocs.every(b => b.status === 'done')
   const activeBloc = blocs.find(b => b.status === 'active')
@@ -267,7 +267,7 @@ export default function ClientHomeDashboard() {
 
         {/* ── HORIZONTAL STEPPER (6 steps) ── */}
         <div className="label-uppercase mb-2" style={{ letterSpacing: '0.1em', fontSize: '0.5rem' }}>VOTRE PARCOURS</div>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '8px 0 4px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '8px 20px 4px' }}>
           {steps.map((step, i) => {
             const isDone = step.status === 'done'
             const isActive = step.status === 'active'
@@ -278,7 +278,7 @@ export default function ClientHomeDashboard() {
               <React.Fragment key={i}>
                 {i > 0 && (
                   <div style={{
-                    flex: 1, height: 2, maxWidth: 48, marginTop: 14,
+                    flex: 1, height: 2, maxWidth: 80, marginTop: 14,
                     ...(step.dashed || steps[i - 1]?.dashed ? {
                       backgroundImage: 'repeating-linear-gradient(to right, #E5E1D8 0, #E5E1D8 4px, transparent 4px, transparent 8px)',
                       backgroundSize: '8px 2px',
@@ -338,65 +338,8 @@ export default function ClientHomeDashboard() {
         </div>
       </div>
 
-      {/* ═══════ PROFIL CLIMAT CARD ═══════ */}
-      {profilClimatState !== 'hidden' && (
-        <div className="dash-fadein" style={{ animationDelay: '50ms', marginBottom: 20 }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #E8F0EB, #F5EDE4)',
-            borderRadius: 14, padding: '20px 24px',
-          }}>
-            <div style={{
-              fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.56rem',
-              letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#B87333', marginBottom: 8,
-            }}>
-              VOTRE PROFIL CLIMAT
-            </div>
 
-            {profilClimatState === 'teaser' ? (
-              <>
-                <div className="font-display" style={{ fontSize: '1.1rem', fontWeight: 500, color: '#1B4332', marginBottom: 8 }}>
-                  Votre profil se dessine...
-                </div>
-                <div className="font-display" style={{ fontSize: '2rem', fontWeight: 600, color: '#1B4332', marginBottom: 8, letterSpacing: '0.1em' }}>
-                  S · M · <span style={{ color: '#E5E1D8', animation: 'profilPulse 2s ease-in-out infinite' }}>?</span> · <span style={{ color: '#E5E1D8', animation: 'profilPulse 2s ease-in-out infinite 0.3s' }}>?</span>
-                </div>
-                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#7A766D', marginBottom: 8 }}>
-                  Complétez le Bloc 3 pour découvrir votre profil complet.
-                </p>
-                <button
-                  onClick={() => navigate('/client/questionnaire/bloc3')}
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                    fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.82rem', color: '#1B4332',
-                    textDecoration: 'underline',
-                  }}
-                >
-                  Continuer le questionnaire →
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="font-display" style={{ fontSize: '1.8rem', fontWeight: 600, color: '#1B4332', marginBottom: 4, letterSpacing: '0.1em' }}>
-                  S · M · F · D
-                </div>
-                <div className="font-display" style={{ fontSize: '1rem', fontWeight: 500, color: '#2A2A28', marginBottom: 4 }}>
-                  Les fondations sont là
-                </div>
-                <p style={{ fontFamily: 'var(--font-sans)', fontStyle: 'italic', fontSize: '0.85rem', color: '#7A766D', marginBottom: 8 }}>
-                  « On fait les choses dans les règles, et on les fait bien. »
-                </p>
-                <span style={{
-                  display: 'inline-block', padding: '4px 12px', borderRadius: 16,
-                  backgroundColor: 'rgba(27,67,50,0.1)',
-                  fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: '0.7rem', color: '#1B4332',
-                }}>
-                  Famille des Méthodiques
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+
 
       {/* ═══════ DIAGNOSTIC TEASER ═══════ */}
       <div className="dash-fadein" style={{ animationDelay: '100ms', marginBottom: 20 }}>
@@ -525,69 +468,7 @@ export default function ClientHomeDashboard() {
       {/* ═══════ THREE-COLUMN LAYOUT ═══════ */}
       <div className="dash-fadein" style={{ animationDelay: '200ms', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
 
-        {/* ── SONDAGES & PERCEPTION CARD ── */}
-        <div style={{
-          backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
-          padding: '20px 20px', display: 'flex', flexDirection: 'column',
-        }}>
-          <div className="flex items-center gap-3 mb-2">
-            <div style={{
-              width: 36, height: 36, borderRadius: 9, backgroundColor: '#E8F0EB',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <Users size={18} color="#1B4332" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div className="font-display" style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2A2A28' }}>Sondages & Perception</div>
-            </div>
-            <span style={{
-              padding: '3px 10px', borderRadius: 12,
-              backgroundColor: sondPerDone === 3 ? '#E8F0EB' : '#F5EDE4',
-              fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 600,
-              color: sondPerDone === 3 ? '#1B4332' : '#B87333',
-            }}>
-              {sondPerDone}/3
-            </span>
-          </div>
-
-          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D', lineHeight: 1.5, marginBottom: 14 }}>
-            Croisez les perspectives.
-          </p>
-
-          {/* Perception RSE sub-item */}
-          <SubItemButton
-            onClick={() => navigate('/client/perception')}
-            icon={<User size={14} color="#B87333" />}
-            iconBg="#F5EDE4"
-            label="Perception RSE"
-            detail={perceptionDone ? 'Terminé' : 'À faire'}
-            statusColor={perceptionDone ? '#1B4332' : '#B87333'}
-            mb={8}
-          />
-
-          {/* Sondage interne sub-item */}
-          <SubItemButton
-            onClick={() => navigate('/client/sondage')}
-            icon={<Users size={14} color="#1B4332" />}
-            iconBg="#E8F0EB"
-            label="Sondage interne"
-            detail={surveyCount >= surveyTarget ? 'Terminé' : `${surveyCount}/${surveyTarget}`}
-            statusColor={surveyCount >= surveyTarget ? '#1B4332' : '#B87333'}
-            mb={8}
-          />
-
-          {/* Entretien direction sub-item */}
-          <SubItemButton
-            onClick={() => navigate('/client/entretiens')}
-            icon={<User size={14} color="#1B4332" />}
-            iconBg="#E8F0EB"
-            label="Entretien direction"
-            detail={dgStatus === 'done' ? 'Terminé' : 'En attente'}
-            statusColor={dgStatus === 'done' ? '#1B4332' : '#B87333'}
-          />
-        </div>
-
-        {/* ── QUESTIONNAIRE CARD ── */}
+        {/* ── QUESTIONNAIRE CARD (LEFT) ── */}
         <div style={{
           backgroundColor: '#FFFFFF', borderRadius: 16,
           border: allBlocsDone ? '1px solid #EDEAE3' : '2px solid #B87333',
@@ -677,7 +558,7 @@ export default function ClientHomeDashboard() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
               >
-                Reprendre « {activeBloc.label} » → 
+                Reprendre « {activeBloc.label} » →
               </button>
             ) : allBlocsDone ? (
               <div style={{
@@ -689,6 +570,65 @@ export default function ClientHomeDashboard() {
               </div>
             ) : null}
           </div>
+        </div>
+
+        {/* ── SONDAGES & PERCEPTION CARD (CENTER) ── */}
+        <div style={{
+          backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
+          padding: '20px 20px', display: 'flex', flexDirection: 'column',
+        }}>
+          <div className="flex items-center gap-3 mb-2">
+            <div style={{
+              width: 36, height: 36, borderRadius: 9, backgroundColor: '#E8F0EB',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Users size={18} color="#1B4332" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div className="font-display" style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2A2A28' }}>Sondages & Perception</div>
+            </div>
+            <span style={{
+              padding: '3px 10px', borderRadius: 12,
+              backgroundColor: sondPerDone === 3 ? '#E8F0EB' : '#F5EDE4',
+              fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 600,
+              color: sondPerDone === 3 ? '#1B4332' : '#B87333',
+            }}>
+              {sondPerDone}/3
+            </span>
+          </div>
+
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.78rem', color: '#7A766D', lineHeight: 1.5, marginBottom: 14 }}>
+            Croisez les perspectives.
+          </p>
+
+          <SubItemButton
+            onClick={() => navigate('/client/perception')}
+            icon={<User size={14} color="#B87333" />}
+            iconBg="#F5EDE4"
+            label="Perception RSE"
+            detail={perceptionDone ? 'Terminé' : 'À faire'}
+            statusColor={perceptionDone ? '#1B4332' : '#B87333'}
+            mb={8}
+          />
+
+          <SubItemButton
+            onClick={() => navigate('/client/sondage')}
+            icon={<Users size={14} color="#1B4332" />}
+            iconBg="#E8F0EB"
+            label="Sondage interne"
+            detail={surveyCount >= surveyTarget ? 'Terminé' : `${surveyCount}/${surveyTarget}`}
+            statusColor={surveyCount >= surveyTarget ? '#1B4332' : '#B87333'}
+            mb={8}
+          />
+
+          <SubItemButton
+            onClick={() => navigate('/client/entretiens')}
+            icon={<User size={14} color="#1B4332" />}
+            iconBg="#E8F0EB"
+            label="Entretien direction"
+            detail={dgStatus === 'done' ? 'Terminé' : 'En attente'}
+            statusColor={dgStatus === 'done' ? '#1B4332' : '#B87333'}
+          />
         </div>
 
         {/* ── DOCUMENTS CARD ── */}
