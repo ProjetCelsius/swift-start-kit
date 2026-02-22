@@ -278,9 +278,10 @@ export default function ClientHomeDashboard() {
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 80,
                     background: 'none', border: 'none', padding: 0,
                     cursor: isLocked ? 'default' : 'pointer',
-                    opacity: isLocked ? 1 : 1,
                     transition: 'opacity 0.15s',
                   }}
+                  onMouseEnter={e => { if (!isLocked) e.currentTarget.style.opacity = '0.7' }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
                 >
                   <div style={{
                     width: 30, height: 30, borderRadius: '50%',
@@ -437,8 +438,10 @@ export default function ClientHomeDashboard() {
                         border: `1px solid ${pill.done ? '#2D6A4F33' : pill.active ? '#B8733333' : '#EDEAE3'}`,
                         fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 500,
                         color: pill.done ? '#1B4332' : pill.active ? '#B87333' : '#B0AB9F',
-                        cursor: 'pointer', transition: 'opacity 0.15s',
+                        cursor: 'pointer', transition: 'all 0.15s',
                       }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(42,42,40,0.08)' }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
                     >
                       {pill.done && <Check size={10} />}
                       {pill.label}
@@ -596,14 +599,14 @@ export default function ClientHomeDashboard() {
                 return (
                   <div
                     key={i}
-                    onClick={() => !isTodo && navigate(bloc.route)}
+                    onClick={() => navigate(bloc.route)}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px',
-                      borderRadius: 10, cursor: isTodo ? 'default' : 'pointer',
+                      borderRadius: 10, cursor: 'pointer',
                       backgroundColor: isActive ? '#F5EDE4' : 'transparent',
                       transition: 'all 0.15s',
                     }}
-                    onMouseEnter={e => { if (!isTodo) e.currentTarget.style.backgroundColor = isDone ? '#E8F0EB' : '#F5EDE4' }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = isDone ? '#E8F0EB' : '#F5EDE4' }}
                     onMouseLeave={e => { e.currentTarget.style.backgroundColor = isActive ? '#F5EDE4' : 'transparent' }}
                   >
                     <div style={{
@@ -618,15 +621,15 @@ export default function ClientHomeDashboard() {
                     </div>
                     <div style={{
                       flex: 1, fontFamily: 'var(--font-sans)', fontWeight: isActive ? 500 : 400, fontSize: '0.82rem',
-                      color: isDone ? '#7A766D' : isTodo ? '#B0AB9F' : '#2A2A28',
+                      color: isDone ? '#7A766D' : isTodo ? '#7A766D' : '#2A2A28',
                     }}>
                       {bloc.label}
                     </div>
                     <span style={{
                       fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 500,
-                      color: isDone ? '#1B4332' : isActive ? '#B87333' : '#B0AB9F',
+                      color: isDone ? '#1B4332' : isActive ? '#B87333' : '#B87333',
                     }}>
-                      {isDone ? 'Terminé ›' : isActive ? `${bloc.progress} ›` : 'À faire'}
+                      {isDone ? 'Terminé ›' : isActive ? `${bloc.progress} ›` : 'À faire ›'}
                     </span>
                   </div>
                 )
