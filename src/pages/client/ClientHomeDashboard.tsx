@@ -187,7 +187,7 @@ export default function ClientHomeDashboard() {
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
   const derived = useMemo(() => deriveFromStatus(demoStatus), [demoStatus])
 
-  const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked, dgStatus, completedSteps, isAnalysis } = derived
+  const { blocs, steps, headerTitle, headerSubtitle, surveyCount, surveyTarget, analystMessage, diagnosticUnlocked, dgStatus, isAnalysis } = derived
   const doneCount = blocs.filter(b => b.status === 'done').length
   const allBlocsDone = blocs.every(b => b.status === 'done')
   const activeBloc = blocs.find(b => b.status === 'active')
@@ -424,27 +424,29 @@ export default function ClientHomeDashboard() {
                 {/* Step pills */}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {[
-                    { label: 'Questionnaire', done: allBlocsDone, active: !allBlocsDone && completedSteps >= 1, route: '/client/questionnaire/bloc1' },
-                    { label: 'Sondage interne', done: surveyCount >= surveyTarget, active: surveyCount > 0 && surveyCount < surveyTarget, route: '/client/sondage' },
-                    { label: 'Entretien DG', done: dgStatus === 'done', active: dgStatus === 'pending', route: '/client/entretiens' },
+                    { label: 'Questionnaire', done: allBlocsDone, active: !allBlocsDone, route: '/client/questionnaire/bloc1', detail: allBlocsDone ? 'Terminé' : `${doneCount}/${blocs.length} blocs` },
+                    { label: 'Sondage interne', done: surveyCount >= surveyTarget, active: surveyCount < surveyTarget, route: '/client/sondage', detail: surveyCount >= surveyTarget ? 'Terminé' : `${surveyCount}/${surveyTarget}` },
+                    { label: 'Entretien DG', done: dgStatus === 'done', active: dgStatus !== 'done', route: '/client/entretiens', detail: dgStatus === 'done' ? 'Terminé' : 'À compléter' },
                   ].map((pill, i) => (
                     <button
                       key={i}
                       onClick={() => navigate(pill.route)}
                       style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 4,
-                        padding: '4px 12px', borderRadius: 20,
-                        backgroundColor: pill.done ? '#E8F0EB' : pill.active ? '#F5EDE4' : '#F7F5F0',
-                        border: `1px solid ${pill.done ? '#2D6A4F33' : pill.active ? '#B8733333' : '#EDEAE3'}`,
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        padding: '5px 14px', borderRadius: 20,
+                        backgroundColor: pill.done ? '#E8F0EB' : '#F5EDE4',
+                        border: `1px solid ${pill.done ? '#2D6A4F33' : '#B8733333'}`,
                         fontFamily: 'var(--font-sans)', fontSize: '0.65rem', fontWeight: 500,
-                        color: pill.done ? '#1B4332' : pill.active ? '#B87333' : '#B0AB9F',
+                        color: pill.done ? '#1B4332' : '#B87333',
                         cursor: 'pointer', transition: 'all 0.15s',
                       }}
                       onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(42,42,40,0.08)' }}
                       onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
                     >
-                      {pill.done && <Check size={10} />}
-                      {pill.label}
+                      {pill.done ? <Check size={10} /> : <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#B87333', flexShrink: 0 }} />}
+                      <span>{pill.label}</span>
+                      <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>· {pill.detail}</span>
+                      <ChevronRight size={10} style={{ opacity: 0.5 }} />
                     </button>
                   ))}
                 </div>
