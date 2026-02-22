@@ -99,7 +99,7 @@ export default function DevToolbar() {
             const newStatus = e.target.value as DemoStatus
             demo.setDiagnosticStatus(newStatus)
             if (newStatus === 'onboarding') {
-              navigate('/client/onboarding')
+              navigate('/setup/demo-novatech')
             }
           }}
           className="text-[10px] px-2 py-1 rounded border-none focus:outline-none"
