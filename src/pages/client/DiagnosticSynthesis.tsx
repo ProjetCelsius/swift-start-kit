@@ -197,9 +197,9 @@ export default function DiagnosticSynthesis() {
 
         {/* ── HERO BAND ── */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '200px 1fr 260px', gap: 0,
+          display: 'grid', gridTemplateColumns: '180px 1fr 240px', gap: 20,
           backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
-          padding: 28, marginBottom: 20,
+          padding: '32px 28px', marginBottom: 20,
         }}>
           {/* Score ring */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
