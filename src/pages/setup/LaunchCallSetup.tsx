@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Check, ChevronLeft, ChevronRight, Users, User, FileText, CheckCircle2 } from 'lucide-react'
+import { Check, ChevronLeft, Users, User, FileText, CheckCircle2 } from 'lucide-react'
 import { getDemoDiagnostic } from '@/data/demoData'
 
 // ── Types ──
@@ -87,10 +87,8 @@ export default function LaunchCallSetup() {
   const clientCompany = diag?.organization.name || ''
   const clientInitials = clientName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
-  // Tab state
+  // Tab state — all tabs freely navigable
   const [activeTab, setActiveTab] = useState<TabId>(1)
-  const [completedTabs, setCompletedTabs] = useState<Set<TabId>>(new Set<TabId>())
-  const [unlockedTabs, setUnlockedTabs] = useState<Set<TabId>>(new Set<TabId>([1]))
 
   // Save indicator
   const [showSaved, setShowSaved] = useState(false)
@@ -113,6 +111,7 @@ export default function LaunchCallSetup() {
   const [docs, setDocs] = useState<Set<string>>(new Set())
 
   const tab1Valid = companyName.trim() !== '' && sector !== '' && headcount !== '' && revenue !== ''
+  const tab1Partial = companyName.trim() !== '' || sector !== '' || headcount !== '' || revenue !== ''
 
   // ── Tab 2 State ──
   const [tiles, setTiles] = useState<TileData[]>(TILE_ITEMS.map(() => ({ state: 'none', comment: '' })))
@@ -127,7 +126,23 @@ export default function LaunchCallSetup() {
   const [dgEmail, setDgEmail] = useState('')
   const [dgName, setDgName] = useState('')
 
-  // Auto-save on changes (skip initial render)
+  const tab3Valid = true // Always valid (has defaults)
+
+  const allValid = tab1Valid && tab2Valid && tab3Valid
+
+  // Completion dot status
+  function tabDotStatus(tabId: TabId): 'complete' | 'partial' | 'empty' {
+    if (tabId === 1) return tab1Valid ? 'complete' : tab1Partial ? 'partial' : 'empty'
+    if (tabId === 2) return tab2Valid ? 'complete' : 'empty'
+    return 'complete' // Tab 3 always complete
+  }
+
+  // Incomplete tab names for CTA hint
+  const incompleteTabs: string[] = []
+  if (!tab1Valid) incompleteTabs.push('Profil entreprise')
+  if (!tab2Valid) incompleteTabs.push('Démarche actuelle')
+
+  // Auto-save on changes
   const isInitial = useRef(true)
   useEffect(() => {
     if (isInitial.current) { isInitial.current = false; return }
@@ -139,12 +154,6 @@ export default function LaunchCallSetup() {
     setActiveTab(tab)
     contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  const completeAndNext = (current: TabId, next: TabId) => {
-    setCompletedTabs(prev => new Set(prev).add(current))
-    setUnlockedTabs(prev => new Set(prev).add(next))
-    goToTab(next)
   }
 
   const cycleTile = (index: number) => {
@@ -159,13 +168,10 @@ export default function LaunchCallSetup() {
   }
 
   const handleValidate = () => {
-    // In real app: save to Supabase here
     navigate('/client/dashboard')
   }
 
   // Summary text
-  // Summary text
-
   let impactText = ''
   let impactColor = '#1B4332'
   if (surveyEnabled && dgEnabled) {
@@ -194,7 +200,6 @@ export default function LaunchCallSetup() {
 
       {/* ── Header ── */}
       <div className="pt-10 pb-2 text-center">
-        {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-5">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: '#1B4332' }}>C</div>
           <div className="text-left leading-tight">
@@ -210,7 +215,6 @@ export default function LaunchCallSetup() {
           Remplissez chaque étape avec votre client.
         </p>
 
-        {/* Client pill */}
         <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-3xl border" style={{ backgroundColor: 'white', borderColor: '#EDEAE3', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
           <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-white text-xs font-semibold"
             style={{ background: 'linear-gradient(135deg, #B87333, #d4956a)' }}>
@@ -223,41 +227,45 @@ export default function LaunchCallSetup() {
         </div>
       </div>
 
-      {/* ── Tabs ── */}
+      {/* ── Tabs — freely navigable ── */}
       <div className="sticky top-0 z-40" style={{ backgroundColor: '#F7F5F0' }}>
         <div className="max-w-[780px] mx-auto flex justify-between pt-6 pb-0 px-4">
           {tabDefs.map(tab => {
             const isActive = activeTab === tab.id
-            const isCompleted = completedTabs.has(tab.id)
-            const isLocked = !unlockedTabs.has(tab.id)
+            const dotStatus = tabDotStatus(tab.id)
 
             return (
               <button
                 key={tab.id}
-                onClick={() => { if (!isLocked) goToTab(tab.id) }}
-                disabled={isLocked}
+                onClick={() => goToTab(tab.id)}
                 className="flex flex-col items-center gap-2 pb-3 flex-1 transition-all relative"
-                style={{
-                  opacity: isLocked ? 0.35 : 1,
-                  cursor: isLocked ? 'not-allowed' : 'pointer',
-                }}
+                style={{ cursor: 'pointer' }}
               >
                 <div
                   className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-xs font-semibold transition-colors"
                   style={{
-                    backgroundColor: isActive || isCompleted ? '#1B4332' : '#F0EDE6',
-                    color: isActive || isCompleted ? 'white' : '#B0AB9F',
+                    backgroundColor: isActive || dotStatus === 'complete' ? '#1B4332' : '#F0EDE6',
+                    color: isActive || dotStatus === 'complete' ? 'white' : '#B0AB9F',
                   }}
                 >
-                  {isCompleted ? <Check size={14} /> : tab.id}
+                  {dotStatus === 'complete' && !isActive ? <Check size={14} /> : tab.id}
                 </div>
-                <span
-                  className="text-xs font-medium"
-                  style={{ color: isActive ? '#1B4332' : isCompleted ? '#7A766D' : '#B0AB9F' }}
-                >
-                  {tab.label}
-                </span>
-                {/* Active underline */}
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="text-xs font-medium"
+                    style={{ color: isActive ? '#1B4332' : dotStatus === 'complete' ? '#7A766D' : '#B0AB9F' }}
+                  >
+                    {tab.label}
+                  </span>
+                  {/* Completion dot */}
+                  {dotStatus !== 'empty' && (
+                    <span style={{
+                      width: 6, height: 6, borderRadius: '50%',
+                      backgroundColor: dotStatus === 'complete' ? '#1B4332' : '#B87333',
+                      flexShrink: 0,
+                    }} />
+                  )}
+                </div>
                 {isActive && (
                   <div className="absolute bottom-0 left-[10%] right-[10%] h-[2.5px] rounded-full" style={{ backgroundColor: '#1B4332' }} />
                 )}
@@ -273,29 +281,28 @@ export default function LaunchCallSetup() {
         {/* ══════════ TAB 1 ══════════ */}
         {activeTab === 1 && (
           <div className="animate-fade-in">
-            {/* Section: Informations générales */}
             <div className="rounded-2xl border p-7 mb-6" style={{ backgroundColor: 'white', borderColor: '#EDEAE3', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
               <div className="text-[0.56rem] font-semibold uppercase tracking-[0.1em] mb-5" style={{ color: '#B0AB9F' }}>
                 INFORMATIONS GÉNÉRALES
               </div>
 
-              <FieldLabel>Raison sociale</FieldLabel>
+              <FieldLabel required>Raison sociale</FieldLabel>
               <Input value={companyName} onChange={setCompanyName} placeholder="Ex : Groupe Méridien SAS" />
 
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <div>
-                  <FieldLabel>Secteur d'activité (code NAF)</FieldLabel>
+                  <FieldLabel required>Secteur d'activité (code NAF)</FieldLabel>
                   <Select value={sector} onChange={setSector} options={NAF_SECTORS} />
                 </div>
                 <div>
-                  <FieldLabel>Effectif total</FieldLabel>
+                  <FieldLabel required>Effectif total</FieldLabel>
                   <Select value={headcount} onChange={setHeadcount} options={HEADCOUNT_OPTIONS} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <div>
-                  <FieldLabel>Chiffre d'affaires</FieldLabel>
+                  <FieldLabel required>Chiffre d'affaires</FieldLabel>
                   <Select value={revenue} onChange={setRevenue} options={REVENUE_OPTIONS} />
                 </div>
                 <div>
@@ -323,7 +330,6 @@ export default function LaunchCallSetup() {
               </div>
             </div>
 
-            {/* Section: Documents disponibles */}
             <div className="rounded-2xl border p-7" style={{ backgroundColor: 'white', borderColor: '#EDEAE3', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
               <div className="text-[0.56rem] font-semibold uppercase tracking-[0.1em] mb-2" style={{ color: '#B0AB9F' }}>
                 DOCUMENTS DISPONIBLES
@@ -370,19 +376,10 @@ export default function LaunchCallSetup() {
               </div>
             </div>
 
-            {/* CTA */}
-            <div className="mt-6 pt-5 border-t flex justify-end" style={{ borderColor: '#EDEAE3' }}>
-              <button
-                disabled={!tab1Valid}
-                onClick={() => completeAndNext(1, 2)}
-                className="flex items-center gap-2 px-7 py-3.5 rounded-[9px] text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: tab1Valid ? '#1B4332' : '#E5E1D8',
-                  color: tab1Valid ? 'white' : '#B0AB9F',
-                  cursor: tab1Valid ? 'pointer' : 'not-allowed',
-                }}
-              >
-                Passer à la démarche actuelle <ChevronRight size={16} />
+            {/* Back button only */}
+            <div className="mt-6 pt-5 border-t flex justify-start" style={{ borderColor: '#EDEAE3' }}>
+              <button onClick={() => goToTab(1)} className="flex items-center gap-1 text-sm font-medium" style={{ color: '#7A766D', background: 'none', border: 'none', cursor: 'pointer' }}>
+                {/* No back on tab 1 */}
               </button>
             </div>
           </div>
@@ -397,6 +394,13 @@ export default function LaunchCallSetup() {
             <p className="text-[0.82rem] mb-5" style={{ color: '#7A766D' }}>
               Cliquez pour indiquer l'état de chaque item. Un champ de commentaire s'ouvre pour les items réalisés ou en cours.
             </p>
+
+            {/* Required hint */}
+            {!tab2Valid && (
+              <div className="mb-4 px-4 py-2.5 rounded-[10px] border text-[0.82rem]" style={{ borderColor: '#EDEAE3', backgroundColor: '#FEF2F2', color: '#DC4A4A' }}>
+                Renseignez au moins un item pour continuer <span style={{ fontWeight: 700, color: '#DC4A4A' }}>*</span>
+              </div>
+            )}
 
             {/* Legend */}
             <div className="flex items-center gap-5 px-4 py-2.5 rounded-[10px] border mb-5" style={{ backgroundColor: 'white', borderColor: '#EDEAE3' }}>
@@ -413,22 +417,10 @@ export default function LaunchCallSetup() {
               ))}
             </div>
 
-            {/* CTA */}
-            <div className="mt-6 pt-5 border-t flex justify-between items-center" style={{ borderColor: '#EDEAE3' }}>
-              <button onClick={() => goToTab(1)} className="flex items-center gap-1 text-sm font-medium" style={{ color: '#7A766D' }}>
+            {/* Back button */}
+            <div className="mt-6 pt-5 border-t flex justify-start" style={{ borderColor: '#EDEAE3' }}>
+              <button onClick={() => goToTab(1)} className="flex items-center gap-1 text-sm font-medium" style={{ color: '#7A766D', background: 'none', border: 'none', cursor: 'pointer' }}>
                 <ChevronLeft size={16} /> Retour
-              </button>
-              <button
-                disabled={!tab2Valid}
-                onClick={() => completeAndNext(2, 3)}
-                className="flex items-center gap-2 px-7 py-3.5 rounded-[9px] text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: tab2Valid ? '#1B4332' : '#E5E1D8',
-                  color: tab2Valid ? 'white' : '#B0AB9F',
-                  cursor: tab2Valid ? 'pointer' : 'not-allowed',
-                }}
-              >
-                Passer à la configuration <ChevronRight size={16} />
               </button>
             </div>
           </div>
@@ -541,24 +533,40 @@ export default function LaunchCallSetup() {
 
             {/* CTA */}
             <div className="flex justify-between items-center mb-2">
-              <button onClick={() => goToTab(2)} className="flex items-center gap-1 text-sm font-medium" style={{ color: '#7A766D' }}>
+              <button onClick={() => goToTab(2)} className="flex items-center gap-1 text-sm font-medium" style={{ color: '#7A766D', background: 'none', border: 'none', cursor: 'pointer' }}>
                 <ChevronLeft size={16} /> Retour
               </button>
             </div>
             <button
               onClick={handleValidate}
+              disabled={!allValid}
               className="w-full flex items-center justify-center gap-2 py-[18px] rounded-[10px] text-sm font-semibold transition-colors"
               style={{
-                backgroundColor: '#1B4332',
-                color: 'white',
-                boxShadow: '0 4px 16px rgba(27,67,50,0.25)',
+                backgroundColor: allValid ? '#1B4332' : '#E5E1D8',
+                color: allValid ? 'white' : '#B0AB9F',
+                cursor: allValid ? 'pointer' : 'not-allowed',
+                boxShadow: allValid ? '0 4px 16px rgba(27,67,50,0.25)' : 'none',
               }}
             >
               <CheckCircle2 size={18} /> Valider et créer l'espace client →
             </button>
-            <p className="text-center mt-3 text-[0.7rem]" style={{ color: '#B0AB9F' }}>
-              Modifiable à tout moment depuis l'espace admin
-            </p>
+            {!allValid && (
+              <div className="text-center mt-3">
+                <p className="text-[0.72rem]" style={{ color: '#B0AB9F' }}>
+                  Complétez les champs obligatoires pour valider
+                </p>
+                {incompleteTabs.length > 0 && (
+                  <p className="text-[0.72rem] mt-1" style={{ color: '#B87333' }}>
+                    Il manque : {incompleteTabs.join(', ')}
+                  </p>
+                )}
+              </div>
+            )}
+            {allValid && (
+              <p className="text-center mt-3 text-[0.7rem]" style={{ color: '#B0AB9F' }}>
+                Modifiable à tout moment depuis l'espace admin
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -568,8 +576,13 @@ export default function LaunchCallSetup() {
 
 // ── Reusable sub-components ──
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <label className="block text-[0.78rem] font-medium mb-1.5" style={{ color: '#2A2A28' }}>{children}</label>
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  return (
+    <label className="block text-[0.78rem] font-medium mb-1.5" style={{ color: '#2A2A28' }}>
+      {children}
+      {required && <span style={{ color: '#DC4A4A', fontWeight: 700, marginLeft: 2 }}>*</span>}
+    </label>
+  )
 }
 
 function Input({ value, onChange, placeholder, type = 'text', disabled = false }: {
@@ -647,7 +660,6 @@ function AdvancementTile({ label, data, onCycle, onComment }: {
           {s.badgeText}
         </span>
       </button>
-      {/* Textarea for done/wip */}
       <div
         className="overflow-hidden transition-all duration-250"
         style={{ maxHeight: state !== 'none' ? '120px' : '0px', opacity: state !== 'none' ? 1 : 0 }}
@@ -681,7 +693,6 @@ function ModuleCard({ icon, iconBg, title, description, enabled, onToggle, warni
           </div>
           <span className="text-base font-medium" style={{ fontFamily: "'Fraunces', serif", color: '#2A2A28' }}>{title}</span>
         </div>
-        {/* Toggle */}
         <button
           onClick={onToggle}
           className="w-12 h-6 rounded-full relative transition-colors"
