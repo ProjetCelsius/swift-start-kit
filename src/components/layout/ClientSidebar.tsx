@@ -296,8 +296,8 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                   <div style={{
                     position: 'absolute',
                     left: 15.5,
-                    top: 30,
-                    bottom: -6,
+                    top: 28,
+                    bottom: 0,
                     width: 1.5,
                     ...(lineSegment === 'done' ? { backgroundColor: '#1B4332' } :
                       lineSegment === 'parallel' ? {
@@ -333,10 +333,8 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                         padding: '8px 6px', textAlign: 'left',
                         background: 'none', border: 'none',
                         cursor: isClickable ? 'pointer' : 'default',
-                        borderRadius: 6, transition: 'background-color 0.15s',
+                        borderRadius: 6,
                       }}
-                      onMouseEnter={e => { if (isClickable) e.currentTarget.style.backgroundColor = '#F0EDE6' }}
-                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
                     >
                       {/* Circle */}
                       {isOptional ? (
