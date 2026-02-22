@@ -1,49 +1,52 @@
 import { ExternalLink } from 'lucide-react'
-import { MOCK_PRIORITIES } from '@/data/mockDiagnosticData'
-import { MOCK_QUARTERLY_PLAN } from '@/data/mockDiagnosticData'
 import { useNavigate } from 'react-router-dom'
+import { mockDiagnostic } from '@/data/mockDiagnosticData'
+import SectionLayout from '@/components/diagnostic/SectionLayout'
 
-const EFFORT_STYLES: Record<string, { bg: string; color: string }> = {
-  Rapide: { bg: 'var(--color-celsius-100)', color: 'var(--color-celsius-900)' },
-  Projet: { bg: 'var(--color-accent-warm-light)', color: 'var(--color-accent-warm)' },
-  Transformation: { bg: 'var(--color-corail-100)', color: 'var(--color-corail-500)' },
-}
-
-const PRIORITY_COLORS = ['#1B4332', '#2D6A4F', '#B87333']
+const PRIORITY_COLORS = ['#1B4332', '#B87333', '#5B8C6E']
 
 export default function DiagnosticSection9() {
   const navigate = useNavigate()
+  const { priorities } = mockDiagnostic.section2
+  const { quarters } = mockDiagnostic.section9
 
   return (
-    <div className="max-w-[720px]">
-      <h2
-        className="text-sm font-semibold uppercase tracking-wider mb-8"
-        style={{ color: 'var(--color-celsius-900)', letterSpacing: '0.05em' }}
+    <SectionLayout sectionNumber={9}>
+      {/* Horizon banner */}
+      <div
+        className="rounded-xl p-4 mb-6 text-center"
+        style={{ background: 'linear-gradient(135deg, #E8F0EB, #F5EDE4)' }}
       >
-        Prochaines étapes
-      </h2>
+        <p style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '1rem', color: '#1B4332' }}>
+          Horizon : 12 mois
+        </p>
+        <p className="text-xs mt-1" style={{ color: '#7A766D' }}>
+          Plan d'action structuré autour de vos 3 priorités
+        </p>
+      </div>
 
       {/* Priority recap */}
-      <div className="space-y-3 mb-8">
-        {MOCK_PRIORITIES.map(p => (
+      <div className="space-y-2 mb-8">
+        {priorities.map((p, i) => (
           <button
-            key={p.number}
+            key={i}
             onClick={() => navigate('/client/diagnostic/2')}
-            className="w-full text-left rounded-xl p-4 flex items-center gap-4 transition-all hover:scale-[1.005]"
-            style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
+            className="w-full text-left rounded-xl p-3.5 flex items-center gap-3 transition-all hover:scale-[1.003]"
+            style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
           >
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-              style={{ backgroundColor: PRIORITY_COLORS[p.number - 1] }}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+              style={{ backgroundColor: PRIORITY_COLORS[i] }}
             >
-              {p.number}
+              {i + 1}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold truncate">{p.title}</p>
-            </div>
+            <p className="text-sm font-semibold flex-1 truncate" style={{ color: '#2A2A28' }}>{p.title}</p>
             <span
-              className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full shrink-0"
-              style={EFFORT_STYLES[p.effort]}
+              className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+              style={{
+                backgroundColor: p.effort === 'Rapide' ? '#E8F0EB' : '#F5EDE4',
+                color: p.effort === 'Rapide' ? '#1B4332' : '#B87333',
+              }}
             >
               {p.effort}
             </span>
@@ -51,33 +54,35 @@ export default function DiagnosticSection9() {
         ))}
       </div>
 
-      {/* 12-month plan */}
+      {/* Quarterly timeline */}
       <div
         className="rounded-xl p-6 mb-8"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
+        style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
       >
-        <h3 className="text-base font-bold mb-5">Plan suggéré sur 12 mois</h3>
+        <h3
+          className="mb-5"
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '1rem', color: '#2A2A28' }}
+        >
+          Plan sur 4 trimestres
+        </h3>
 
         <div className="grid grid-cols-4 gap-3">
-          {MOCK_QUARTERLY_PLAN.map(q => (
-            <div key={q.quarter}>
-              <p className="text-xs font-bold uppercase tracking-wider mb-3 text-center" style={{ color: 'var(--color-celsius-900)', letterSpacing: '0.05em' }}>
-                {q.quarter}
+          {quarters.map((q, qi) => (
+            <div key={qi}>
+              <p
+                className="text-[10px] font-bold uppercase tracking-wider mb-3 text-center"
+                style={{ color: '#1B4332', letterSpacing: '0.05em' }}
+              >
+                {q.label}
               </p>
               <div className="space-y-2">
-                {q.actions.map((a, i) => (
+                {q.actions.map((a, ai) => (
                   <div
-                    key={i}
-                    className="rounded-lg p-3"
-                    style={{ backgroundColor: 'var(--color-fond)' }}
+                    key={ai}
+                    className="rounded-lg p-2.5"
+                    style={{ backgroundColor: '#F7F5F0' }}
                   >
-                    <div className="flex items-start gap-2">
-                      <div
-                        className="w-2 h-2 rounded-full shrink-0 mt-1"
-                        style={{ backgroundColor: PRIORITY_COLORS[a.priority - 1] || 'var(--color-gris-400)' }}
-                      />
-                      <p className="text-xs leading-snug">{a.label}</p>
-                    </div>
+                    <p className="text-[11px] leading-snug" style={{ color: '#2A2A28' }}>{a}</p>
                   </div>
                 ))}
               </div>
@@ -93,7 +98,7 @@ export default function DiagnosticSection9() {
           target="_blank"
           rel="noopener noreferrer"
           className="w-full py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-          style={{ backgroundColor: 'var(--color-celsius-900)', boxShadow: 'var(--shadow-card)' }}
+          style={{ backgroundColor: '#1B4332' }}
         >
           Planifier un échange avec votre analyste <ExternalLink size={16} />
         </a>
@@ -107,6 +112,6 @@ export default function DiagnosticSection9() {
           Découvrir les accompagnements Celsius <ExternalLink size={16} />
         </a>
       </div>
-    </div>
+    </SectionLayout>
   )
 }

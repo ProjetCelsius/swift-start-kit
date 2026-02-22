@@ -1,48 +1,30 @@
-import { useState } from 'react'
+import { TrendingDown, ExternalLink } from 'lucide-react'
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid, Legend,
 } from 'recharts'
-import { ExternalLink } from 'lucide-react'
 import { MOCK_FOOTPRINT } from '@/data/mockDiagnosticData'
+import SectionLayout from '@/components/diagnostic/SectionLayout'
 
-const SCOPE_COLORS = { scope1: '#1B4332', scope2: '#2D6A4F', scope3: '#93C5A0' }
+const SCOPE_COLORS = ['#1B4332', '#2D6A4F', '#93C5A0']
 
 export default function DiagnosticSection6() {
-  const [hasFootprint, setHasFootprint] = useState(MOCK_FOOTPRINT.hasFootprint)
+  const hasFootprint = MOCK_FOOTPRINT.hasFootprint
 
   return (
-    <div className="max-w-[640px]">
-      <div className="flex items-center justify-between mb-8">
-        <h2
-          className="text-sm font-semibold uppercase tracking-wider"
-          style={{ color: 'var(--color-celsius-900)', letterSpacing: '0.05em' }}
-        >
-          Empreinte carbone contextualisée
-        </h2>
-        {/* Demo toggle */}
-        <button
-          onClick={() => setHasFootprint(!hasFootprint)}
-          className="text-xs px-3 py-1 rounded-full border"
-          style={{ borderColor: 'var(--color-border)', color: 'var(--color-texte-secondary)' }}
-        >
-          {hasFootprint ? 'Voir sans bilan' : 'Voir avec bilan'}
-        </button>
-      </div>
-
-      {hasFootprint ? <StateA /> : <StateB />}
-    </div>
+    <SectionLayout sectionNumber={6}>
+      {hasFootprint ? <WithFootprint /> : <WithoutFootprint />}
+    </SectionLayout>
   )
 }
 
-// ── STATE A: Has carbon footprint ────────────────────────
-function StateA() {
+function WithFootprint() {
   const d = MOCK_FOOTPRINT
 
   const scopeData = [
-    { name: 'Scope 1', value: d.scope1, color: SCOPE_COLORS.scope1 },
-    { name: 'Scope 2', value: d.scope2, color: SCOPE_COLORS.scope2 },
-    { name: 'Scope 3', value: d.scope3, color: SCOPE_COLORS.scope3 },
+    { name: 'Scope 1 — Direct', value: d.scope1, pct: Math.round((d.scope1 / d.total) * 100) },
+    { name: 'Scope 2 — Énergie', value: d.scope2, pct: Math.round((d.scope2 / d.total) * 100) },
+    { name: 'Scope 3 — Chaîne de valeur', value: d.scope3, pct: Math.round((d.scope3 / d.total) * 100) },
   ]
 
   const trajectoryData = d.trajectoryYears.map((y, i) => ({
@@ -51,140 +33,103 @@ function StateA() {
     'Trajectoire Paris': d.trajectoryParis[i],
   }))
 
-  const sectorPos = Math.min((d.intensityPerEmployee / (d.sectorAvgIntensity * 1.8)) * 100, 100)
-  const sectorAvgPos = Math.min((d.sectorAvgIntensity / (d.sectorAvgIntensity * 1.8)) * 100, 100)
-
   return (
     <>
-      {/* Total */}
+      {/* Big number hero */}
       <div
         className="rounded-xl p-8 mb-6 text-center"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
+        style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
       >
-        <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-texte-secondary)', letterSpacing: '0.05em' }}>
-          Émissions totales
-        </p>
-        <p className="text-4xl font-bold mb-1" style={{ color: 'var(--color-celsius-900)' }}>
+        <p
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: '2.5rem', color: '#1B4332' }}
+        >
           {d.total.toLocaleString('fr-FR')}
         </p>
-        <p className="text-sm" style={{ color: 'var(--color-texte-secondary)' }}>tCO₂e / an</p>
+        <p className="text-sm mt-1" style={{ color: '#7A766D' }}>
+          tCO₂e — Émissions totales annuelles
+        </p>
+      </div>
 
-        <div className="flex justify-center gap-4 mt-4">
-          {scopeData.map(s => (
-            <div key={s.name} className="text-center">
-              <div className="w-3 h-3 rounded-full mx-auto mb-1" style={{ backgroundColor: s.color }} />
-              <p className="text-xs font-medium">{s.name}</p>
-              <p className="text-sm font-bold">{s.value.toLocaleString('fr-FR')}</p>
+      {/* Scope breakdown stacked bar */}
+      <div
+        className="rounded-xl p-6 mb-6"
+        style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
+      >
+        <h3
+          className="mb-4"
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '1rem', color: '#2A2A28' }}
+        >
+          Répartition par scope
+        </h3>
+        {/* Simple horizontal stacked bar */}
+        <div className="flex rounded-lg overflow-hidden h-10 mb-4">
+          {scopeData.map((s, i) => (
+            <div
+              key={s.name}
+              className="flex items-center justify-center"
+              style={{
+                width: `${s.pct}%`,
+                backgroundColor: SCOPE_COLORS[i],
+                minWidth: s.pct > 5 ? 'auto' : '30px',
+              }}
+            >
+              <span className="text-[10px] font-bold text-white">{s.pct}%</span>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          {scopeData.map((s, i) => (
+            <div key={s.name} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: SCOPE_COLORS[i] }} />
+                <span className="text-xs" style={{ color: '#2A2A28' }}>{s.name}</span>
+              </div>
+              <span className="text-xs font-semibold" style={{ color: '#2A2A28' }}>
+                {s.value.toLocaleString('fr-FR')} tCO₂e
+              </span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Scope breakdown bar */}
-      <div
-        className="rounded-xl p-6 mb-6"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-      >
-        <h3 className="text-base font-bold mb-4">Répartition par scope</h3>
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={scopeData} layout="vertical" barSize={28}>
-              <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--color-gris-400)' }} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: 'var(--color-texte)' }} width={70} />
-              <Tooltip
-                formatter={(v: any) => `${Number(v).toLocaleString('fr-FR')} tCO₂e`}
-                contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid var(--color-border)' }}
-              />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                {scopeData.map((s, i) => <Cell key={i} fill={s.color} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Intensity cards */}
+      {/* Benchmarking cards */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div
-          className="rounded-xl p-5 text-center"
-          style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-        >
-          <p className="text-2xl font-bold" style={{ color: 'var(--color-celsius-900)' }}>{d.intensityPerEmployee}</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--color-texte-secondary)' }}>tCO₂e / collaborateur</p>
-        </div>
-        <div
-          className="rounded-xl p-5 text-center"
-          style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-        >
-          <p className="text-2xl font-bold" style={{ color: 'var(--color-celsius-900)' }}>{d.intensityPerRevenue}</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--color-texte-secondary)' }}>tCO₂e / k€ CA</p>
-        </div>
+        <BenchCard
+          label="Par collaborateur"
+          value={`${d.intensityPerEmployee} tCO₂e`}
+          sector={`${d.sectorAvgIntensity} tCO₂e`}
+          isBetter={d.intensityPerEmployee < d.sectorAvgIntensity}
+        />
+        <BenchCard
+          label="Par k€ de CA"
+          value={`${d.intensityPerRevenue} tCO₂e`}
+          sector={`${d.sectorAverageRevenue} tCO₂e`}
+          isBetter={d.intensityPerRevenue < d.sectorAverageRevenue}
+        />
       </div>
 
-      {/* Sector benchmark */}
-      <div
-        className="rounded-xl p-6 mb-6"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
-      >
-        <h3 className="text-base font-bold mb-4">Positionnement sectoriel</h3>
-        <p className="text-xs mb-3" style={{ color: 'var(--color-texte-secondary)' }}>
-          Intensité carbone par collaborateur (tCO₂e/salarié)
-        </p>
-        <div className="relative h-6 rounded-full" style={{ backgroundColor: 'var(--color-gris-200)' }}>
-          {/* Sector avg marker */}
-          <div
-            className="absolute top-0 h-full border-r-2 border-dashed z-10"
-            style={{ left: `${sectorAvgPos}%`, borderColor: 'var(--color-gris-400)' }}
-          />
-          <div
-            className="absolute -top-5 text-xs font-medium"
-            style={{ left: `${sectorAvgPos}%`, transform: 'translateX(-50%)', color: 'var(--color-gris-400)' }}
-          >
-            Moy. secteur
-          </div>
-          {/* Client position */}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-3 z-20"
-            style={{
-              left: `${sectorPos}%`,
-              transform: 'translate(-50%, -50%)',
-              backgroundColor: sectorPos > sectorAvgPos ? '#B87333' : '#1B4332',
-              borderColor: 'white',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-            }}
-          />
-        </div>
-        <div className="flex justify-between mt-2">
-          <span className="text-xs" style={{ color: 'var(--color-gris-400)' }}>0</span>
-          <span className="text-xs" style={{ color: 'var(--color-gris-400)' }}>
-            {Math.round(d.sectorAvgIntensity * 1.8)} tCO₂e/sal.
-          </span>
-        </div>
-        <p className="text-xs mt-3 font-medium" style={{ color: sectorPos > sectorAvgPos ? '#B87333' : '#1B4332' }}>
-          {sectorPos > sectorAvgPos
-            ? `Au-dessus de la moyenne sectorielle (${d.sectorAvgIntensity} tCO₂e/sal.)`
-            : `En dessous de la moyenne sectorielle (${d.sectorAvgIntensity} tCO₂e/sal.)`
-          }
-        </p>
-      </div>
-
-      {/* Trajectory */}
+      {/* Trajectory chart */}
       <div
         className="rounded-xl p-6"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
+        style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
       >
-        <h3 className="text-base font-bold mb-4">Trajectoire implicite</h3>
-        <div className="h-64">
+        <h3
+          className="mb-4"
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '1rem', color: '#2A2A28' }}
+        >
+          Trajectoire implicite
+        </h3>
+        <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trajectoryData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-light)" />
-              <XAxis dataKey="year" tick={{ fontSize: 11, fill: 'var(--color-gris-400)' }} />
-              <YAxis tick={{ fontSize: 11, fill: 'var(--color-gris-400)' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#EDEAE3" />
+              <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#B0AB9F' }} />
+              <YAxis tick={{ fontSize: 11, fill: '#B0AB9F' }} />
               <Tooltip
                 formatter={(v: any) => `${Number(v).toLocaleString('fr-FR')} tCO₂e`}
-                contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid var(--color-border)' }}
+                contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid #EDEAE3' }}
               />
-              <Legend wrapperStyle={{ fontSize: '12px' }} />
+              <Legend wrapperStyle={{ fontSize: '11px' }} />
               <Line type="monotone" dataKey="Tendance actuelle" stroke="#DC4A4A" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="6 3" />
               <Line type="monotone" dataKey="Trajectoire Paris" stroke="#1B4332" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
@@ -195,47 +140,66 @@ function StateA() {
   )
 }
 
-// ── STATE B: No carbon footprint ─────────────────────────
-function StateB() {
+function BenchCard({ label, value, sector, isBetter }: { label: string; value: string; sector: string; isBetter: boolean }) {
+  return (
+    <div
+      className="rounded-xl p-5"
+      style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#B0AB9F', letterSpacing: '0.05em' }}>
+        {label}
+      </p>
+      <p style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '1.5rem', color: '#1B4332' }}>
+        {value}
+      </p>
+      <div className="flex items-center gap-1.5 mt-2">
+        <TrendingDown size={14} color={isBetter ? '#1B4332' : '#DC4A4A'} />
+        <p className="text-xs" style={{ color: isBetter ? '#1B4332' : '#DC4A4A' }}>
+          {isBetter ? 'Mieux que' : 'Au-dessus de'} la moyenne sectorielle ({sector})
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function WithoutFootprint() {
   const categories = MOCK_FOOTPRINT.estimatedCategories
   const maxVal = Math.max(...categories.map(c => c.value))
 
   return (
     <>
       <div
-        className="rounded-xl p-6 mb-6 border-l-4"
-        style={{
-          backgroundColor: 'var(--color-accent-warm-light)',
-          borderLeftColor: 'var(--color-accent-warm)',
-        }}
+        className="rounded-xl p-5 mb-6"
+        style={{ backgroundColor: '#F5EDE4', borderLeft: '3px solid #B87333' }}
       >
-        <p className="text-sm leading-relaxed">
-          Vous n'avez pas encore réalisé de Bilan Carbone. Voici une <strong>estimation de votre profil d'émissions</strong> basée sur votre secteur et votre taille.
+        <p className="text-sm leading-relaxed" style={{ color: '#2A2A28' }}>
+          Vous n'avez pas encore réalisé de Bilan Carbone. Voici une <strong>estimation</strong> basée sur votre secteur et votre taille.
         </p>
       </div>
 
       <div
         className="rounded-xl p-6 mb-6"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
+        style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
       >
-        <h3 className="text-base font-bold mb-5">Profil estimé des émissions</h3>
+        <h3
+          className="mb-5"
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '1rem', color: '#2A2A28' }}
+        >
+          Profil estimé des émissions
+        </h3>
         <div className="space-y-3">
           {categories.map(cat => (
             <div key={cat.label}>
               <div className="flex justify-between mb-1">
-                <span className="text-xs font-medium">{cat.label}</span>
-                <span className="text-xs font-bold" style={{ color: 'var(--color-celsius-900)' }}>
+                <span className="text-xs">{cat.label}</span>
+                <span className="text-xs font-semibold" style={{ color: '#1B4332' }}>
                   {cat.value.toLocaleString('fr-FR')} tCO₂e
                 </span>
               </div>
-              <div className="h-3 rounded-full" style={{ backgroundColor: 'var(--color-gris-200)' }}>
+              <div className="h-2.5 rounded-full" style={{ backgroundColor: '#EDEAE3' }}>
                 <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${(cat.value / maxVal) * 100}%`,
-                    backgroundColor: 'var(--color-celsius-900)',
-                    opacity: 0.6 + (cat.value / maxVal) * 0.4,
-                  }}
+                  className="h-full rounded-full"
+                  style={{ width: `${(cat.value / maxVal) * 100}%`, backgroundColor: '#1B4332', opacity: 0.6 + (cat.value / maxVal) * 0.4 }}
                 />
               </div>
             </div>
@@ -248,7 +212,7 @@ function StateB() {
         target="_blank"
         rel="noopener noreferrer"
         className="w-full py-3.5 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-        style={{ backgroundColor: 'var(--color-corail-500)', boxShadow: 'var(--shadow-card)' }}
+        style={{ backgroundColor: '#B87333' }}
       >
         Réaliser votre Bilan Carbone avec Celsius <ExternalLink size={16} />
       </a>

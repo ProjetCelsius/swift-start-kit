@@ -1,146 +1,131 @@
+import { AlertTriangle, Quote } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from 'recharts'
-import {
-  PERCEPTION_LABELS, MOCK_PERCEPTION_GAPS,
-  MOCK_POPULATION_COMPARISON, MOCK_DG_COMPARISON,
-} from '@/data/mockDiagnosticData'
+import { mockDiagnostic } from '@/data/mockDiagnosticData'
 import { POPULATION_PROFILES } from '@/data/bloc4Data'
+import SectionLayout from '@/components/diagnostic/SectionLayout'
 
 const PROFILE_COLORS = POPULATION_PROFILES.map(p => p.color)
-
-function gapSeverityColor(gap: number) {
-  if (gap > 2) return '#DC4A4A'
-  if (gap >= 1) return '#B87333'
-  return '#1B4332'
+const SENTIMENT_STYLE: Record<string, { border: string }> = {
+  positive: { border: '#1B4332' },
+  neutral: { border: '#B0AB9F' },
+  critical: { border: '#DC4A4A' },
 }
 
 export default function DiagnosticSection4() {
-  const { rseScores, rsePredictions, employeeScores } = MOCK_PERCEPTION_GAPS
+  const { perceptionData, populationEstimated, populationReal, verbatims } = mockDiagnostic.section4
 
-  // Bar chart data
-  const barData = PERCEPTION_LABELS.map((label, i) => ({
-    name: `P${i + 1}`,
-    fullLabel: label,
-    RSE: rseScores[i],
-    Prédiction: rsePredictions[i],
-    Collaborateurs: employeeScores[i],
+  // Find biggest gap
+  const sorted = [...perceptionData].sort((a, b) => Math.abs(b.rse - b.terrain) - Math.abs(a.rse - a.terrain))
+  const biggest = sorted[0]
+  const biggestGap = Math.abs(biggest.rse - biggest.terrain).toFixed(1)
+
+  // Horizontal bar data
+  const barData = perceptionData.map(d => ({
+    name: d.label,
+    'Votre perception': d.rse,
+    'Votre prédiction': d.prediction,
+    'Vos équipes': d.terrain,
+    gap: Math.abs(d.rse - d.terrain),
   }))
 
-  // Top 3 gaps (RSE vs Employee)
-  const gaps = PERCEPTION_LABELS.map((label, i) => ({
-    label,
-    index: i,
-    rse: rseScores[i],
-    pred: rsePredictions[i],
-    emp: employeeScores[i],
-    gap: Math.abs(rseScores[i] - employeeScores[i]),
-  }))
-    .sort((a, b) => b.gap - a.gap)
-    .slice(0, 3)
-
-  // Population data
-  const { rseEstimate, employeeReal } = MOCK_POPULATION_COMPARISON
-  const estData = POPULATION_PROFILES.map((p, i) => ({ name: p.label, value: rseEstimate[i] }))
-  const realData = POPULATION_PROFILES.map((p, i) => ({ name: p.label, value: employeeReal[i] }))
-
-  // Find biggest population discrepancy
-  const popGaps = POPULATION_PROFILES.map((p, i) => ({
-    label: p.label,
-    diff: Math.abs(rseEstimate[i] - employeeReal[i]),
-    est: rseEstimate[i],
-    real: employeeReal[i],
-  })).sort((a, b) => b.diff - a.diff)
+  // Population donut data
+  const labels = POPULATION_PROFILES.map(p => p.label)
+  const estValues = [populationEstimated.moteurs, populationEstimated.engages, populationEstimated.indifferents, populationEstimated.sceptiques, populationEstimated.refractaires]
+  const realValues = [populationReal.moteurs, populationReal.engages, populationReal.indifferents, populationReal.sceptiques, populationReal.refractaires]
+  const estData = labels.map((l, i) => ({ name: l, value: estValues[i] }))
+  const realData = labels.map((l, i) => ({ name: l, value: realValues[i] }))
 
   return (
-    <div className="max-w-[720px]">
-      <h2
-        className="text-sm font-semibold uppercase tracking-wider mb-8"
-        style={{ color: 'var(--color-celsius-900)', letterSpacing: '0.05em' }}
+    <SectionLayout sectionNumber={4}>
+      {/* Triple regard explanation */}
+      <div
+        className="rounded-xl p-5 mb-8"
+        style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
       >
-        Écarts de perception
-      </h2>
+        <h3
+          className="mb-3"
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '1rem', color: '#2A2A28' }}
+        >
+          Le triple regard
+        </h3>
+        <div className="flex flex-wrap gap-4 mb-3">
+          {[
+            { color: '#1B4332', label: 'Ce que vous pensez', sub: 'Perception RSE' },
+            { color: '#B87333', label: 'Ce que vous prédisez', sub: 'Prédiction RSE' },
+            { color: '#E8734A', label: "Ce que vos équipes disent", sub: 'Sondage terrain' },
+          ].map(d => (
+            <div key={d.label} className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
+              <div>
+                <p className="text-xs font-semibold" style={{ color: '#2A2A28' }}>{d.label}</p>
+                <p className="text-[10px]" style={{ color: '#B0AB9F' }}>{d.sub}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs leading-relaxed" style={{ color: '#7A766D' }}>
+          Nous comparons 3 regards : votre évaluation, ce que vous imaginiez que vos équipes répondraient, et ce qu'elles ont réellement dit.
+        </p>
+      </div>
 
-      {/* Main bar chart */}
+      {/* Horizontal bar chart */}
       <div
         className="rounded-xl p-6 mb-6"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
+        style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
       >
-        <h3 className="text-base font-bold mb-4">Triple comparaison : RSE × Prédiction × Collaborateurs</h3>
-        <div className="h-80">
+        <div className="h-[360px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={barData} barGap={2} barCategoryGap="20%">
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--color-texte)' }} />
-              <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: 'var(--color-gris-400)' }} />
+            <BarChart data={barData} layout="vertical" barGap={2} barSize={8} margin={{ left: 20 }}>
+              <XAxis type="number" domain={[0, 10]} tick={{ fontSize: 10, fill: '#B0AB9F' }} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#2A2A28' }} width={130} />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                }}
-                formatter={(value: any, name: any) => [`${Number(value).toFixed(1)}/10`, String(name)]}
-                labelFormatter={(label: any) => {
-                  const idx = parseInt(String(label).replace('P', '')) - 1
-                  return PERCEPTION_LABELS[idx] || String(label)
-                }}
+                contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid #EDEAE3' }}
+                formatter={(v: any, name: any) => [`${Number(v).toFixed(1)}/10`, String(name)]}
               />
-              <Legend
-                wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
-              />
-              <Bar dataKey="RSE" fill="#1B4332" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Prédiction" fill="#B87333" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Collaborateurs" fill="#93C5A0" radius={[4, 4, 0, 0]} />
+              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+              <Bar dataKey="Votre perception" fill="#1B4332" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="Votre prédiction" fill="#B87333" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="Vos équipes" fill="#E8734A" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Top 3 gaps */}
-      <div className="space-y-3 mb-8">
-        {gaps.map((g, i) => (
-          <div
-            key={i}
-            className="rounded-xl p-5 border-l-4"
-            style={{
-              backgroundColor: 'var(--color-blanc)',
-              boxShadow: 'var(--shadow-card)',
-              borderLeftColor: gapSeverityColor(g.gap),
-            }}
-          >
-            <p className="text-sm font-semibold mb-2">{g.label}</p>
-            <div className="flex gap-4 mb-2">
-                 <span className="flex items-center gap-1.5 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: '#1B4332' }} />
-                RSE : {g.rse.toFixed(1)}
-              </span>
-              <span className="flex items-center gap-1.5 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: '#B87333' }} />
-                Prédiction : {g.pred.toFixed(1)}
-              </span>
-              <span className="flex items-center gap-1.5 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: '#93C5A0' }} />
-                Collaborateurs : {g.emp.toFixed(1)}
-              </span>
-            </div>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-texte-secondary)' }}>
-              Écart de {g.gap.toFixed(1)} points : vous estimez {g.rse.toFixed(1)}/10, vos équipes répondent {g.emp.toFixed(1)}/10.
-            </p>
-          </div>
-        ))}
+      {/* Biggest gap callout */}
+      <div
+        className="rounded-xl p-5 mb-6 flex items-start gap-3"
+        style={{ backgroundColor: '#FEF2F2', borderLeft: '3px solid #DC4A4A' }}
+      >
+        <AlertTriangle size={20} color="#DC4A4A" className="shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-bold mb-1" style={{ color: '#DC4A4A' }}>
+            Plus grand écart : « {biggest.label} »
+          </p>
+          <p className="text-sm leading-relaxed" style={{ color: '#2A2A28' }}>
+            Écart de {biggestGap} points — vous estimez {biggest.rse.toFixed(1)}/10, vos équipes répondent {biggest.terrain.toFixed(1)}/10.
+            {biggest.label === 'Objectifs clairs' && " Vous pensez que vos objectifs sont clairs. Vos équipes ne les voient pas."}
+          </p>
+        </div>
       </div>
 
-      {/* Population map */}
+      {/* Population distribution */}
       <div
         className="rounded-xl p-6 mb-6"
-        style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
+        style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
       >
-        <h3 className="text-base font-bold mb-5">Carte de population : estimation vs réalité</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <h3
+          className="mb-5"
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '1rem', color: '#2A2A28' }}
+        >
+          Répartition de vos équipes
+        </h3>
+        <div className="grid grid-cols-2 gap-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-center mb-2" style={{ color: 'var(--color-texte-secondary)', letterSpacing: '0.05em' }}>
-              Votre estimation
+            <p className="text-xs font-semibold uppercase tracking-wider text-center mb-3" style={{ color: '#7A766D', letterSpacing: '0.05em' }}>
+              Ce que vous estimiez
             </p>
             <div className="h-44">
               <ResponsiveContainer width="100%" height="100%">
@@ -154,8 +139,8 @@ export default function DiagnosticSection4() {
             </div>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-center mb-2" style={{ color: 'var(--color-texte-secondary)', letterSpacing: '0.05em' }}>
-              Auto-déclaration
+            <p className="text-xs font-semibold uppercase tracking-wider text-center mb-3" style={{ color: '#7A766D', letterSpacing: '0.05em' }}>
+              La réalité mesurée
             </p>
             <div className="h-44">
               <ResponsiveContainer width="100%" height="100%">
@@ -171,61 +156,54 @@ export default function DiagnosticSection4() {
         </div>
         {/* Legend */}
         <div className="flex flex-wrap justify-center gap-3 mt-3">
-          {POPULATION_PROFILES.map((p, i) => (
-            <span key={i} className="flex items-center gap-1 text-xs">
-              <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: p.color }} />
+          {POPULATION_PROFILES.map(p => (
+            <span key={p.id} className="flex items-center gap-1.5 text-xs">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
               {p.label}
             </span>
           ))}
         </div>
-        {popGaps[0] && (
-          <p className="text-xs mt-4 text-center leading-relaxed" style={{ color: 'var(--color-texte-secondary)' }}>
-            Plus grand écart : <strong>{popGaps[0].label}</strong> — vous estimez {popGaps[0].est}%, réalité {popGaps[0].real}% ({popGaps[0].diff > 0 ? '+' : ''}{popGaps[0].real - popGaps[0].est} points).
+        {/* Shift summary */}
+        <div className="mt-4 p-3 rounded-lg text-center" style={{ backgroundColor: '#F7F5F0' }}>
+          <p className="text-xs" style={{ color: '#7A766D' }}>
+            Vous estimiez <strong>{populationEstimated.engages + populationEstimated.moteurs}%</strong> d'engagés/moteurs.
+            Réalité : <strong>{populationReal.engages + populationReal.moteurs}%</strong>.
+            Écart de <strong style={{ color: '#DC4A4A' }}>{(populationEstimated.engages + populationEstimated.moteurs) - (populationReal.engages + populationReal.moteurs)} points</strong>.
           </p>
-        )}
+        </div>
       </div>
 
-      {/* DG comparison */}
-      {MOCK_DG_COMPARISON.hasResponded && (
-        <div
-          className="rounded-xl p-6"
-          style={{ backgroundColor: 'var(--color-blanc)', boxShadow: 'var(--shadow-card)' }}
+      {/* Verbatims */}
+      <div
+        className="rounded-xl p-6"
+        style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
+      >
+        <h3
+          className="mb-4"
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '1rem', color: '#2A2A28' }}
         >
-          <h3 className="text-base font-bold mb-4">Regard croisé RSE / Direction</h3>
-          <div className="space-y-3">
-            <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-fond)' }}>
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-texte-secondary)', letterSpacing: '0.05em' }}>
-                Budget climat
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs" style={{ color: 'var(--color-gris-400)' }}>Direction déclare</p>
-                  <p className="text-sm font-semibold">{MOCK_DG_COMPARISON.budgetDeclared}</p>
-                </div>
-                <div>
-                  <p className="text-xs" style={{ color: 'var(--color-gris-400)' }}>RSE perçoit</p>
-                  <p className="text-sm font-semibold">{MOCK_DG_COMPARISON.budgetPerceived}</p>
-                </div>
+          Paroles d'équipes
+        </h3>
+        <div className="space-y-3">
+          {verbatims.map((v, i) => (
+            <div
+              key={i}
+              className="rounded-lg p-4 flex items-start gap-3"
+              style={{ backgroundColor: '#F7F5F0', borderLeft: `3px solid ${SENTIMENT_STYLE[v.sentiment].border}` }}
+            >
+              <Quote size={14} color="#B0AB9F" className="shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm leading-relaxed italic" style={{ color: '#2A2A28' }}>
+                  « {v.text} »
+                </p>
+                <p className="text-[10px] mt-1.5 font-semibold" style={{ color: '#B0AB9F' }}>
+                  — {v.department}
+                </p>
               </div>
             </div>
-            <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-fond)' }}>
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-texte-secondary)', letterSpacing: '0.05em' }}>
-                Adéquation des moyens
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs" style={{ color: 'var(--color-gris-400)' }}>Direction (DG5)</p>
-                  <p className="text-sm font-bold" style={{ color: '#1B4332' }}>{MOCK_DG_COMPARISON.dgMeansScore}/10</p>
-                </div>
-                <div>
-                  <p className="text-xs" style={{ color: 'var(--color-gris-400)' }}>RSE (P2)</p>
-                  <p className="text-sm font-bold" style={{ color: '#B87333' }}>{MOCK_DG_COMPARISON.rseMeansScore}/10</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
-      )}
-    </div>
+      </div>
+    </SectionLayout>
   )
 }

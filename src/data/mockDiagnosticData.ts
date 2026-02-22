@@ -20,14 +20,19 @@ export const mockDiagnostic = {
       "Le point d'alerte principal concerne l'écart entre votre perception et celle de vos équipes. Vous estimiez que 60% de vos collaborateurs étaient engagés ou moteurs. La réalité mesurée est de 38%. Ce n'est pas un problème d'adhésion — la plupart ne sont pas opposés. C'est un problème de communication et de traduction concrète : vos équipes ne savent pas quoi faire de leur bonne volonté.",
       "La bonne nouvelle : votre scope 3 est déjà cartographié, votre trajectoire est amorcée, et la CSRD vous pousse dans la bonne direction. Vous avez 18 mois pour transformer cette conformité subie en avantage concurrentiel. Les 3 priorités qui suivent sont conçues pour ça."
     ],
+    keyTakeaways: [
+      "Structurer la gouvernance climat avec un reporting trimestriel au COMEX",
+      "Combler l'écart de perception via un programme managers ciblé",
+      "Lancer la trajectoire SBTi avant l'obligation CSRD pour 12 mois d'avance"
+    ],
     date: "15 février 2026"
   },
 
   section2: {
     priorities: [
-      { title: "Structurer la gouvernance climat avec un reporting trimestriel au COMEX", why: "Votre DG alloue du budget mais ne voit pas les résultats. Un tableau de bord trimestriel crée la boucle de feedback nécessaire.", effort: "Rapide" as const, budget: "~5k" },
-      { title: "Déployer un programme de sensibilisation ciblé managers", why: "L'écart de perception vient du middle management. Les managers sont le goulot d'étranglement entre la stratégie et le terrain.", effort: "Projet" as const, budget: "15-25k" },
-      { title: "Lancer la trajectoire SBTi avant l'obligation CSRD", why: "Vous avez les données. Formaliser maintenant vous donne 12 mois d'avance sur vos concurrents et crédibilise votre démarche.", effort: "Projet" as const, budget: "20-40k" }
+      { title: "Structurer la gouvernance climat avec un reporting trimestriel au COMEX", why: "Votre DG alloue du budget mais ne voit pas les résultats. Un tableau de bord trimestriel crée la boucle de feedback nécessaire.", effort: "Rapide" as const, budget: "~5k€", impactX: 20, impactY: 85 },
+      { title: "Déployer un programme de sensibilisation ciblé managers", why: "L'écart de perception vient du middle management. Les managers sont le goulot d'étranglement entre la stratégie et le terrain.", effort: "Projet" as const, budget: "15-25k€", impactX: 50, impactY: 80 },
+      { title: "Lancer la trajectoire SBTi avant l'obligation CSRD", why: "Vous avez les données. Formaliser maintenant vous donne 12 mois d'avance sur vos concurrents et crédibilise votre démarche.", effort: "Projet" as const, budget: "20-40k€", impactX: 75, impactY: 90 }
     ],
     antiRecommendation: "Ne lancez pas de certification B Corp à ce stade. Le coût (50-80k) et l'effort ne sont pas justifiés par votre positionnement marché B2B. Concentrez ces ressources sur la trajectoire SBTi qui a un impact business direct."
   },
@@ -40,7 +45,13 @@ export const mockDiagnostic = {
       { name: "Mesure et données", score: 67, grade: "B" },
       { name: "Stratégie et trajectoire", score: 53, grade: "B" },
       { name: "Culture et engagement", score: 47, grade: "C" }
-    ]
+    ],
+    sectorAverages: {
+      'Gouvernance climat': 65,
+      'Mesure et données': 58,
+      'Stratégie et trajectoire': 50,
+      'Culture et engagement': 55,
+    }
   },
 
   section4: {
@@ -55,13 +66,25 @@ export const mockDiagnostic = {
       { label: "Communication honnête", rse: 7.2, prediction: 5.0, terrain: 4.1 }
     ],
     populationEstimated: { moteurs: 15, engages: 45, indifferents: 25, sceptiques: 10, refractaires: 5 },
-    populationReal: { moteurs: 12, engages: 26, indifferents: 38, sceptiques: 18, refractaires: 6 }
+    populationReal: { moteurs: 12, engages: 26, indifferents: 38, sceptiques: 18, refractaires: 6 },
+    verbatims: [
+      { text: "On nous demande de trier nos déchets mais les vrais enjeux sont dans l'approvisionnement, pas dans nos poubelles.", department: "Production", sentiment: 'critical' as const },
+      { text: "La direction a pris le sujet au sérieux avec le bilan carbone, c'est un bon signal.", department: "Finance", sentiment: 'positive' as const },
+      { text: "Je ne sais pas vraiment ce qu'on attend de moi concrètement sur ces sujets.", department: "Commercial", sentiment: 'neutral' as const },
+      { text: "Les objectifs existent mais personne ne nous les a jamais présentés clairement.", department: "RH", sentiment: 'critical' as const },
+      { text: "Mon manager n'en parle jamais, donc ça ne peut pas être si important.", department: "Logistique", sentiment: 'neutral' as const },
+    ]
   },
 
   section5: {
     currentFTE: 0.5,
     recommendedFTE: 2.0,
-    analysisText: "Avec 800 collaborateurs et un scope 3 significatif, votre démarche nécessite au minimum 1.5 à 2 ETP dédiés. Actuellement, votre responsable RSE y consacre environ 50% de son temps, le reste étant absorbé par la qualité et la conformité réglementaire."
+    analysisText: "Avec 800 collaborateurs et un scope 3 significatif, votre démarche nécessite au minimum 1.5 à 2 ETP dédiés. Actuellement, votre responsable RSE y consacre environ 50% de son temps, le reste étant absorbé par la qualité et la conformité réglementaire.",
+    recommendations: [
+      "Recruter un(e) chargé(e) de mission climat à temps plein (coût estimé : 45-55k€/an)",
+      "Formaliser le temps RSE dans la fiche de poste du/de la responsable actuel(le)",
+      "Identifier des relais dans chaque direction métier (réseau d'ambassadeurs)"
+    ]
   },
 
   section6: {
