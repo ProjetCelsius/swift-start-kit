@@ -29,14 +29,14 @@ export const STATUS_CONFIG: Record<DiagnosticStatus, { label: string; color: str
   delivered: { label: 'Terminé', color: '#7A766D', bg: '#F0EDE6' },
 }
 
-export const MOCK_ANALYSTS = ['Claire Lefèvre', 'Thomas Moreau', 'Julie Dupont']
+export const MOCK_ANALYSTS = ['Guillaume Pakula', 'Thomas Moreau', 'Julie Dupont']
 
 export const MOCK_DIAGNOSTICS: AdminDiagnostic[] = [
   {
     id: 'diag-001',
     company: 'TechVert Solutions',
     contactEmail: 'rse@techvert.fr',
-    analyst: 'Claire Lefèvre',
+    analyst: 'Guillaume Pakula',
     status: 'analysis',
     sector: 'Numérique',
     headcount: '251-500',
@@ -64,7 +64,7 @@ export const MOCK_DIAGNOSTICS: AdminDiagnostic[] = [
     id: 'diag-002',
     company: 'Maison Durable SAS',
     contactEmail: 'direction@maisondurable.fr',
-    analyst: 'Claire Lefèvre',
+    analyst: 'Guillaume Pakula',
     status: 'delivered',
     sector: 'Construction',
     headcount: '51-250',
