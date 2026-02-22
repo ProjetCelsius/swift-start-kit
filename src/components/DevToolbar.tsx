@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useDemo } from '@/hooks/useDemo'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ChevronUp, ChevronDown } from 'lucide-react'
+import { ChevronUp, ChevronDown, Unlock } from 'lucide-react'
+import { useDiagnosticReading } from '@/hooks/useDiagnosticReading'
 import type { DemoStatus, DemoRole } from '@/data/demoData'
 
 const STATUS_OPTIONS: { value: DemoStatus; label: string }[] = [
@@ -24,6 +25,7 @@ export default function DevToolbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const [expanded, setExpanded] = useState(false)
+  const { unlockAll } = useDiagnosticReading()
 
   if (!demo.enabled) {
     return (
@@ -124,6 +126,16 @@ export default function DevToolbar() {
           ))}
         </select>
 
+        {/* Unlock all sections button */}
+        <button
+          onClick={unlockAll}
+          className="text-[9px] font-medium px-2 py-0.5 rounded transition-colors flex items-center gap-1"
+          style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
+          title="Débloquer toutes les sections du diagnostic"
+        >
+          <Unlock size={10} /> Débloquer sections
+        </button>
+
         {/* Current info */}
         <div className="flex-1 text-right">
           <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -149,6 +161,7 @@ export default function DevToolbar() {
               <div className="flex flex-wrap gap-1">
                 {[
                   { label: 'Dashboard', path: '/client/dashboard' },
+                  { label: 'Synthèse', path: '/client/synthesis' },
                   { label: 'Bloc 1', path: '/client/questionnaire/bloc1' },
                   { label: 'Bloc 2', path: '/client/questionnaire/bloc2' },
                   { label: 'Bloc 3', path: '/client/questionnaire/bloc3' },

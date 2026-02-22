@@ -296,7 +296,7 @@ export default function ClientHomeDashboard() {
                       3: '/client/perception',
                       4: '/client/documents',
                       5: '/client/dashboard',
-                      6: '/client/diagnostic/1',
+                      6: '/client/synthesis',
                     }
                     navigate(routes[step.num] || '/client/dashboard')
                   }}
@@ -361,7 +361,7 @@ export default function ClientHomeDashboard() {
                 9 sections d'analyse personnalisées vous attendent.
               </p>
               <button
-                onClick={() => navigate('/client/diagnostic')}
+                onClick={() => navigate('/client/synthesis')}
                 style={{
                   padding: '11px 24px', borderRadius: 8, backgroundColor: '#1B4332', color: '#fff',
                   fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.85rem',

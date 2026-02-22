@@ -1,7 +1,8 @@
 // Placeholder pages — will be fleshed out in subsequent commits
 
 import { useParams } from 'react-router-dom'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
+import { useDiagnosticReading } from '@/hooks/useDiagnosticReading'
 
 const sectionComponents: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
   '1': lazy(() => import('./diagnostic/DiagnosticSection1')),
@@ -40,7 +41,33 @@ export function SondagePage() {
 
 export function DiagnosticSectionPage() {
   const { sectionId } = useParams<{ sectionId: string }>()
+  const { progress, markAsRead } = useDiagnosticReading()
   const Section = sectionId ? sectionComponents[sectionId] : null
+  const state = sectionId ? progress[sectionId] : undefined
+
+  // Auto-mark as read after 3 seconds
+  useEffect(() => {
+    if (!sectionId || state === 'lu' || state === 'locked') return
+    const timer = setTimeout(() => {
+      markAsRead(sectionId)
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [sectionId, state, markAsRead])
+
+  // If locked, show locked message
+  if (state === 'locked') {
+    return (
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <span className="text-2xl">🔒</span>
+          <h1 className="text-2xl font-bold">Section verrouillée</h1>
+        </div>
+        <p style={{ color: 'var(--color-texte-secondary)' }}>
+          Lisez les sections précédentes pour débloquer celle-ci.
+        </p>
+      </div>
+    )
+  }
 
   if (!Section) {
     return (
