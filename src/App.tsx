@@ -5,6 +5,7 @@ import DevToolbar from './components/DevToolbar'
 import ClientLayout from './components/layout/ClientLayout'
 import Login from './pages/Login'
 import ClientHomeDashboard from './pages/client/ClientHomeDashboard'
+import DocumentsPage from './pages/client/DocumentsPage'
 import QuestionnaireBloc1 from './pages/client/QuestionnaireBloc1'
 import QuestionnaireBloc2 from './pages/client/QuestionnaireBloc2'
 import QuestionnaireBloc3 from './pages/client/QuestionnaireBloc3'
@@ -78,6 +79,8 @@ function AppRoutes() {
           <Route path="/client/attente" element={<AttentePage />} />
           <Route path="/client/entretiens" element={<EntretiensPage />} />
           <Route path="/client/questionnaire-rse" element={<QuestionnaireRsePage />} />
+          <Route path="/client/perception" element={<QuestionnaireBloc4 />} />
+          <Route path="/client/documents" element={<DocumentsPage />} />
           <Route path="/client/diagnostic" element={<DiagnosticPage />} />
           <Route path="/client/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
           <Route path="/client/journal" element={<JournalPage />} />

@@ -11,6 +11,7 @@ import {
   Download,
   LogOut,
   LayoutGrid,
+  FolderOpen,
 } from 'lucide-react'
 import celsiusLogo from '@/assets/celsius-logo.svg'
 import clientAvatar from '@/assets/client-avatar.jpg'
@@ -22,7 +23,7 @@ import HelpPanel from '../questionnaire/HelpPanel'
 import { MonComptePanel, ChangePasswordPanel, ExportDataPanel, AideSupportPanel } from './AccountPanels'
 
 // ── Types ──────────────────────────────
-type StepStatus = 'done' | 'current' | 'parallel' | 'upcoming'
+type StepStatus = 'done' | 'current' | 'parallel' | 'upcoming' | 'optional'
 
 interface JourneyStep {
   id: string
@@ -31,6 +32,7 @@ interface JourneyStep {
   status: StepStatus
   meta: string
   subItems?: SubItem[]
+  dashed?: boolean // dashed connector
 }
 
 interface SubItem {
@@ -58,107 +60,126 @@ import type { DemoStatus } from '@/data/demoData'
 function deriveSteps(demoStatus: DemoStatus | undefined, analyst: { first_name: string }): JourneyStep[] {
   const s = demoStatus || 'questionnaire'
 
-  const configs: Record<string, { steps: Omit<JourneyStep, 'subItems'>[] }> = {
-    onboarding: {
-      steps: [
-        { id: 'appel', num: 1, label: 'Appel de lancement', status: 'current', meta: 'À planifier' },
-        { id: 'questionnaire', num: 2, label: 'Questionnaire', status: 'upcoming', meta: '' },
-        { id: 'sondage', num: 3, label: 'Sondages', status: 'upcoming', meta: '' },
-        { id: 'analyse', num: 4, label: 'Analyse', status: 'upcoming', meta: '' },
-        { id: 'restitution', num: 5, label: 'Restitution', status: 'upcoming', meta: 'Verrouillé' },
-      ],
-    },
-    questionnaire: {
-      steps: [
-        { id: 'appel', num: 1, label: 'Appel de lancement', status: 'done', meta: 'Réalisé le 10 fév.' },
-        { id: 'questionnaire', num: 2, label: 'Questionnaire', status: 'current', meta: 'En cours — 2/4 blocs' },
-        { id: 'sondage', num: 3, label: 'Sondages', status: 'parallel', meta: '12/30 — en parallèle' },
-        { id: 'analyse', num: 4, label: 'Analyse', status: 'upcoming', meta: '' },
-        { id: 'restitution', num: 5, label: 'Restitution', status: 'upcoming', meta: 'Verrouillé' },
-      ],
-    },
-    survey_pending: {
-      steps: [
-        { id: 'appel', num: 1, label: 'Appel de lancement', status: 'done', meta: 'Réalisé le 10 fév.' },
-        { id: 'questionnaire', num: 2, label: 'Questionnaire', status: 'current', meta: 'En cours — 3/4 blocs' },
-        { id: 'sondage', num: 3, label: 'Sondages', status: 'parallel', meta: '12/30 — en parallèle' },
-        { id: 'analyse', num: 4, label: 'Analyse', status: 'upcoming', meta: '' },
-        { id: 'restitution', num: 5, label: 'Restitution', status: 'upcoming', meta: 'Verrouillé' },
-      ],
-    },
-    analysis: {
-      steps: [
-        { id: 'appel', num: 1, label: 'Appel de lancement', status: 'done', meta: 'Réalisé' },
-        { id: 'questionnaire', num: 2, label: 'Questionnaire', status: 'done', meta: 'Terminé' },
-        { id: 'sondage', num: 3, label: 'Sondages', status: 'done', meta: '34/30 ✓' },
-        { id: 'analyse', num: 4, label: 'Analyse', status: 'current', meta: 'En cours' },
-        { id: 'restitution', num: 5, label: 'Restitution', status: 'upcoming', meta: 'Bientôt' },
-      ],
-    },
-    ready_for_restitution: {
-      steps: [
-        { id: 'appel', num: 1, label: 'Appel de lancement', status: 'done', meta: 'Réalisé' },
-        { id: 'questionnaire', num: 2, label: 'Questionnaire', status: 'done', meta: 'Terminé' },
-        { id: 'sondage', num: 3, label: 'Sondages', status: 'done', meta: '34/30 ✓' },
-        { id: 'analyse', num: 4, label: 'Analyse', status: 'done', meta: 'Terminée' },
-        { id: 'restitution', num: 5, label: 'Restitution', status: 'current', meta: 'À planifier' },
-      ],
-    },
-    delivered: {
-      steps: [
-        { id: 'appel', num: 1, label: 'Appel de lancement', status: 'done', meta: 'Réalisé' },
-        { id: 'questionnaire', num: 2, label: 'Questionnaire', status: 'done', meta: 'Terminé' },
-        { id: 'sondage', num: 3, label: 'Sondages', status: 'done', meta: '34/30 ✓' },
-        { id: 'analyse', num: 4, label: 'Analyse', status: 'done', meta: 'Terminée' },
-        { id: 'restitution', num: 5, label: 'Restitution', status: 'done', meta: 'Fait ✓' },
-      ],
-    },
-  }
-
-  const cfg = configs[s] || configs.questionnaire
-
-  // Sub-items per status
+  // Determine bloc statuses (now 3 blocs for questionnaire)
   const blocStatusMap: Record<string, Record<string, 'done' | 'in_progress' | 'todo'>> = {
-    onboarding: { b1: 'todo', b2: 'todo', b3: 'todo', b4: 'todo' },
-    questionnaire: { b1: 'done', b2: 'done', b3: 'in_progress', b4: 'todo' },
-    survey_pending: { b1: 'done', b2: 'done', b3: 'done', b4: 'in_progress' },
-    analysis: { b1: 'done', b2: 'done', b3: 'done', b4: 'done' },
-    ready_for_restitution: { b1: 'done', b2: 'done', b3: 'done', b4: 'done' },
-    delivered: { b1: 'done', b2: 'done', b3: 'done', b4: 'done' },
+    onboarding: { b1: 'todo', b2: 'todo', b3: 'todo' },
+    questionnaire: { b1: 'done', b2: 'done', b3: 'in_progress' },
+    survey_pending: { b1: 'done', b2: 'done', b3: 'done' },
+    analysis: { b1: 'done', b2: 'done', b3: 'done' },
+    ready_for_restitution: { b1: 'done', b2: 'done', b3: 'done' },
+    delivered: { b1: 'done', b2: 'done', b3: 'done' },
   }
   const bs = blocStatusMap[s] || blocStatusMap.questionnaire
 
-  return cfg.steps.map(step => {
-    let subItems: SubItem[] | undefined
+  // Perception RSE status
+  const perceptionStatus: Record<string, 'done' | 'in_progress' | 'todo'> = {
+    onboarding: 'todo',
+    questionnaire: 'todo',
+    survey_pending: 'in_progress',
+    analysis: 'done',
+    ready_for_restitution: 'done',
+    delivered: 'done',
+  }
 
-    if (step.id === 'questionnaire') {
-      subItems = [
+  const sondageStatus: Record<string, 'done' | 'in_progress' | 'todo'> = {
+    onboarding: 'todo',
+    questionnaire: 'in_progress',
+    survey_pending: 'in_progress',
+    analysis: 'done',
+    ready_for_restitution: 'done',
+    delivered: 'done',
+  }
+
+  const entretienStatus: Record<string, 'done' | 'in_progress' | 'todo'> = {
+    onboarding: 'todo',
+    questionnaire: 'todo',
+    survey_pending: 'todo',
+    analysis: 'done',
+    ready_for_restitution: 'done',
+    delivered: 'done',
+  }
+
+  const doneBlocs = Object.values(bs).filter(v => v === 'done').length
+
+  // Documents count (mock)
+  const docsCount: Record<string, number> = {
+    onboarding: 0, questionnaire: 0, survey_pending: 0,
+    analysis: 3, ready_for_restitution: 3, delivered: 5,
+  }
+
+  const perSt = perceptionStatus[s] || 'todo'
+  const sonSt = sondageStatus[s] || 'todo'
+  const entSt = entretienStatus[s] || 'todo'
+  const sondPerDone = [perSt, sonSt, entSt].filter(v => v === 'done').length
+
+  // Build step configs
+  const isPostAnalysis = s === 'analysis' || s === 'ready_for_restitution' || s === 'delivered'
+  const isPostQuestionnaire = s === 'survey_pending' || isPostAnalysis
+  const allQDone = isPostQuestionnaire
+
+  function questMeta() {
+    if (allQDone) return 'Terminé'
+    return `En cours — ${doneBlocs}/3 blocs`
+  }
+
+  function sondMeta() {
+    if (isPostAnalysis) return `${sondPerDone}/3 ✓`
+    if (s === 'survey_pending' || s === 'questionnaire') return '12/30 — en parallèle'
+    return ''
+  }
+
+  const steps: JourneyStep[] = [
+    {
+      id: 'appel', num: 1, label: 'Appel de lancement',
+      status: s === 'onboarding' ? 'current' : 'done',
+      meta: s === 'onboarding' ? 'À planifier' : 'Réalisé le 10 fév.',
+    },
+    {
+      id: 'questionnaire', num: 2, label: 'Questionnaire',
+      status: allQDone ? 'done' : s === 'onboarding' ? 'upcoming' : 'current',
+      meta: s === 'onboarding' ? '' : questMeta(),
+      subItems: [
         { label: 'Votre démarche', path: '/client/questionnaire/bloc1', status: bs.b1 },
         { label: 'Votre maturité', path: '/client/questionnaire/bloc2', status: bs.b2 },
         { label: 'Vos enjeux', path: '/client/questionnaire/bloc3', status: bs.b3 },
-        { label: 'La perception', path: '/client/questionnaire/bloc4', status: bs.b4 },
-      ]
-    } else if (step.id === 'sondage') {
-      const sondageStatus = (s === 'analysis' || s === 'ready_for_restitution' || s === 'delivered') ? 'done' as const : s === 'survey_pending' || s === 'questionnaire' ? 'in_progress' as const : 'todo' as const
-      const entretienStatus = (s === 'analysis' || s === 'ready_for_restitution' || s === 'delivered') ? 'done' as const : 'todo' as const
-      subItems = [
-        { label: 'Sondage interne', path: '/client/sondage', status: sondageStatus },
-        { label: 'Entretien direction', path: '/client/entretiens', status: entretienStatus },
-      ]
-    } else if (step.id === 'analyse') {
-      subItems = [
-        { label: `${analyst.first_name} travaille sur votre diagnostic`, info: true },
-      ]
-    } else if (step.id === 'restitution') {
-      subItems = DIAG_SECTIONS.map(sec => ({
+      ],
+    },
+    {
+      id: 'sondage', num: 3, label: 'Sondages & Perception',
+      status: isPostAnalysis ? 'done' : (s === 'questionnaire' || s === 'survey_pending') ? 'parallel' : 'upcoming',
+      meta: sondMeta(),
+      subItems: [
+        { label: 'Perception RSE', path: '/client/perception', status: perSt },
+        { label: 'Sondage interne', path: '/client/sondage', status: sonSt },
+        { label: 'Entretien direction', path: '/client/entretiens', status: entSt },
+      ],
+    },
+    {
+      id: 'documents', num: 4, label: 'Documents',
+      status: 'optional' as StepStatus,
+      meta: (docsCount[s] || 0) > 0 ? `${docsCount[s]} fichier${(docsCount[s] || 0) > 1 ? 's' : ''} envoyé${(docsCount[s] || 0) > 1 ? 's' : ''}` : 'À compléter à tout moment',
+      dashed: true,
+      subItems: [],
+    },
+    {
+      id: 'analyse', num: 5, label: 'Analyse',
+      status: s === 'analysis' ? 'current' : isPostAnalysis ? 'done' : 'upcoming',
+      meta: s === 'analysis' ? 'En cours' : (s === 'ready_for_restitution' || s === 'delivered') ? 'Terminée' : '',
+      subItems: s === 'analysis' ? [{ label: `${analyst.first_name} travaille sur votre diagnostic`, info: true }] : undefined,
+    },
+    {
+      id: 'restitution', num: 6, label: 'Restitution',
+      status: s === 'delivered' ? 'done' : s === 'ready_for_restitution' ? 'current' : 'upcoming',
+      meta: s === 'delivered' ? 'Fait ✓' : s === 'ready_for_restitution' ? 'À planifier' : 'Verrouillé',
+      subItems: (s === 'delivered' || s === 'ready_for_restitution') ? DIAG_SECTIONS.map(sec => ({
         label: sec.label,
         path: `/client/diagnostic/${sec.slug}`,
-        status: (step.status === 'done' ? 'done' : 'todo') as 'done' | 'todo',
-      }))
-    }
+        status: (s === 'delivered' ? 'done' : 'todo') as 'done' | 'todo',
+      })) : undefined,
+    },
+  ]
 
-    return { ...step, subItems }
-  })
+  return steps
 }
 
 export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -167,7 +188,6 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
   const analyst = MOCK_ANALYST
   const demo = useDemoIfAvailable()
   const [helpOpen, setHelpOpen] = useState(false)
-  
 
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
   const steps = useMemo(() => deriveSteps(demoStatus, analyst), [demoStatus, analyst])
@@ -255,12 +275,15 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
 
         <div style={{ position: 'relative', paddingLeft: 6 }}>
           {steps.map((step, i) => {
-            const showSubs = step.status === 'done' || step.status === 'current' || step.status === 'parallel'
+            const isOptional = step.status === 'optional'
+            const showSubs = step.status === 'done' || step.status === 'current' || step.status === 'parallel' || isOptional
             const isLast = i === steps.length - 1
 
             // Determine line segment style between this step and next
             const lineSegment = !isLast ? (() => {
               const next = steps[i + 1]
+              // Dashed connectors for Documents step
+              if (step.dashed || next.dashed) return 'dashed'
               if (step.status === 'done' && (next.status === 'done' || next.status === 'current')) return 'done'
               if (next.status === 'parallel') return 'parallel'
               return 'upcoming'
@@ -268,11 +291,11 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
 
             return (
               <div key={step.id} style={{ position: 'relative' }}>
-                {/* Line segment BEHIND circles — centered on 20px circle: left padding 6 + circle start at padding 8px + 10px center = ~16px */}
+                {/* Line segment */}
                 {lineSegment && (
                   <div style={{
                     position: 'absolute',
-                    left: 15.5, // 6px container padding + 8px button padding + 10px (half of 20px circle) - 0.75px (half of 1.5px line)
+                    left: 15.5,
                     top: 30,
                     bottom: -6,
                     width: 1.5,
@@ -280,20 +303,24 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                       lineSegment === 'parallel' ? {
                         backgroundImage: 'repeating-linear-gradient(to bottom, #E5E1D8 0, #E5E1D8 3px, transparent 3px, transparent 6px)',
                       } :
+                      lineSegment === 'dashed' ? {
+                        backgroundImage: 'repeating-linear-gradient(to bottom, #E5E1D8 0, #E5E1D8 4px, transparent 4px, transparent 8px)',
+                      } :
                       { backgroundColor: '#E5E1D8' }),
                   }} />
                 )}
 
-                {/* Step header — clickable for done/current steps */}
+                {/* Step header */}
                 {(() => {
                   const stepRoutes: Record<string, string> = {
                     appel: '/client/questionnaire/bloc1',
                     questionnaire: '/client/questionnaire/bloc1',
-                    sondage: '/client/sondage',
+                    sondage: '/client/perception',
+                    documents: '/client/documents',
                     analyse: '/client/dashboard',
                     restitution: '/client/diagnostic/1',
                   }
-                  const isClickable = step.status === 'done' || step.status === 'current' || step.status === 'parallel'
+                  const isClickable = step.status === 'done' || step.status === 'current' || step.status === 'parallel' || isOptional
                   return (
                     <button
                       onClick={() => {
@@ -312,20 +339,31 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                       onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
                     >
                       {/* Circle */}
-                      <JourneyCircle status={step.status} num={step.num} />
+                      {isOptional ? (
+                        <div style={{
+                          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                          border: '1.5px dashed #EDEAE3',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <FolderOpen size={10} style={{ color: '#B0AB9F' }} />
+                        </div>
+                      ) : (
+                        <JourneyCircle status={step.status} num={step.num} />
+                      )}
 
                       {/* Text */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
                           fontFamily: 'var(--font-sans)', fontSize: '0.76rem',
                           fontWeight: step.status === 'current' || step.status === 'parallel' ? 500 : 400,
-                          color: step.status === 'current' ? '#2A2A28' : step.status === 'parallel' ? '#2A2A28' : step.status === 'done' ? '#7A766D' : '#B0AB9F',
+                          color: isOptional ? '#7A766D' : step.status === 'current' ? '#2A2A28' : step.status === 'parallel' ? '#2A2A28' : step.status === 'done' ? '#7A766D' : '#B0AB9F',
                         }}>
                           {step.label}
                         </div>
                         {step.meta && (
                           <div style={{
                             fontFamily: 'var(--font-sans)', fontSize: '0.6rem',
+                            fontStyle: isOptional ? 'italic' : 'normal',
                             color: step.status === 'current' || step.status === 'parallel' ? '#B87333' : '#B0AB9F',
                           }}>
                             {step.meta}
@@ -336,8 +374,8 @@ export default function ClientSidebar({ onNavigate }: { onNavigate?: () => void 
                   )
                 })()}
 
-                {/* Sub-items — always visible for done/current/parallel, no toggle */}
-                {showSubs && step.subItems && (
+                {/* Sub-items */}
+                {showSubs && step.subItems && step.subItems.length > 0 && (
                   <div style={{ paddingLeft: 34, paddingBottom: 4 }}>
                     {step.subItems.map((sub, si) => {
                       if (sub.info) {

@@ -339,7 +339,7 @@ export default function QuestionnaireBloc3() {
             <ChevronLeft size={16} /> Précédent
           </button>
           <button
-            onClick={() => navigate('/client/questionnaire/bloc4')}
+            onClick={() => navigate('/client/perception')}
             style={{
               flex: 1, padding: '14px 28px', borderRadius: 8,
               backgroundColor: 'var(--color-primary)', color: '#fff',
@@ -350,7 +350,7 @@ export default function QuestionnaireBloc3() {
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-primary)')}
           >
-            Passer au Bloc 4 <ChevronRight size={18} />
+            Continuer vers Sondages & Perception <ChevronRight size={18} />
           </button>
         </div>
       </div>
