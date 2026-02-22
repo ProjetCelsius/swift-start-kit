@@ -5,6 +5,7 @@ import { useDiagnosticReading, type ReadingState } from '@/hooks/useDiagnosticRe
 import { useDemoIfAvailable } from '@/hooks/useDemo'
 import type { DemoStatus } from '@/data/demoData'
 
+
 const d = mockDiagnostic
 
 // ── Helpers ────────────────────────────
@@ -24,11 +25,11 @@ function getPageState(status: DemoStatus | undefined): 'unlocked' | 'analysis' |
 function getCompletedSteps(status: DemoStatus | undefined) {
   const s = status || 'questionnaire'
   const steps = [
-    { label: 'Lancement', done: true },
-    { label: 'Questionnaire', done: s !== 'onboarding' && s !== 'questionnaire' ? true : s === 'questionnaire' ? 'current' : false },
-    { label: 'Sondages', done: ['analysis', 'ready_for_restitution', 'delivered'].includes(s) ? true : s === 'survey_pending' ? 'current' : false },
+    { label: 'Lancement', done: true as boolean | 'current' },
+    { label: 'Questionnaire', done: s !== 'onboarding' && s !== 'questionnaire' ? true : s === 'questionnaire' ? 'current' as const : false },
+    { label: 'Sondages', done: ['analysis', 'ready_for_restitution', 'delivered'].includes(s) ? true : s === 'survey_pending' ? 'current' as const : false },
     { label: 'Documents', done: ['analysis', 'ready_for_restitution', 'delivered'].includes(s) ? true : false },
-    { label: 'Analyse', done: ['ready_for_restitution', 'delivered'].includes(s) ? true : s === 'analysis' ? 'current' : false },
+    { label: 'Analyse', done: ['ready_for_restitution', 'delivered'].includes(s) ? true : s === 'analysis' ? 'current' as const : false },
   ]
   const doneCount = steps.filter(st => st.done === true).length
   return { steps, doneCount }
@@ -42,7 +43,6 @@ function RadarSVG() {
   const cx = w / 2, cy = h / 2 + 5
   const r = 70
 
-  // Diamond orientation: top, right, bottom, left
   const angles = [-90, 0, 90, 180].map(a => (a * Math.PI) / 180)
 
   function point(angle: number, value: number) {
@@ -57,41 +57,37 @@ function RadarSVG() {
   const clientPath = clientPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + 'Z'
   const sectorPath = sectorPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + 'Z'
 
-  const labels = [
-    { name: 'Gouvernance', score: dims[0].score, anchor: 'middle' as const, dx: 0, dy: -8 },
-    { name: 'Mes', score: dims[1].score, anchor: 'start' as const, dx: 8, dy: 4 },
-    { name: 'Stratégie', score: dims[2].score, anchor: 'middle' as const, dx: 0, dy: 16 },
-    { name: 'ture', score: dims[3].score, anchor: 'end' as const, dx: -8, dy: 4 },
+  const dimLabels = [
+    { short: 'Gouv.', full: 'Gouvernance', idx: 0, anchor: 'middle' as const, dx: 0, dy: -10 },
+    { short: 'Mesure', full: 'Mesure', idx: 1, anchor: 'start' as const, dx: 8, dy: 4 },
+    { short: 'Strat.', full: 'Stratégie', idx: 2, anchor: 'middle' as const, dx: 0, dy: 16 },
+    { short: 'Culture', full: 'Culture', idx: 3, anchor: 'end' as const, dx: -8, dy: 4 },
   ]
 
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      {/* Grid levels */}
       {levels.map(lev => {
         const pts = angles.map(a => point(a, lev))
         return <polygon key={lev} points={pts.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#EDEAE3" strokeWidth={0.8} />
       })}
-      {/* Axes */}
       {angles.map((a, i) => {
         const end = point(a, 100)
         return <line key={i} x1={cx} y1={cy} x2={end.x} y2={end.y} stroke="#EDEAE3" strokeWidth={0.8} />
       })}
-      {/* Sector polygon */}
       <path d={sectorPath} fill="rgba(176,171,159,0.08)" stroke="#B0AB9F" strokeWidth={1.5} strokeDasharray="4 3" />
-      {/* Client polygon */}
       <path d={clientPath} fill="rgba(27,67,50,0.1)" stroke="#1B4332" strokeWidth={2} />
-      {/* Labels */}
-      {labels.map((lb, i) => {
-        const p = point(angles[i], 100)
+      {dimLabels.map((lb) => {
+        const p = point(angles[lb.idx], 100)
+        const score = dims[lb.idx].score
         return (
-          <g key={i}>
+          <g key={lb.idx}>
             <text x={p.x + lb.dx} y={p.y + lb.dy - 6} textAnchor={lb.anchor}
               style={{ fontSize: 10, fontFamily: 'var(--font-sans)', fontWeight: 500, fill: '#2A2A28' }}>
-              {lb.name}
+              {lb.short}
             </text>
             <text x={p.x + lb.dx} y={p.y + lb.dy + 6} textAnchor={lb.anchor}
-              style={{ fontSize: 10, fontFamily: 'var(--font-display)', fontWeight: 600, fill: gradeColor(dims[i].grade) }}>
-              {lb.score}
+              style={{ fontSize: 10, fontFamily: 'var(--font-display)', fontWeight: 600, fill: gradeColor(dims[lb.idx].grade) }}>
+              {score}
             </text>
           </g>
         )
@@ -104,10 +100,10 @@ function RadarSVG() {
 const SECTION_CARDS = [
   { num: 1, title: 'Synthèse éditoriale', teaser: '3 constats clés pour votre organisation — l\'avis de votre analyste.', highlight: true },
   { num: 2, title: 'Ce que nous ferions à votre place', teaser: '3 priorités d\'action + 1 anti-recommandation pour éviter les faux pas.' },
-  { num: 3, title: 'Score de maturité', teaser: `${d.section3.globalScore}/100 — Note ${d.section3.globalGrade}. 4 dimensions analysées, comparaison sectorielle.` },
+  { num: 3, title: 'Score de maturité', teaser: '62/100 — Note B. 4 dimensions analysées, comparaison sectorielle.' },
   { num: 4, title: 'Écarts de perception', teaser: 'Le triple regard : RSE, prédiction, terrain. Écart moyen de 2.3 points.', highlight: true },
-  { num: 5, title: 'Moyens et ressources', teaser: `${d.section5.currentFTE} ETP actuel vs ${d.section5.recommendedFTE} ETP recommandés — un écart critique à combler.` },
-  { num: 6, title: 'Empreinte carbone', teaser: `${d.section6.total.toLocaleString('fr-FR')} tCO₂e · ${d.section6.perEmployee} t/collaborateur · Inférieur à la moyenne sectorielle.` },
+  { num: 5, title: 'Moyens et ressources', teaser: '0.5 ETP actuel vs 2.0 ETP recommandés — un écart critique à combler.' },
+  { num: 6, title: 'Empreinte carbone', teaser: '12 500 tCO₂e · 15.6 t/collaborateur · Inférieur à la moyenne sectorielle.' },
   { num: 7, title: 'Échéancier réglementaire', teaser: '6 échéances identifiées dont 2 urgentes dans les 6 prochains mois.' },
   { num: 8, title: 'Cartographie des dispositifs', teaser: '4 réalisés · 2 en cours · 6 à démarrer dont 2 essentiels.' },
   { num: 9, title: 'Feuille de route', teaser: 'Plan d\'action sur 4 trimestres — de T1 à T4 2026.' },
@@ -115,14 +111,9 @@ const SECTION_CARDS = [
 
 // ── Key insights data ────────────────────────────
 function getKeyInsights() {
-  // Perception gap: find max |rse - terrain|
   const gaps = d.section4.perceptionData.map(item => ({ ...item, gap: Math.abs(item.rse - item.terrain) }))
   const maxGap = gaps.reduce((a, b) => a.gap > b.gap ? a : b)
-
-  // First priority
   const prio = d.section2.priorities[0]
-
-  // Next deadline not started
   const nextDeadline = d.section7.deadlines.find(dl => dl.status === 'Pas commence') || d.section7.deadlines[1]
 
   return [
@@ -144,7 +135,7 @@ function getKeyInsights() {
       icon: <Clock size={16} />, iconBg: '#F5EDE4', iconColor: '#B87333',
       label: 'PROCHAINE ÉCHÉANCE', labelColor: '#B87333',
       value: `CSRD — Juin 2026`,
-      detail: `${nextDeadline.description} ${nextDeadline.status === 'Pas commence' ? 'Pas encore commencé' : nextDeadline.status} — 4 mois restants.`,
+      detail: `${nextDeadline.description} — ${nextDeadline.status === 'Pas commence' ? 'Pas encore commencé' : nextDeadline.status}.`,
       link: 'Section 7 : Échéancier →', route: '/client/diagnostic/7',
     },
   ]
@@ -159,13 +150,9 @@ export default function DiagnosticSynthesis() {
   const org = demo?.enabled ? demo.activeDiagnostic.organization : null
   const pageState = getPageState(demoStatus as DemoStatus)
 
-  // ── Analysis state ──
-  if (pageState === 'analysis') return <AnalysisView status={demoStatus as DemoStatus} org={org} />
+  if (pageState === 'analysis') return <AnalysisView status={demoStatus as DemoStatus} />
+  if (pageState === 'locked') return <LockedView status={demoStatus as DemoStatus} />
 
-  // ── Locked state ──
-  if (pageState === 'locked') return <LockedView status={demoStatus as DemoStatus} org={org} />
-
-  // ── Unlocked state ──
   const insights = getKeyInsights()
   const scoreColor = gradeColor(d.section3.globalGrade)
   const circumference = 2 * Math.PI * 58
@@ -173,7 +160,6 @@ export default function DiagnosticSynthesis() {
 
   return (
     <div style={{ maxWidth: 960 }}>
-      {/* Stagger animation styles */}
       <style>{`
         @keyframes synthFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         .synth-stagger > * { opacity: 0; animation: synthFadeIn 500ms ease-out forwards; }
@@ -197,7 +183,6 @@ export default function DiagnosticSynthesis() {
           <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.82rem', color: '#7A766D', margin: '0 0 14px' }}>
             9 sections d'analyse personnalisées pour {org?.name || d.client.name} — {org?.sector || d.client.sector} · {org?.headcount || d.client.employees} collaborateurs
           </p>
-          {/* Analyst attribution */}
           <div className="flex items-center gap-2.5">
             <div style={{
               width: 32, height: 32, borderRadius: '50%', backgroundColor: '#1B4332',
@@ -252,14 +237,13 @@ export default function DiagnosticSynthesis() {
               VOS 4 DIMENSIONS
             </div>
             <RadarSVG />
-            {/* Legend */}
             <div className="flex items-center gap-4" style={{ marginTop: 4 }}>
               <div className="flex items-center gap-1.5">
-                <span style={{ width: 16, height: 2, backgroundColor: '#1B4332', display: 'inline-block' }} />
+                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#1B4332', display: 'inline-block' }} />
                 <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', color: '#7A766D' }}>Votre score</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span style={{ width: 16, height: 2, backgroundColor: '#B0AB9F', display: 'inline-block', borderTop: '1px dashed #B0AB9F' }} />
+                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#B0AB9F', display: 'inline-block' }} />
                 <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', color: '#B0AB9F' }}>Moyenne sectorielle</span>
               </div>
             </div>
@@ -280,7 +264,7 @@ export default function DiagnosticSynthesis() {
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 400, color: '#2A2A28', marginBottom: 6 }}>
               {d.client.profilClimat.name}
             </div>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.76rem', color: '#7A766D', fontStyle: 'italic', lineHeight: 1.5, marginBottom: 10, margin: '0 0 10px' }}>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.76rem', color: '#7A766D', fontStyle: 'italic', lineHeight: 1.5, margin: '0 0 10px' }}>
               « {d.client.profilClimat.phrase} »
             </p>
             <span style={{
@@ -300,7 +284,6 @@ export default function DiagnosticSynthesis() {
             <button
               key={i}
               onClick={() => navigate(ins.route)}
-              className="insight-card"
               style={{
                 backgroundColor: '#FFFFFF', borderRadius: 12, border: '1px solid #EDEAE3',
                 padding: '20px 18px', textAlign: 'left', cursor: 'pointer',
@@ -342,8 +325,8 @@ export default function DiagnosticSynthesis() {
             const sectorAvg = (d.section3.sectorAverages as Record<string, number>)[dim.name] || 55
             const isGood = dim.grade === 'A' || dim.grade === 'B'
             const barColor = isGood
-              ? `linear-gradient(90deg, #1B4332, #2D6A4F)`
-              : `linear-gradient(90deg, #B87333, #D4956B)`
+              ? 'linear-gradient(90deg, #1B4332, #2D6A4F)'
+              : 'linear-gradient(90deg, #B87333, #D4956B)'
 
             return (
               <div key={i} className="flex items-center gap-3" style={{ marginBottom: i < 3 ? 14 : 0 }}>
@@ -356,7 +339,6 @@ export default function DiagnosticSynthesis() {
                     background: barColor,
                     transition: 'width 0.8s ease',
                   }} />
-                  {/* Sector marker */}
                   <div style={{
                     position: 'absolute', top: -3, left: `${sectorAvg}%`,
                     width: 2, height: 14, backgroundColor: '#B0AB9F', opacity: 0.5,
@@ -404,7 +386,7 @@ export default function DiagnosticSynthesis() {
                     position: 'relative',
                     backgroundColor: isLocked ? '#FAFAF8' : '#FFFFFF',
                     borderRadius: 12,
-                    border: isHighlight ? '1.5px solid #2D6A4F' : `1px solid #EDEAE3`,
+                    border: isHighlight ? '1.5px solid #2D6A4F' : '1px solid #EDEAE3',
                     padding: '18px 16px',
                     textAlign: 'left',
                     cursor: isLocked ? 'default' : 'pointer',
@@ -415,7 +397,6 @@ export default function DiagnosticSynthesis() {
                   onMouseEnter={e => { if (!isLocked) { e.currentTarget.style.borderColor = '#1B4332'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(42,42,40,0.06)'; e.currentTarget.style.transform = 'translateY(-2px)' } }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = isHighlight ? '#2D6A4F' : '#EDEAE3'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}
                 >
-                  {/* Top row: number + title */}
                   <div className="flex items-start gap-3" style={{ marginBottom: 10 }}>
                     <div style={{
                       width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
@@ -433,8 +414,6 @@ export default function DiagnosticSynthesis() {
                       {card.title}
                     </span>
                   </div>
-
-                  {/* Teaser */}
                   <p style={{
                     fontFamily: 'var(--font-sans)', fontSize: '0.7rem',
                     color: isLocked ? '#B0AB9F' : '#7A766D', lineHeight: 1.5,
@@ -442,8 +421,6 @@ export default function DiagnosticSynthesis() {
                   }}>
                     {card.teaser}
                   </p>
-
-                  {/* Footer: link + badge */}
                   <div className="flex items-center justify-between">
                     <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.62rem', fontWeight: 500, color: isLocked ? '#B0AB9F' : '#1B4332' }}>
                       Consulter →
@@ -469,7 +446,7 @@ export default function DiagnosticSynthesis() {
 }
 
 // ═══════ ANALYSIS VIEW ═══════
-function AnalysisView({ status }: { status: DemoStatus; org: any }) {
+function AnalysisView({ status }: { status: DemoStatus }) {
   const { steps } = getCompletedSteps(status)
   return (
     <div style={{ maxWidth: 960 }}>
@@ -503,7 +480,7 @@ function AnalysisView({ status }: { status: DemoStatus; org: any }) {
             <div style={{ position: 'absolute', width: 160, height: 160, borderRadius: '50%', background: 'rgba(184,115,51,0.15)', top: '30%', right: '15%' }} />
             <div style={{ position: 'absolute', width: 120, height: 120, borderRadius: '50%', background: 'rgba(45,106,79,0.2)', bottom: '20%', left: '40%' }} />
           </div>
-          {/* Geometric shapes suggestion */}
+          {/* Geometric shapes */}
           <div style={{ position: 'absolute', inset: 0, opacity: 0.15, pointerEvents: 'none', filter: 'blur(16px)' }}>
             <svg width="100%" height="100%" viewBox="0 0 800 500">
               <rect x="80" y="60" width="180" height="12" rx="4" fill="#1B4332" />
@@ -523,7 +500,6 @@ function AnalysisView({ status }: { status: DemoStatus; org: any }) {
             backgroundColor: 'rgba(247,245,240,0.85)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           }}>
-            {/* Pulsing avatar */}
             <div style={{
               width: 48, height: 48, borderRadius: '50%', backgroundColor: '#1B4332',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -538,7 +514,6 @@ function AnalysisView({ status }: { status: DemoStatus; org: any }) {
               Votre analyste a bien reçu toutes vos réponses et celles de vos équipes. Le diagnostic personnalisé sera prêt sous 48h.
             </p>
 
-            {/* Progress bar */}
             <div style={{ width: 220, height: 4, borderRadius: 2, backgroundColor: '#EDEAE3', overflow: 'hidden', marginBottom: 8 }}>
               <div style={{ height: '100%', width: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #1B4332, #B87333)' }} />
             </div>
@@ -546,7 +521,6 @@ function AnalysisView({ status }: { status: DemoStatus; org: any }) {
               5 / 5 étapes complétées — Analyse en cours
             </p>
 
-            {/* Step pills */}
             <div className="flex items-center gap-1.5" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
               {steps.map((step, i) => {
                 const isDone = step.done === true
@@ -574,7 +548,7 @@ function AnalysisView({ status }: { status: DemoStatus; org: any }) {
 }
 
 // ═══════ LOCKED VIEW ═══════
-function LockedView({ status }: { status: DemoStatus; org: any }) {
+function LockedView({ status }: { status: DemoStatus }) {
   const { steps, doneCount } = getCompletedSteps(status)
   const progressWidth = (doneCount / 5) * 100
 
@@ -603,12 +577,10 @@ function LockedView({ status }: { status: DemoStatus; org: any }) {
           position: 'relative', minHeight: 500, backgroundColor: '#FFFFFF',
           borderRadius: 16, border: '1px solid #EDEAE3', overflow: 'hidden',
         }}>
-          {/* Blurred blobs */}
           <div style={{ position: 'absolute', inset: 0, filter: 'blur(40px)', opacity: 0.25, pointerEvents: 'none' }}>
             <div style={{ position: 'absolute', width: 180, height: 180, borderRadius: '50%', background: 'rgba(27,67,50,0.15)', top: '15%', left: '20%' }} />
             <div style={{ position: 'absolute', width: 140, height: 140, borderRadius: '50%', background: 'rgba(184,115,51,0.1)', bottom: '25%', right: '20%' }} />
           </div>
-          {/* Geometric shapes */}
           <div style={{ position: 'absolute', inset: 0, opacity: 0.12, pointerEvents: 'none', filter: 'blur(16px)' }}>
             <svg width="100%" height="100%" viewBox="0 0 800 500">
               <rect x="100" y="80" width="160" height="10" rx="4" fill="#1B4332" />
@@ -618,13 +590,11 @@ function LockedView({ status }: { status: DemoStatus; org: any }) {
             </svg>
           </div>
 
-          {/* Overlay */}
           <div style={{
             position: 'absolute', inset: 0,
             backgroundColor: 'rgba(247,245,240,0.85)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           }}>
-            {/* Lock icon */}
             <div style={{
               width: 56, height: 56, borderRadius: '50%',
               background: 'linear-gradient(135deg, #F5EDE4, #F0EDE6)',
@@ -641,15 +611,13 @@ function LockedView({ status }: { status: DemoStatus; org: any }) {
               Complétez le questionnaire, les sondages et l'envoi de vos documents pour débloquer votre analyse.
             </p>
 
-            {/* Progress bar */}
             <div style={{ width: 220, height: 4, borderRadius: 2, backgroundColor: '#EDEAE3', overflow: 'hidden', marginBottom: 8 }}>
-              <div style={{ height: '100%', width: `${progressWidth}%`, borderRadius: 2, background: 'linear-gradient(90deg, #1B4332, #B87333)', transition: 'width 0.5s ease' }} />
+              <div style={{ height: '100%', width: `${progressWidth}%`, borderRadius: 2, background: 'linear-gradient(90deg, #B87333, #1B4332)', transition: 'width 0.5s ease' }} />
             </div>
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.62rem', color: '#B0AB9F', margin: '0 0 16px' }}>
               {doneCount} / 5 étapes complétées
             </p>
 
-            {/* Step pills */}
             <div className="flex items-center gap-1.5" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
               {steps.map((step, i) => {
                 const isDone = step.done === true
