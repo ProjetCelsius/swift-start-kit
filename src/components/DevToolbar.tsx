@@ -204,6 +204,7 @@ export default function DevToolbar() {
                 {[
                   { label: 'Sondage', path: '/sondage/demo' },
                   { label: 'DG', path: '/dg/demo' },
+                  { label: 'Setup', path: '/setup/demo-novatech' },
                 ].map(n => (
                   <button
                     key={n.path}

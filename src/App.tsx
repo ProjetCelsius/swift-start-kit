@@ -26,6 +26,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminDiagnosticDetail from './pages/admin/AdminDiagnosticDetail'
 import AdminStats from './pages/admin/AdminStats'
 import NewDiagnostic from './pages/admin/NewDiagnostic'
+import LaunchCallSetup from './pages/setup/LaunchCallSetup'
 import {
   QuestionnairePage,
   DiagnosticSectionPage,
@@ -90,6 +91,9 @@ function AppRoutes() {
           <Route path="/journal" element={<Navigate to="/client/journal" replace />} />
           <Route path="/messages" element={<Navigate to="/client/messages" replace />} />
         </Route>
+
+        {/* Setup (standalone, no layout) */}
+        <Route path="/setup/:diagnosticId" element={<LaunchCallSetup />} />
 
         {/* Espace Répondant (public) */}
         <Route path="/sondage/:token" element={<SurveyPage />} />
