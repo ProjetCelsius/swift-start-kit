@@ -1,61 +1,79 @@
-import { MOCK_DEADLINES } from '@/data/mockDiagnosticData'
+import { AlertCircle } from 'lucide-react'
+import { mockDiagnostic } from '@/data/mockDiagnosticData'
+import SectionLayout from '@/components/diagnostic/SectionLayout'
 
-const STATUS_STYLES: Record<string, { bg: string; color: string; dot: string }> = {
-  'Prêt': { bg: 'var(--color-celsius-100)', color: '#1B4332', dot: '#1B4332' },
-  'En cours': { bg: 'var(--color-accent-warm-light)', color: '#B87333', dot: '#B87333' },
-  'Pas commencé': { bg: '#FEE2E2', color: '#DC4A4A', dot: '#DC4A4A' },
+const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  'En cours': { bg: '#F5EDE4', color: '#B87333', label: 'En cours' },
+  'Pas commence': { bg: '#FEF2F2', color: '#DC4A4A', label: 'Pas commencé' },
+  'Conforme': { bg: '#E8F0EB', color: '#1B4332', label: 'Conforme' },
 }
 
 export default function DiagnosticSection7() {
-  return (
-    <div className="max-w-[640px]">
-      <h2
-        className="text-sm font-semibold uppercase tracking-wider mb-8"
-        style={{ color: 'var(--color-celsius-900)', letterSpacing: '0.05em' }}
-      >
-        Échéances clés
-      </h2>
+  const { deadlines } = mockDiagnostic.section7
 
+  return (
+    <SectionLayout sectionNumber={7}>
+      {/* Urgency summary */}
+      <div
+        className="rounded-xl p-5 mb-8 flex items-center gap-3"
+        style={{ backgroundColor: '#FEF2F2', borderLeft: '3px solid #DC4A4A' }}
+      >
+        <AlertCircle size={20} color="#DC4A4A" className="shrink-0" />
+        <p className="text-sm font-medium" style={{ color: '#2A2A28' }}>
+          <strong style={{ color: '#DC4A4A' }}>2 échéances imminentes</strong>, {deadlines.length - 2} à anticiper
+        </p>
+      </div>
+
+      {/* Timeline */}
       <div className="relative pl-8">
         {/* Vertical line */}
         <div
-          className="absolute left-[5px] top-2 bottom-2 w-0.5"
-          style={{ backgroundColor: '#1B4332' }}
+          className="absolute left-[7px] top-3 bottom-3 w-0.5"
+          style={{ backgroundColor: '#EDEAE3' }}
         />
 
-        <div className="space-y-5">
-          {MOCK_DEADLINES.map((d, i) => {
-            const style = STATUS_STYLES[d.status]
-            const isAlert = d.urgent && d.status === 'Pas commencé'
+        <div className="space-y-4">
+          {deadlines.map((d, i) => {
+            const isUrgent = d.status === 'Pas commence' && i < 2
+            const status = STATUS_STYLES[d.status] || STATUS_STYLES['Pas commence']
+            const borderColor = isUrgent ? '#DC4A4A' : d.status === 'En cours' ? '#B87333' : '#EDEAE3'
+            const dotColor = isUrgent ? '#DC4A4A' : d.status === 'En cours' ? '#B87333' : '#B0AB9F'
 
             return (
               <div key={i} className="relative">
                 {/* Dot */}
                 <div
-                  className="absolute -left-8 top-5 w-3 h-3 rounded-full border-2 border-white z-10"
-                  style={{ backgroundColor: style.dot, boxShadow: '0 0 0 2px ' + style.dot + '33' }}
+                  className="absolute -left-8 top-5 w-3.5 h-3.5 rounded-full border-2 border-white z-10"
+                  style={{ backgroundColor: dotColor, boxShadow: `0 0 0 2px ${dotColor}22` }}
                 />
 
                 <div
                   className="rounded-xl p-5"
                   style={{
-                    backgroundColor: isAlert ? '#FEE2E2' : 'var(--color-blanc)',
-                    boxShadow: 'var(--shadow-card)',
-                    borderLeft: isAlert ? '3px solid #DC4A4A' : 'none',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #EDEAE3',
+                    borderLeft: `3px solid ${borderColor}`,
                   }}
                 >
-                  <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-texte-secondary)', letterSpacing: '0.05em' }}>
-                    {d.date}
-                  </p>
-                  <h3 className="text-base font-bold mb-1">{d.title}</h3>
-                  <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--color-texte-secondary)' }}>
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#B0AB9F', letterSpacing: '0.05em' }}>
+                      {d.date}
+                    </p>
+                    {isUrgent && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#FEF2F2', color: '#DC4A4A' }}>
+                        Urgent
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-sm font-bold mb-1" style={{ color: '#2A2A28' }}>{d.obligation}</h3>
+                  <p className="text-xs leading-relaxed mb-3" style={{ color: '#7A766D' }}>
                     {d.description}
                   </p>
                   <span
-                    className="text-xs font-semibold px-3 py-1 rounded-full"
-                    style={{ backgroundColor: style.bg, color: style.color }}
+                    className="text-[10px] font-semibold px-3 py-1 rounded-full"
+                    style={{ backgroundColor: status.bg, color: status.color }}
                   >
-                    {d.status}
+                    {status.label}
                   </span>
                 </div>
               </div>
@@ -63,6 +81,6 @@ export default function DiagnosticSection7() {
           })}
         </div>
       </div>
-    </div>
+    </SectionLayout>
   )
 }
