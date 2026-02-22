@@ -64,10 +64,22 @@ export default function DevToolbar() {
 
         <div className="w-px h-5" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }} />
 
-        {/* Client name */}
-        <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
-          {demo.activeDiagnostic.organization.name}
-        </span>
+        {/* Diagnostic selector */}
+        <select
+          value={demo.activeDiagnosticId}
+          onChange={e => {
+            demo.setActiveDiagnosticId(e.target.value)
+            navigate('/client/dashboard')
+          }}
+          className="text-[10px] px-2 py-1 rounded border-none focus:outline-none"
+          style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', maxWidth: 140 }}
+        >
+          {demo.diagnostics.map(d => (
+            <option key={d.id} value={d.id} style={{ backgroundColor: '#1A1A1A' }}>
+              {d.organization.name}
+            </option>
+          ))}
+        </select>
 
         {/* Role */}
         <div className="flex gap-0.5">
@@ -77,7 +89,7 @@ export default function DevToolbar() {
               onClick={() => {
                 demo.setRole(r.value)
                 if (r.value === 'admin' && !location.pathname.startsWith('/admin')) navigate('/admin/dashboard')
-                if (r.value === 'client' && location.pathname.startsWith('/admin')) navigate('/client/questionnaire/bloc1')
+                if (r.value === 'client' && location.pathname.startsWith('/admin')) navigate('/client/dashboard')
               }}
               className="text-[10px] font-medium px-2 py-0.5 rounded transition-colors"
               style={{
@@ -99,7 +111,7 @@ export default function DevToolbar() {
             const newStatus = e.target.value as DemoStatus
             demo.setDiagnosticStatus(newStatus)
             if (newStatus === 'onboarding') {
-              navigate('/setup/demo-novatech')
+              navigate(`/setup/${demo.activeDiagnosticId}`)
             }
           }}
           className="text-[10px] px-2 py-1 rounded border-none focus:outline-none"
@@ -115,7 +127,7 @@ export default function DevToolbar() {
         {/* Current info */}
         <div className="flex-1 text-right">
           <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            {demo.activeDiagnostic.organization.name} · {STATUS_OPTIONS.find(s => s.value === demo.activeDiagnostic.status)?.label} · {ROLE_OPTIONS.find(r => r.value === demo.role)?.label}
+            {demo.activeDiagnostic.organization.name} · {STATUS_OPTIONS.find(s => s.value === demo.activeDiagnostic.status)?.label}
           </span>
         </div>
 
@@ -136,11 +148,13 @@ export default function DevToolbar() {
               <p className="text-[10px] font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>Navigation rapide</p>
               <div className="flex flex-wrap gap-1">
                 {[
+                  { label: 'Dashboard', path: '/client/dashboard' },
                   { label: 'Bloc 1', path: '/client/questionnaire/bloc1' },
                   { label: 'Bloc 2', path: '/client/questionnaire/bloc2' },
                   { label: 'Bloc 3', path: '/client/questionnaire/bloc3' },
-                  { label: 'Bloc 4', path: '/client/questionnaire/bloc4' },
+                  { label: 'Perception', path: '/client/perception' },
                   { label: 'Sondage', path: '/client/sondage' },
+                  { label: 'Documents', path: '/client/documents' },
                   { label: 'Journal', path: '/client/journal' },
                   { label: 'Messages', path: '/client/messages' },
                 ].map(n => (
@@ -164,11 +178,11 @@ export default function DevToolbar() {
                 {Array.from({ length: 9 }, (_, i) => (
                   <button
                     key={i}
-                    onClick={() => navigate(`/diagnostic/${i + 1}`)}
+                    onClick={() => navigate(`/client/diagnostic/${i + 1}`)}
                     className="text-[9px] px-1.5 py-0.5 rounded transition-colors"
                     style={{
-                      backgroundColor: location.pathname === `/diagnostic/${i + 1}` ? '#1B5E3B' : 'rgba(255,255,255,0.08)',
-                      color: location.pathname === `/diagnostic/${i + 1}` ? 'white' : 'rgba(255,255,255,0.4)',
+                      backgroundColor: location.pathname === `/client/diagnostic/${i + 1}` ? '#1B5E3B' : 'rgba(255,255,255,0.08)',
+                      color: location.pathname === `/client/diagnostic/${i + 1}` ? 'white' : 'rgba(255,255,255,0.4)',
                     }}
                   >
                     S{i + 1}
@@ -204,7 +218,7 @@ export default function DevToolbar() {
                 {[
                   { label: 'Sondage', path: '/sondage/demo' },
                   { label: 'DG', path: '/dg/demo' },
-                  { label: 'Setup', path: '/setup/demo-novatech' },
+                  { label: 'Setup', path: `/setup/${demo.activeDiagnosticId}` },
                 ].map(n => (
                   <button
                     key={n.path}
