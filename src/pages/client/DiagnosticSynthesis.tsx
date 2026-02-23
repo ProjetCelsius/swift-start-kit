@@ -196,13 +196,13 @@ export default function DiagnosticSynthesis() {
         </div>
 
         {/* ── HERO BAND ── */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '220px 1fr 300px', gap: 32,
+        <div className="flex flex-col md:flex-row" style={{
+          gap: 16, overflow: 'hidden',
           backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
-          padding: '36px 36px', marginBottom: 20,
+          padding: 28, marginBottom: 20,
         }}>
           {/* Score ring */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ position: 'relative', width: 140, height: 140, marginBottom: 12 }}>
               <svg viewBox="0 0 140 140" style={{ width: '100%', height: '100%' }}>
                 <circle cx="70" cy="70" r="58" fill="none" stroke="#EDEAE3" strokeWidth="10" />
@@ -232,7 +232,7 @@ export default function DiagnosticSynthesis() {
           </div>
 
           {/* Radar chart */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ flex: 1.2, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.52rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#B0AB9F', marginBottom: 4 }}>
               VOS 4 DIMENSIONS
             </div>
@@ -251,6 +251,7 @@ export default function DiagnosticSynthesis() {
 
           {/* Profil Climat */}
           <div style={{
+            flex: 1, minWidth: 0, overflow: 'hidden', maxWidth: '100%',
             background: 'linear-gradient(135deg, #E8F0EB, #FFFFFF 50%, #F5EDE4)',
             border: '1px solid #EDEAE3', borderRadius: 12, padding: 20,
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
