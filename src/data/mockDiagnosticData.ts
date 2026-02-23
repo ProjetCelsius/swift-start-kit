@@ -10,7 +10,7 @@ export const mockDiagnostic = {
     sector: "Industrie manufacturière",
     employees: 800,
     revenue: "50-200M",
-    analyst: { name: "Guillaume Pakula", initials: "GP", title: "Analyste climat senior" },
+    analyst: { name: "Guillaume Pakula", initials: "GP", title: "Analyste Climat Senior" },
     profilClimat: { code: "SMFD", name: "Les fondations sont là", phrase: "On fait les choses dans les règles, et on les fait bien.", family: "Les Méthodiques", entrepriseType: "Saint-Gobain" }
   },
 
@@ -156,13 +156,11 @@ export interface Priority {
   budget: '<10k€' | '10-50k€' | '>50k€'
 }
 
-export const MOCK_PRIORITIES: Priority[] = mockDiagnostic.section2.priorities.map((p, i) => ({
-  number: i + 1,
-  title: p.title,
-  why: p.why,
-  effort: p.effort === 'Rapide' ? 'Rapide' : 'Projet',
-  budget: '<10k€',
-}))
+export const MOCK_PRIORITIES: Priority[] = [
+  { number: 1, title: mockDiagnostic.section2.priorities[0].title, why: mockDiagnostic.section2.priorities[0].why, effort: 'Rapide', budget: '<10k€' },
+  { number: 2, title: mockDiagnostic.section2.priorities[1].title, why: mockDiagnostic.section2.priorities[1].why, effort: 'Projet', budget: '10-50k€' },
+  { number: 3, title: mockDiagnostic.section2.priorities[2].title, why: mockDiagnostic.section2.priorities[2].why, effort: 'Projet', budget: '10-50k€' },
+]
 
 export const MOCK_ANTI_RECOMMENDATION = {
   title: 'Ce que nous ne recommandons PAS',
@@ -180,21 +178,49 @@ export interface DimensionScore {
   sectorPositive: boolean
 }
 
+const DIMENSION_DETAILS: Record<string, { analysis: string; sectorPosition: string; sectorPositive: boolean }> = {
+  'Gouvernance climat': {
+    analysis: "Votre gouvernance est votre point fort. Le sujet est porté par la direction et un référent est identifié. Le principal axe de progression : formaliser un reporting régulier au COMEX pour créer une boucle de feedback.",
+    sectorPosition: "Top 30% de votre secteur",
+    sectorPositive: true,
+  },
+  'Mesure et données': {
+    analysis: "Votre Bilan Carbone est récent et couvre les 3 scopes. La principale faiblesse : le suivi n'est pas encore automatisé. Vous dépendez d'un exercice annuel ponctuel plutôt que d'un monitoring continu.",
+    sectorPosition: "Dans la moyenne sectorielle",
+    sectorPositive: true,
+  },
+  'Stratégie et trajectoire': {
+    analysis: "Une stratégie existe mais reste déclarative. Les objectifs ne sont pas encore adossés à une trajectoire quantifiée (type SBTi). C'est le levier principal pour crédibiliser votre démarche.",
+    sectorPosition: "En dessous de la moyenne sectorielle",
+    sectorPositive: false,
+  },
+  'Culture et engagement': {
+    analysis: "C'est votre principale zone de fragilité. L'écart entre votre perception et celle de vos équipes est significatif (−3.8 points en moyenne). Les managers ne relaient pas suffisamment la démarche vers le terrain.",
+    sectorPosition: "En dessous de la moyenne sectorielle",
+    sectorPositive: false,
+  },
+}
+
 export const MOCK_MATURITY = {
   globalScore: mockDiagnostic.section3.globalScore,
   globalLetter: mockDiagnostic.section3.globalGrade,
   globalLabel: 'Structuré',
   globalColor: '#2D6A4F',
-  dimensions: mockDiagnostic.section3.dimensions.map(d => ({
-    id: d.name.toLowerCase().replace(/ /g, '_'),
-    label: d.name,
-    score: d.score,
-    letter: d.grade,
-    color: d.grade === 'A' ? '#1B4332' : d.grade === 'B' ? '#2D6A4F' : d.grade === 'C' ? '#B87333' : '#DC4A4A',
-    analysis: '',
-    sectorPosition: '',
-    sectorPositive: true,
-  })) as DimensionScore[],
+  dimensions: mockDiagnostic.section3.dimensions.map(d => {
+    const details = DIMENSION_DETAILS[d.name] || { analysis: '', sectorPosition: '', sectorPositive: true }
+    return {
+      id: d.name.toLowerCase().replace(/ /g, '_'),
+      label: d.name,
+      score: d.score,
+      letter: d.grade,
+      color: d.grade === 'A' ? '#1B4332' : d.grade === 'B' ? '#2D6A4F' : d.grade === 'C' ? '#B87333' : '#DC4A4A',
+      analysis: details.analysis,
+      sectorPosition: details.sectorPosition,
+      sectorPositive: details.sectorPositive,
+    }
+  }) as DimensionScore[],
+  profileSummary: "Vous êtes en phase de structuration. Les fondations sont posées — gouvernance identifiée, données collectées — mais la démarche n'a pas encore infusé dans la culture de l'organisation. Le passage de « conformité » à « conviction » est votre prochain palier.",
+  sectorAverages: { gouvernance: 58, mesure: 65, strategie: 62, culture: 52, global: 59 },
 }
 
 export const PERCEPTION_LABELS = mockDiagnostic.section4.perceptionData.map(d => d.label)

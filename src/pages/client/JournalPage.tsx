@@ -14,30 +14,30 @@ interface JournalEntry {
 
 const MOCK_ENTRIES: JournalEntry[] = [
   {
-    id: '4', author: 'analyst', authorName: 'Claire Lefèvre', initials: 'CL',
+    id: '4', author: 'analyst', authorName: 'Guillaume Pakula', initials: 'GP',
     date: new Date(Date.now() - 2 * 3600_000),
     text: "J'ai finalisé l'analyse croisée de vos réponses au questionnaire et des résultats du sondage collaborateurs. Les écarts de perception sont significatifs sur 3 dimensions — je détaillerai tout cela lors de notre appel de restitution.",
     badge: 'Rédaction',
   },
   {
-    id: '3', author: 'analyst', authorName: 'Claire Lefèvre', initials: 'CL',
+    id: '3', author: 'analyst', authorName: 'Guillaume Pakula', initials: 'GP',
     date: new Date(Date.now() - 3 * 86400_000),
     text: "Le sondage est bien lancé avec déjà 15 réponses. Je commence l'analyse de vos réponses au questionnaire RSE. Première observation : votre gouvernance climat est plus avancée que ce que l'on observe habituellement dans votre secteur.",
     badge: 'Analyse en cours',
     replies: [
-      { author: 'Vous', text: 'Merci Claire. Nous avons atteint 23 réponses, est-ce suffisant ?', date: new Date(Date.now() - 2 * 86400_000) },
+      { author: 'Vous', text: 'Merci Guillaume. Nous avons atteint 23 réponses, est-ce suffisant ?', date: new Date(Date.now() - 2 * 86400_000) },
     ],
   },
   {
-    id: '2', author: 'analyst', authorName: 'Claire Lefèvre', initials: 'CL',
+    id: '2', author: 'analyst', authorName: 'Guillaume Pakula', initials: 'GP',
     date: new Date(Date.now() - 5 * 86400_000),
     text: "Les résultats de votre Bloc 2 montrent un score de maturité intéressant. Votre dimension Gouvernance est nettement au-dessus de la moyenne sectorielle, tandis que la dimension Mesure & Données présente une marge de progression.",
     badge: 'Analyse en cours',
   },
   {
-    id: '1', author: 'analyst', authorName: 'Claire Lefèvre', initials: 'CL',
+    id: '1', author: 'analyst', authorName: 'Guillaume Pakula', initials: 'GP',
     date: new Date(Date.now() - 7 * 86400_000),
-    text: "Bienvenue dans votre espace Boussole Climat ! Je suis Claire, votre analyste dédiée. J'ai bien reçu vos réponses au Bloc 1 et 2. Je reviendrai vers vous dès que j'aurai avancé dans l'analyse.",
+    text: "Bienvenue dans votre espace Boussole Climat ! Je suis Guillaume, votre analyste dédié. J'ai bien reçu vos réponses au Bloc 1 et 2. Je reviendrai vers vous dès que j'aurai avancé dans l'analyse.",
     badge: 'Démarrage',
   },
 ]

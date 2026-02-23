@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
+import guillaumePhoto from '@/assets/guillaume-photo.png'
 
 const SECTION_TITLES = [
   'Synthèse éditoriale',
@@ -61,12 +62,11 @@ export default function SectionLayout({ sectionNumber, children, showAnalyst }: 
       {showAnalyst && (
         <div className="mb-8 pl-4" style={{ borderLeft: '3px solid #1B4332' }}>
           <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-              style={{ backgroundColor: '#1B4332' }}
-            >
-              {analyst.initials}
-            </div>
+           <img
+              src={guillaumePhoto}
+              alt={analyst.name}
+              className="w-10 h-10 rounded-full object-cover shrink-0"
+            />
             <div>
               <p style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '0.85rem', color: '#2A2A28' }}>
                 {analyst.name}

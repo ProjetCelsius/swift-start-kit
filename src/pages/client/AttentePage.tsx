@@ -10,12 +10,12 @@ const STEPS = [
 
 const JOURNAL_PREVIEW = [
   {
-    initials: 'CL', name: 'Claire Lefèvre',
+    initials: 'GP', name: 'Guillaume Pakula',
     date: 'Il y a 2h',
     text: "J'ai finalisé l'analyse croisée de vos réponses. Les écarts de perception sont significatifs sur 3 dimensions.",
   },
   {
-    initials: 'CL', name: 'Claire Lefèvre',
+    initials: 'GP', name: 'Guillaume Pakula',
     date: 'Il y a 3 jours',
     text: "Le sondage est bien lancé avec déjà 15 réponses. Je commence l'analyse de vos réponses au questionnaire.",
   },
@@ -30,7 +30,7 @@ export default function AttentePage() {
         Votre diagnostic est en préparation
       </h1>
       <p style={{ fontSize: '0.9rem', color: '#7A766D', marginBottom: 32 }}>
-        Claire travaille sur votre diagnostic
+        Guillaume travaille sur votre diagnostic
       </p>
 
       {/* Step indicator */}
