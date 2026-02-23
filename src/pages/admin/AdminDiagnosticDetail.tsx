@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Check, Clock, Circle, Pencil, Sparkles, Lock, Eye, Send } from 'lucide-react'
+import { ChevronLeft, Check, Clock, Circle, Pencil, Sparkles, Lock, Eye, Send, Copy, RefreshCw } from 'lucide-react'
 import { MOCK_DIAGNOSTICS, STATUS_CONFIG } from '@/data/mockAdminData'
 import { getDemoDiagnostic } from '@/data/demoData'
 import type { DemoDiagnostic } from '@/data/demoData'
@@ -637,42 +637,68 @@ function TabSondageDG({ sbSurvey, sbDg, useSb, demoData }: { sbSurvey: any[]; sb
 }
 
 // ── TAB 4: DIAGNOSTIC EDITOR ──────────────────────
+// ── MOCK SECTION CONTENT for AI generation ──────
+function getMockSectionContent(idx: number): string {
+  const md = mockDiagnostic
+  switch (idx) {
+    case 0: return md.section1.paragraphs.join('\n\n')
+    case 1: return md.section2.priorities.map((p, i) => `**Priorité ${i + 1} — ${p.title}**\n${p.why}\nEffort : ${p.effort} | Budget : ${p.budget}`).join('\n\n') + `\n\n**Ce que nous ne recommandons PAS**\n${md.section2.antiRecommendation}`
+    case 2: return `Score global : ${md.section3.globalScore}/100 (${md.section3.globalGrade})\n\n` + md.section3.dimensions.map(d => `${d.name} : ${d.score}/100 (${d.grade})`).join('\n') + `\n\n${md.section3.profileSummary}`
+    case 3: return md.section4.perceptionData.map(d => `${d.label} — RSE: ${d.rse} | Prédiction: ${d.prediction} | Terrain: ${d.terrain}`).join('\n') + `\n\nVerbatims :\n` + md.section4.verbatims.map(v => `• « ${v.text} » (${v.department})`).join('\n')
+    case 4: return `ETP actuels : ${md.section5.currentFTE}\nETP recommandés : ${md.section5.recommendedFTE}\n\n${md.section5.analysisText}\n\nRecommandations :\n` + md.section5.recommendations.map(r => `• ${r}`).join('\n')
+    case 5: return `Empreinte totale : ${md.section6.total} tCO₂e\nScope 1 : ${md.section6.scope1} | Scope 2 : ${md.section6.scope2} | Scope 3 : ${md.section6.scope3}\n\nIntensité : ${md.section6.perEmployee} tCO₂e/salarié (moyenne secteur : ${md.section6.sectorAverage})`
+    case 6: return md.section7.deadlines.map(d => `${d.date} — ${d.obligation}\n${d.description} (${d.status})`).join('\n\n')
+    case 7: return md.section8.tiles.map(t => `${t.name} : ${t.status}${t.relevance ? ` [${t.relevance}]` : ''}`).join('\n')
+    case 8: return md.section9.quarters.map(q => `**${q.label}**\n` + q.actions.map(a => `• ${a}`).join('\n')).join('\n\n')
+    default: return ''
+  }
+}
+
 function TabDiagnostic({ diagnosticId, sbSections, useSb, userId, refreshSections }: {
   diagnosticId: string; sbSections: any[]; useSb: boolean; userId?: string; refreshSections: () => Promise<void>
 }) {
-  const [editMode, setEditMode] = useState(false)
   const [editing, setEditing] = useState<number | null>(null)
   const [validated, setValidated] = useState<boolean[]>(Array(9).fill(false))
-  const [aiLoading, setAiLoading] = useState<number | null>(null)
   const [aiContent, setAiContent] = useState<Record<number, string>>({})
+  const [aiGenerated, setAiGenerated] = useState<Record<number, boolean>>({})
+  const [generating, setGenerating] = useState(false)
+  const [genProgress, setGenProgress] = useState<number[]>([])
+  const [genDone, setGenDone] = useState(false)
+  const [showPublishModal, setShowPublishModal] = useState(false)
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  // Init validated state from Supabase sections
+  // Init from Supabase sections
   useEffect(() => {
     if (useSb && sbSections.length > 0) {
       const newValidated = Array(9).fill(false)
+      const newContent: Record<number, string> = {}
+      const newAiGen: Record<number, boolean> = {}
       for (const sec of sbSections) {
         const idx = sec.section_number - 1
         if (idx >= 0 && idx < 9) {
           newValidated[idx] = sec.status === 'validated'
           if (sec.content_json) {
-            setAiContent(prev => ({
-              ...prev,
-              [idx]: typeof sec.content_json === 'string' ? sec.content_json : JSON.stringify(sec.content_json),
-            }))
+            newContent[idx] = typeof sec.content_json === 'string' ? sec.content_json : JSON.stringify(sec.content_json, null, 2)
+            newAiGen[idx] = sec.generated_by_ai || false
           }
         }
       }
       setValidated(newValidated)
+      setAiContent(newContent)
+      setAiGenerated(newAiGen)
     }
   }, [sbSections, useSb])
 
-  const allValidated = validated.every(Boolean)
-  const DATA_SECTIONS = [2, 3, 5]
+  const validatedCount = validated.filter(Boolean).length
+  const allValidated = validatedCount === 9
+  const hasAnyContent = Object.keys(aiContent).length > 0
 
-  const handleAIFill = async (idx: number) => {
+  // Generate ALL sections
+  const handleGenerateAll = async () => {
     if (useSb) {
-      // Try calling the edge function
-      setAiLoading(idx)
+      setGenerating(true)
+      setGenProgress([])
+      setGenDone(false)
       try {
         const session = await supabase.auth.getSession()
         const token = session.data.session?.access_token
@@ -682,39 +708,31 @@ function TabDiagnostic({ diagnosticId, sbSections, useSb, userId, refreshSection
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ diagnostic_id: diagnosticId, section_number: idx + 1 }),
+          body: JSON.stringify({ diagnostic_id: diagnosticId }),
         })
-
-        if (res.status === 404) {
-          // Edge function not deployed yet, fallback to mock
-          doMockAIFill(idx)
-        } else if (res.ok) {
+        if (res.ok) {
+          // Simulate progress for UX
+          for (let i = 0; i < 9; i++) {
+            await new Promise(r => setTimeout(r, 400))
+            setGenProgress(p => [...p, i])
+          }
+          setGenDone(true)
           await refreshSections()
-        } else {
-          console.error('AI generation error:', res.status)
-          doMockAIFill(idx)
+          return
         }
-      } catch {
-        doMockAIFill(idx)
-      } finally {
-        setAiLoading(null)
-      }
-      return
+      } catch { /* fallback to mock */ }
     }
-    doMockAIFill(idx)
-  }
-
-  const doMockAIFill = (idx: number) => {
-    setAiLoading(idx)
-    setTimeout(() => {
-      setAiLoading(null)
-      setAiContent(prev => ({
-        ...prev,
-        [idx]: idx === 0
-          ? mockDiagnostic.section1.paragraphs.join('\n\n')
-          : `Contenu généré par IA pour la section "${SECTION_NAMES[idx]}". Ce brouillon a été créé à partir des données collectées dans le questionnaire, le sondage et le questionnaire DG. Il doit être relu et validé par l'analyste avant publication.`,
-      }))
-    }, 2000)
+    // Mock generation with progressive reveal
+    setGenerating(true)
+    setGenProgress([])
+    setGenDone(false)
+    for (let i = 0; i < 9; i++) {
+      await new Promise(r => setTimeout(r, 500))
+      setAiContent(prev => ({ ...prev, [i]: getMockSectionContent(i) }))
+      setAiGenerated(prev => ({ ...prev, [i]: true }))
+      setGenProgress(p => [...p, i])
+    }
+    setGenDone(true)
   }
 
   const handleSaveSection = async (idx: number, content: string, markValidated: boolean) => {
@@ -742,237 +760,419 @@ function TabDiagnostic({ diagnosticId, sbSections, useSb, userId, refreshSection
     setEditing(null)
   }
 
-  const handleUnlock = async () => {
+  const handleRegenerateOne = (idx: number) => {
+    setAiContent(prev => ({ ...prev, [idx]: getMockSectionContent(idx) }))
+    setAiGenerated(prev => ({ ...prev, [idx]: true }))
+  }
+
+  const handleCopy = (idx: number) => {
+    if (aiContent[idx]) {
+      navigator.clipboard.writeText(aiContent[idx])
+    }
+  }
+
+  const handlePublish = async () => {
     if (useSb) {
       try {
         await supabase
           .from('diagnostics')
           .update({ status: 'delivered', unlocked_at: new Date().toISOString() })
           .eq('id', diagnosticId)
-        alert('Diagnostic déverrouillé !')
+        await supabase
+          .from('journal_entries')
+          .insert({
+            diagnostic_id: diagnosticId,
+            author_id: userId || '',
+            content: 'Diagnostic publié et rendu accessible au client.',
+            step_change: 'review → delivered',
+          })
       } catch (err) {
-        console.error('Error unlocking:', err)
-        alert('Erreur lors du déverrouillage.')
+        console.error('Error publishing:', err)
       }
-    } else {
-      alert('Diagnostic déverrouillé ! (mode démo)')
     }
+    setShowPublishModal(false)
   }
 
   return (
-    <div>
-      {/* Toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button
-          onClick={() => { setEditMode(false); setEditing(null) }}
-          style={{
-            padding: '8px 16px', borderRadius: 8, border: '1px solid #EDEAE3',
-            backgroundColor: !editMode ? '#1B4332' : '#fff', color: !editMode ? '#fff' : '#7A766D',
-            fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: '0.8rem', cursor: 'pointer',
-          }}
-        >
-          <Eye size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} />
-          Mode lecture
-        </button>
-        <button
-          onClick={() => setEditMode(true)}
-          style={{
-            padding: '8px 16px', borderRadius: 8, border: '1px solid #EDEAE3',
-            backgroundColor: editMode ? '#1B4332' : '#fff', color: editMode ? '#fff' : '#7A766D',
-            fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: '0.8rem', cursor: 'pointer',
-          }}
-        >
-          <Pencil size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} />
-          Mode édition
-        </button>
-      </div>
-
-      {!editMode ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {SECTION_NAMES.map((name, i) => (
-            <div key={i} style={{
-              backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14, padding: '18px 22px',
-            }}>
-              <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.56rem', textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F', marginBottom: 4 }}>
-                SECTION {i + 1}
-              </p>
-              <p style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontSize: '1rem', color: '#2A2A28', marginBottom: 8 }}>{name}</p>
-              {validated[i] ? (
-                <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', color: '#7A766D', lineHeight: 1.6 }}>
-                  {aiContent[i] ? aiContent[i].slice(0, 200) + '...' : 'Contenu validé.'}
-                </p>
-              ) : (
-                <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', color: '#B0AB9F', fontStyle: 'italic' }}>
-                  Section non validée.
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {SECTION_NAMES.map((name, i) => {
-            const isData = DATA_SECTIONS.includes(i)
-            const isEditing = editing === i
-            const hasAI = aiContent[i] !== undefined
-            const isLoading = aiLoading === i
-
-            return (
-              <div key={i} style={{
-                backgroundColor: '#fff', border: `1px solid ${isEditing ? '#E5E1D8' : '#EDEAE3'}`,
-                borderRadius: 14, padding: '18px 22px',
-                boxShadow: isEditing ? '0 2px 8px rgba(42,42,40,.04), 0 8px 32px rgba(42,42,40,.06)' : '0 1px 3px rgba(42,42,40,.04)',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isEditing ? 16 : 0 }}>
-                  <div>
-                    <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.56rem', textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F', marginBottom: 4 }}>
-                      SECTION {i + 1}
-                    </p>
-                    <p style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontSize: '1rem', color: '#2A2A28' }}>{name}</p>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                      <div
-                        onClick={() => {
-                          const newVal = !validated[i]
-                          setValidated(p => p.map((v, j) => j === i ? newVal : v))
-                          if (useSb && aiContent[i]) {
-                            handleSaveSection(i, aiContent[i], newVal)
-                          }
-                        }}
-                        style={{
-                          width: 18, height: 18, borderRadius: 4, border: '1.5px solid',
-                          borderColor: validated[i] ? '#1B4332' : '#EDEAE3',
-                          backgroundColor: validated[i] ? '#1B4332' : '#fff',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                        }}
-                      >
-                        {validated[i] && <Check size={12} color="#fff" />}
-                      </div>
-                      <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: '0.82rem', color: '#1B4332' }}>
-                        Validée
-                      </span>
-                    </label>
-                    {!isData && !isEditing && (
-                      <button
-                        onClick={() => setEditing(i)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'none',
-                          cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', color: '#7A766D',
-                        }}
-                      >
-                        <Pencil size={14} /> Modifier
-                      </button>
-                    )}
-                  </div>
+    <div style={{ position: 'relative' }}>
+      {/* Generation overlay */}
+      {generating && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          backgroundColor: 'rgba(42,42,40,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            backgroundColor: '#fff', borderRadius: 16, padding: '32px 40px', maxWidth: 480, width: '90%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+          }}>
+            {!genDone ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                  <span style={{
+                    width: 20, height: 20, border: '2.5px solid #EDEAE3', borderTopColor: '#1B4332',
+                    borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+                  }} />
+                  <span style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28' }}>
+                    Génération en cours…
+                  </span>
                 </div>
-
-                {isEditing && !isData && (
-                  <div>
-                    {(i === 0 || i === 1) && !hasAI && (
-                      <button
-                        onClick={() => handleAIFill(i)}
-                        disabled={isLoading}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
-                          borderRadius: 8, border: 'none', cursor: isLoading ? 'wait' : 'pointer',
-                          background: 'linear-gradient(135deg, #1B4332, #2D6A4F)', color: '#fff',
-                          fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', fontWeight: 500, marginBottom: 14,
-                        }}
-                      >
-                        {isLoading ? (
-                          <>
-                            <span style={{
-                              width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)',
-                              borderTopColor: '#fff', borderRadius: '50%',
-                              animation: 'spin 0.8s linear infinite',
-                            }} />
-                            Génération en cours...
-                          </>
-                        ) : (
-                          <><Sparkles size={16} /> Pré-remplir par IA</>
-                        )}
-                      </button>
-                    )}
-
-                    {hasAI && (
-                      <div style={{ marginBottom: 14 }}>
-                        <textarea
-                          defaultValue={aiContent[i]}
-                          onChange={e => setAiContent(prev => ({ ...prev, [i]: e.target.value }))}
-                          style={{
-                            width: '100%', minHeight: 200, padding: 14, borderRadius: 10,
-                            border: '1px solid #EDEAE3', fontFamily: 'DM Sans, sans-serif',
-                            fontSize: '0.85rem', lineHeight: 1.7, color: '#2A2A28', resize: 'vertical',
-                          }}
-                        />
-                        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                          <button onClick={() => handleSaveSection(i, aiContent[i], true)}
-                            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', backgroundColor: '#1B4332', color: '#fff', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
-                            Accepter
-                          </button>
-                          <button onClick={() => handleAIFill(i)}
-                            style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #EDEAE3', backgroundColor: '#fff', color: '#7A766D', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', cursor: 'pointer' }}>
-                            Régénérer
-                          </button>
-                          <button onClick={() => { setAiContent(p => { const n = { ...p }; delete n[i]; return n }); setEditing(null) }}
-                            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', backgroundColor: 'transparent', color: '#B0AB9F', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', cursor: 'pointer' }}>
-                            Annuler
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {!hasAI && i !== 0 && i !== 1 && (
-                      <div>
-                        <textarea
-                          placeholder={`Contenu de la section "${name}"...`}
-                          onChange={e => setAiContent(prev => ({ ...prev, [i]: e.target.value }))}
-                          style={{
-                            width: '100%', minHeight: 200, padding: 14, borderRadius: 10,
-                            border: '1px solid #EDEAE3', fontFamily: 'DM Sans, sans-serif',
-                            fontSize: '0.85rem', lineHeight: 1.7, color: '#2A2A28', resize: 'vertical',
-                          }}
-                        />
-                        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                          <button onClick={() => handleSaveSection(i, aiContent[i] || '', false)}
-                            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', backgroundColor: '#1B4332', color: '#fff', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
-                            Sauvegarder
-                          </button>
-                          <button onClick={() => setEditing(null)}
-                            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', backgroundColor: 'transparent', color: '#B0AB9F', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', cursor: 'pointer' }}>
-                            Annuler
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {SECTION_NAMES.map((name, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {genProgress.includes(i) ? (
+                        <Check size={16} color="#1B4332" />
+                      ) : (
+                        <Circle size={16} color="#EDEAE3" />
+                      )}
+                      <span style={{
+                        fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem',
+                        color: genProgress.includes(i) ? '#2A2A28' : '#B0AB9F',
+                        fontWeight: genProgress.includes(i) ? 500 : 400,
+                      }}>
+                        {i + 1}. {name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%', backgroundColor: '#E8F0EB',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Check size={18} color="#1B4332" />
                   </div>
-                )}
-
-                {isData && (
-                  <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', color: '#B0AB9F', fontStyle: 'italic', marginTop: 8 }}>
-                    Les données sont calculées automatiquement à partir des réponses.
-                  </p>
-                )}
-              </div>
-            )
-          })}
-
-          <button
-            onClick={handleUnlock}
-            disabled={!allValidated}
-            style={{
-              width: '100%', padding: '14px 24px', borderRadius: 8, border: 'none',
-              backgroundColor: allValidated ? '#1B4332' : '#F0EDE6',
-              color: allValidated ? '#fff' : '#B0AB9F',
-              fontFamily: 'DM Sans, sans-serif', fontSize: '0.88rem', fontWeight: 600,
-              cursor: allValidated ? 'pointer' : 'not-allowed', marginTop: 8,
-            }}
-          >
-            Déverrouiller le diagnostic
-          </button>
+                  <span style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontSize: '1.1rem', color: '#1B4332' }}>
+                    Diagnostic généré — 9 sections prêtes à valider
+                  </span>
+                </div>
+                <button
+                  onClick={() => setGenerating(false)}
+                  style={{
+                    width: '100%', padding: '12px 20px', borderRadius: 10, border: 'none',
+                    background: 'linear-gradient(135deg, #1B4332, #2D6A4F)', color: '#fff',
+                    fontFamily: 'DM Sans, sans-serif', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  Commencer la relecture
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
+
+      {/* Publish confirmation modal */}
+      {showPublishModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          backgroundColor: 'rgba(42,42,40,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            backgroundColor: '#fff', borderRadius: 16, padding: '28px 36px', maxWidth: 440, width: '90%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+          }}>
+            <h3 style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontSize: '1.1rem', color: '#2A2A28', marginBottom: 12 }}>
+              Publier le diagnostic ?
+            </h3>
+            <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: '#7A766D', lineHeight: 1.6, marginBottom: 24 }}>
+              Le client recevra une notification et pourra consulter son diagnostic. Cette action est irréversible.
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowPublishModal(false)}
+                style={{
+                  padding: '10px 20px', borderRadius: 8, border: '1px solid #EDEAE3',
+                  backgroundColor: '#fff', color: '#7A766D', fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '0.85rem', cursor: 'pointer',
+                }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handlePublish}
+                style={{
+                  padding: '10px 20px', borderRadius: 8, border: 'none',
+                  backgroundColor: '#1B4332', color: '#fff', fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Confirmer la publication
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Progress bar */}
+      <div style={{
+        backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14,
+        padding: '16px 22px', marginBottom: 20,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.85rem', color: '#2A2A28' }}>
+            {validatedCount}/9 sections validées
+          </span>
+          {allValidated && (
+            <span style={{
+              padding: '3px 10px', borderRadius: 20, backgroundColor: '#E8F0EB',
+              fontFamily: 'DM Sans, sans-serif', fontSize: '0.72rem', fontWeight: 600, color: '#1B4332',
+            }}>
+              ✓ Prêt à publier
+            </span>
+          )}
+        </div>
+        <div style={{ height: 6, borderRadius: 3, backgroundColor: '#F0EDE6', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%', borderRadius: 3,
+            backgroundColor: allValidated ? '#1B4332' : '#2D6A4F',
+            width: `${(validatedCount / 9) * 100}%`,
+            transition: 'width 0.4s ease',
+          }} />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 20 }}>
+        {/* Section sidebar nav */}
+        <div style={{
+          width: 200, flexShrink: 0, position: 'sticky', top: 20, alignSelf: 'flex-start',
+        }}>
+          <p style={{
+            fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.6rem',
+            textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F', marginBottom: 10,
+          }}>SECTIONS</p>
+          {SECTION_NAMES.map((name, i) => (
+            <button
+              key={i}
+              onClick={() => sectionRefs.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '6px 8px',
+                border: 'none', background: editing === i ? '#F0EDE6' : 'none', borderRadius: 6,
+                cursor: 'pointer', textAlign: 'left', marginBottom: 2,
+              }}
+            >
+              {validated[i] ? (
+                <Check size={14} color="#1B4332" />
+              ) : aiContent[i] !== undefined ? (
+                <Circle size={14} color="#4A90D9" fill="#4A90D9" />
+              ) : (
+                <Circle size={14} color="#EDEAE3" />
+              )}
+              <span style={{
+                fontFamily: 'DM Sans, sans-serif', fontSize: '0.72rem',
+                color: validated[i] ? '#1B4332' : '#7A766D', fontWeight: validated[i] ? 500 : 400,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {i + 1}. {name}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Main content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Generate All CTA */}
+          {!hasAnyContent && (
+            <button
+              onClick={handleGenerateAll}
+              style={{
+                width: '100%', padding: 16, borderRadius: 12, border: 'none',
+                background: 'linear-gradient(135deg, #1B4332, #2D6A4F)', color: '#fff',
+                fontFamily: 'DM Sans, sans-serif', fontSize: '0.9rem', fontWeight: 600,
+                cursor: 'pointer', marginBottom: 24, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', gap: 10,
+              }}
+            >
+              <Sparkles size={18} /> Générer le diagnostic par IA
+            </button>
+          )}
+
+          {/* Section cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {SECTION_NAMES.map((name, i) => {
+              const isEditing = editing === i
+              const hasContent = aiContent[i] !== undefined
+              const isAI = aiGenerated[i] || false
+              const isValidated = validated[i]
+
+              const statusBadge = isValidated
+                ? { label: 'Validé', bg: '#E8F0EB', color: '#1B4332' }
+                : isAI
+                ? { label: 'Brouillon IA', bg: '#E8F0FF', color: '#4A90D9' }
+                : { label: 'Vide', bg: '#F0EDE6', color: '#B0AB9F' }
+
+              return (
+                <div
+                  key={i}
+                  ref={el => { sectionRefs.current[i] = el }}
+                  style={{
+                    backgroundColor: '#fff',
+                    border: `1px solid ${isEditing ? '#E5E1D8' : '#EDEAE3'}`,
+                    borderRadius: 14, padding: '18px 22px',
+                    boxShadow: isEditing ? '0 2px 8px rgba(42,42,40,.04), 0 8px 32px rgba(42,42,40,.06)' : '0 1px 3px rgba(42,42,40,.04)',
+                  }}
+                >
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isEditing || hasContent ? 14 : 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{
+                        fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: '0.56rem',
+                        textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F',
+                      }}>SECTION {i + 1}</span>
+                      <span style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontSize: '1rem', color: '#2A2A28' }}>{name}</span>
+                      <span style={{
+                        padding: '2px 8px', borderRadius: 12, fontSize: '0.65rem', fontWeight: 600,
+                        backgroundColor: statusBadge.bg, color: statusBadge.color,
+                      }}>{statusBadge.label}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {hasContent && !isEditing && (
+                        <>
+                          <button onClick={() => handleCopy(i)} title="Copier" style={{
+                            border: 'none', background: 'none', cursor: 'pointer', color: '#B0AB9F', padding: 4,
+                          }}><Copy size={14} /></button>
+                          <button onClick={() => handleRegenerateOne(i)} title="Régénérer" style={{
+                            border: 'none', background: 'none', cursor: 'pointer', color: '#B0AB9F', padding: 4,
+                          }}><RefreshCw size={14} /></button>
+                          <button onClick={() => setEditing(i)} title="Modifier" style={{
+                            border: 'none', background: 'none', cursor: 'pointer', color: '#7A766D', padding: 4,
+                          }}><Pencil size={14} /></button>
+                        </>
+                      )}
+                      {!hasContent && !isEditing && (
+                        <button onClick={() => { handleRegenerateOne(i); setEditing(i) }} style={{
+                          display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'none',
+                          cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', color: '#4A90D9',
+                        }}>
+                          <Sparkles size={14} /> Générer
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* AI banner */}
+                  {hasContent && isAI && !isValidated && !isEditing && (
+                    <div style={{
+                      backgroundColor: '#F0F4FF', borderLeft: '3px solid #4A90D9',
+                      borderRadius: '0 8px 8px 0', padding: '8px 14px', marginBottom: 12,
+                      fontFamily: 'DM Sans, sans-serif', fontSize: '0.75rem', color: '#4A90D9', fontWeight: 500,
+                    }}>
+                      Généré par IA — à relire et valider
+                    </div>
+                  )}
+
+                  {/* Content preview (not editing) */}
+                  {hasContent && !isEditing && (
+                    <p style={{
+                      fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', color: '#7A766D',
+                      lineHeight: 1.6, whiteSpace: 'pre-wrap',
+                      maxHeight: 120, overflow: 'hidden',
+                    }}>
+                      {aiContent[i].slice(0, 300)}{aiContent[i].length > 300 ? '…' : ''}
+                    </p>
+                  )}
+
+                  {/* Editor */}
+                  {isEditing && (
+                    <div>
+                      {isAI && !isValidated && (
+                        <div style={{
+                          backgroundColor: '#F0F4FF', borderLeft: '3px solid #4A90D9',
+                          borderRadius: '0 8px 8px 0', padding: '8px 14px', marginBottom: 12,
+                          fontFamily: 'DM Sans, sans-serif', fontSize: '0.75rem', color: '#4A90D9', fontWeight: 500,
+                        }}>
+                          Généré par IA — à relire et valider
+                        </div>
+                      )}
+                      <textarea
+                        defaultValue={aiContent[i] || ''}
+                        onChange={e => setAiContent(prev => ({ ...prev, [i]: e.target.value }))}
+                        style={{
+                          width: '100%', minHeight: 300, padding: 14, borderRadius: 10,
+                          border: '1px solid #EDEAE3', fontFamily: 'DM Sans, sans-serif',
+                          fontSize: '0.85rem', lineHeight: 1.7, color: '#2A2A28', resize: 'vertical',
+                          backgroundColor: isAI ? '#FAFCFF' : '#fff',
+                        }}
+                      />
+                      <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                        <button onClick={() => handleSaveSection(i, aiContent[i] || '', true)} style={{
+                          display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8,
+                          border: 'none', backgroundColor: '#1B4332', color: '#fff',
+                          fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+                        }}>
+                          <Check size={14} /> Valider
+                        </button>
+                        <button onClick={() => handleSaveSection(i, aiContent[i] || '', false)} style={{
+                          padding: '8px 16px', borderRadius: 8, border: '1px solid #EDEAE3',
+                          backgroundColor: '#fff', color: '#7A766D',
+                          fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', cursor: 'pointer',
+                        }}>
+                          Sauvegarder brouillon
+                        </button>
+                        <button onClick={() => handleRegenerateOne(i)} style={{
+                          display: 'flex', alignItems: 'center', gap: 4, padding: '8px 16px', borderRadius: 8,
+                          border: '1px solid #EDEAE3', backgroundColor: '#fff', color: '#7A766D',
+                          fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', cursor: 'pointer',
+                        }}>
+                          <RefreshCw size={14} /> Régénérer
+                        </button>
+                        <button onClick={() => handleCopy(i)} style={{
+                          display: 'flex', alignItems: 'center', gap: 4, padding: '8px 16px', borderRadius: 8,
+                          border: '1px solid #EDEAE3', backgroundColor: '#fff', color: '#7A766D',
+                          fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', cursor: 'pointer',
+                        }}>
+                          <Copy size={14} /> Copier
+                        </button>
+                        <button onClick={() => setEditing(null)} style={{
+                          padding: '8px 16px', borderRadius: 8, border: 'none',
+                          backgroundColor: 'transparent', color: '#B0AB9F',
+                          fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', cursor: 'pointer',
+                        }}>
+                          Fermer
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quick validate toggle */}
+                  {hasContent && !isEditing && !isValidated && (
+                    <button
+                      onClick={() => {
+                        setValidated(p => p.map((v, j) => j === i ? true : v))
+                        if (useSb && aiContent[i]) handleSaveSection(i, aiContent[i], true)
+                      }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6, marginTop: 10,
+                        border: 'none', background: 'none', cursor: 'pointer',
+                        fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', color: '#1B4332', fontWeight: 500,
+                      }}
+                    >
+                      <Check size={14} /> Valider cette section
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Publish button */}
+          <button
+            onClick={() => allValidated && setShowPublishModal(true)}
+            disabled={!allValidated}
+            style={{
+              width: '100%', padding: '14px 24px', borderRadius: 10, border: 'none',
+              backgroundColor: allValidated ? '#1B4332' : '#F0EDE6',
+              color: allValidated ? '#fff' : '#B0AB9F',
+              fontFamily: 'DM Sans, sans-serif', fontSize: '0.9rem', fontWeight: 600,
+              cursor: allValidated ? 'pointer' : 'not-allowed', marginTop: 24,
+            }}
+          >
+            {allValidated ? '🚀 Publier le diagnostic' : `Publier le diagnostic (${validatedCount}/9 validées)`}
+          </button>
+        </div>
+      </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
@@ -980,24 +1180,35 @@ function TabDiagnostic({ diagnosticId, sbSections, useSb, userId, refreshSection
 }
 
 // ── TAB 5: JOURNAL ──────────────────────────────
-function TabJournal({ diagnosticId, sbJournal, useSb, userId, refreshJournal }: {
-  diagnosticId: string; sbJournal: any[]; useSb: boolean; userId?: string; refreshJournal: () => Promise<void>
+function TabJournal({ diagnosticId, sbJournal, useSb, userId, refreshJournal, demoData }: {
+  diagnosticId: string; sbJournal: any[]; useSb: boolean; userId?: string; refreshJournal: () => Promise<void>; demoData?: DemoDiagnostic
 }) {
   const [note, setNote] = useState('')
   const [isInternal, setIsInternal] = useState(false)
+
+  const demoEntries = (demoData?.journal ?? []).map(e => ({
+    id: e.id,
+    author: e.author as 'analyst' | 'client',
+    name: e.authorName,
+    initials: e.authorName.split(' ').map((n: string) => n[0]).join('').slice(0, 2),
+    date: new Date(e.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+    text: e.text,
+    badge: e.badge || null,
+    internal: false,
+  }))
 
   const entries = useSb && sbJournal.length > 0
     ? sbJournal.map(e => ({
         id: e.id,
         author: e.author_id === userId ? 'analyst' as const : 'client' as const,
         name: e.author_id === userId ? 'Vous' : 'Client',
-        initials: e.author_id === userId ? 'GP' : 'CL',
+        initials: e.author_id === userId ? 'GP' : 'SD',
         date: new Date(e.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
         text: e.content,
         badge: e.step_change ? `Étape : ${e.step_change}` : null,
         internal: false,
       }))
-    : MOCK_JOURNAL
+    : demoEntries
 
   const handlePublish = async () => {
     if (!note.trim()) return
