@@ -39,9 +39,9 @@ function getCompletedSteps(status: DemoStatus | undefined) {
 function RadarSVG() {
   const dims = d.section3.dimensions
   const sa = d.section3.sectorAverages as Record<string, number>
-  const w = 220, h = 180
+  const w = 280, h = 240
   const cx = w / 2, cy = h / 2 + 5
-  const r = 70
+  const r = 90
 
   const angles = [-90, 0, 90, 180].map(a => (a * Math.PI) / 180)
 
@@ -81,12 +81,12 @@ function RadarSVG() {
         const score = dims[lb.idx].score
         return (
           <g key={lb.idx}>
-            <text x={p.x + lb.dx} y={p.y + lb.dy - 6} textAnchor={lb.anchor}
-              style={{ fontSize: 10, fontFamily: 'var(--font-sans)', fontWeight: 500, fill: '#2A2A28' }}>
+            <text x={p.x + lb.dx} y={p.y + lb.dy - 7} textAnchor={lb.anchor}
+              style={{ fontSize: 12, fontFamily: 'var(--font-sans)', fontWeight: 500, fill: '#2A2A28' }}>
               {lb.short}
             </text>
-            <text x={p.x + lb.dx} y={p.y + lb.dy + 6} textAnchor={lb.anchor}
-              style={{ fontSize: 10, fontFamily: 'var(--font-display)', fontWeight: 600, fill: gradeColor(dims[lb.idx].grade) }}>
+            <text x={p.x + lb.dx} y={p.y + lb.dy + 7} textAnchor={lb.anchor}
+              style={{ fontSize: 12, fontFamily: 'var(--font-display)', fontWeight: 600, fill: gradeColor(dims[lb.idx].grade) }}>
               {score}
             </text>
           </g>
@@ -197,9 +197,9 @@ export default function DiagnosticSynthesis() {
 
         {/* ── HERO BAND ── */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '200px 1fr 280px', gap: 28,
+          display: 'grid', gridTemplateColumns: '220px 1fr 300px', gap: 32,
           backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
-          padding: '32px 28px', marginBottom: 20,
+          padding: '36px 36px', marginBottom: 20,
         }}>
           {/* Score ring */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
