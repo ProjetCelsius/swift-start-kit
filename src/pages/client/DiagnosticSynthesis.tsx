@@ -159,7 +159,7 @@ export default function DiagnosticSynthesis() {
   const dashLength = (d.section3.globalScore / 100) * circumference
 
   return (
-    <div style={{ maxWidth: 960 }}>
+    <div style={{ maxWidth: 1200 }}>
       <style>{`
         @keyframes synthFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         .synth-stagger > * { opacity: 0; animation: synthFadeIn 500ms ease-out forwards; }
@@ -197,7 +197,7 @@ export default function DiagnosticSynthesis() {
 
         {/* ── HERO BAND ── */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '180px 1fr 240px', gap: 20,
+          display: 'grid', gridTemplateColumns: '200px 1fr 280px', gap: 28,
           backgroundColor: '#FFFFFF', borderRadius: 16, border: '1px solid #EDEAE3',
           padding: '32px 28px', marginBottom: 20,
         }}>
@@ -449,7 +449,7 @@ export default function DiagnosticSynthesis() {
 function AnalysisView({ status }: { status: DemoStatus }) {
   const { steps } = getCompletedSteps(status)
   return (
-    <div style={{ maxWidth: 960 }}>
+    <div style={{ maxWidth: 1200 }}>
       <style>{`
         @keyframes synthFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes analysisPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(27,67,50,0.2); } 50% { box-shadow: 0 0 0 12px rgba(27,67,50,0); } }
@@ -553,7 +553,7 @@ function LockedView({ status }: { status: DemoStatus }) {
   const progressWidth = (doneCount / 5) * 100
 
   return (
-    <div style={{ maxWidth: 960 }}>
+    <div style={{ maxWidth: 1200 }}>
       <style>{`
         @keyframes synthFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         .synth-stagger > * { opacity: 0; animation: synthFadeIn 500ms ease-out forwards; }
