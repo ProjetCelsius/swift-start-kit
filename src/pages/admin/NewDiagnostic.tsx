@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, CheckCircle } from 'lucide-react'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 
 const SECTORS = ['Industrie manufacturière', 'Numérique', 'Construction', 'Transport & Logistique', 'Agroalimentaire', 'Énergie', 'Services', 'Commerce', 'Santé', 'Autre']
 const HEADCOUNTS = ['1-10', '11-50', '51-250', '251-500', '501-1000', '1001-5000', '>5000']
@@ -20,8 +22,10 @@ const labelStyle: React.CSSProperties = {
 
 export default function NewDiagnostic() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [step, setStep] = useState(0)
   const [created, setCreated] = useState(false)
+  const [creating, setCreating] = useState(false)
 
   // Step 1
   const [company, setCompany] = useState('')
@@ -45,6 +49,68 @@ export default function NewDiagnostic() {
 
   const step1Valid = company && sector && headcount && revenue && contactName && contactEmail
 
+  const handleCreate = async () => {
+    if (!isSupabaseConfigured()) {
+      setCreated(true)
+      return
+    }
+
+    setCreating(true)
+    try {
+      // 1. Create organization
+      const { data: org, error: orgErr } = await supabase
+        .from('organizations')
+        .insert({
+          name: company,
+          sector_naf: sector,
+          headcount_range: headcount,
+          revenue_range: revenue,
+        })
+        .select()
+        .single()
+
+      if (orgErr) throw orgErr
+
+      // 2. Create diagnostic
+      const { data: diag, error: diagErr } = await supabase
+        .from('diagnostics')
+        .insert({
+          organization_id: org.id,
+          analyst_id: user?.id || null,
+          status: 'onboarding',
+          survey_distinguish_populations: optPop,
+        })
+        .select()
+        .single()
+
+      if (diagErr) throw diagErr
+
+      setCreated(true)
+
+      // After a short delay, could navigate to the new diagnostic
+      setTimeout(() => {
+        navigate(`/admin/diagnostics/${diag.id}`)
+      }, 3000)
+    } catch (err) {
+      console.error('Error creating diagnostic:', err)
+      alert('Erreur lors de la création du diagnostic. Veuillez réessayer.')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const resetForm = () => {
+    setCreated(false)
+    setStep(0)
+    setCompany('')
+    setSector('')
+    setHeadcount('')
+    setRevenue('')
+    setContactName('')
+    setContactEmail('')
+    setContactPhone('')
+  }
+
   if (created) {
     return (
       <div style={{ maxWidth: 480, margin: '80px auto', textAlign: 'center' }}>
@@ -60,7 +126,7 @@ export default function NewDiagnostic() {
             style={{ padding: '12px 24px', borderRadius: 8, backgroundColor: '#1B4332', color: '#fff', border: 'none', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' }}>
             Voir le diagnostic
           </button>
-          <button onClick={() => { setCreated(false); setStep(0); setCompany(''); setSector(''); setHeadcount(''); setRevenue(''); setContactName(''); setContactEmail(''); setContactPhone('') }}
+          <button onClick={resetForm}
             style={{ padding: '12px 24px', borderRadius: 8, backgroundColor: '#fff', color: '#1B4332', border: '1px solid #EDEAE3', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' }}>
             Créer un autre
           </button>
@@ -282,13 +348,15 @@ export default function NewDiagnostic() {
               style={{ padding: '12px 24px', borderRadius: 8, border: '1px solid #EDEAE3', backgroundColor: '#fff', color: '#7A766D', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', cursor: 'pointer' }}>
               Retour
             </button>
-            <button onClick={() => setCreated(true)}
+            <button onClick={handleCreate} disabled={creating}
               style={{
                 padding: '14px 32px', borderRadius: 8, border: 'none',
                 backgroundColor: '#1B4332', color: '#fff',
-                fontFamily: 'Fraunces, serif', fontSize: '0.95rem', fontWeight: 500, cursor: 'pointer',
+                fontFamily: 'Fraunces, serif', fontSize: '0.95rem', fontWeight: 500,
+                cursor: creating ? 'wait' : 'pointer',
+                opacity: creating ? 0.7 : 1,
               }}>
-              Créer le diagnostic
+              {creating ? 'Création en cours...' : 'Créer le diagnostic'}
             </button>
           </div>
         </div>
