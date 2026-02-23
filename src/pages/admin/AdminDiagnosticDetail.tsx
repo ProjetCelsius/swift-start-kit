@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, Check, Clock, Circle, Pencil, Sparkles, Lock, Eye, Send } from 'lucide-react'
 import { MOCK_DIAGNOSTICS, STATUS_CONFIG } from '@/data/mockAdminData'
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 
 const TABS = ['Questionnaire', 'Réponses', 'Sondage & DG', 'Diagnostic', 'Journal']
 
@@ -87,12 +89,140 @@ const MOCK_JOURNAL = [
 export default function AdminDiagnosticDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState(0)
-  const diag = MOCK_DIAGNOSTICS.find(d => d.id === id)
+  const [sbDiag, setSbDiag] = useState<any>(null)
+  const [sbResponses, setSbResponses] = useState<any[]>([])
+  const [sbSurvey, setSbSurvey] = useState<any[]>([])
+  const [sbSections, setSbSections] = useState<any[]>([])
+  const [sbJournal, setSbJournal] = useState<any[]>([])
+  const [sbDg, setSbDg] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const useSb = isSupabaseConfigured()
 
-  if (!diag) return <div style={{ padding: 32, fontFamily: 'DM Sans, sans-serif', color: '#7A766D' }}>Diagnostic introuvable.</div>
+  // Mock fallback
+  const mockDiag = MOCK_DIAGNOSTICS.find(d => d.id === id)
 
-  const st = STATUS_CONFIG[diag.status]
+  const loadDiagnostic = useCallback(async () => {
+    if (!useSb || !id) return
+    try {
+      const { data } = await supabase
+        .from('diagnostics')
+        .select(`
+          *,
+          organization:organizations(*),
+          client:profiles!diagnostics_client_user_id_fkey(*),
+          sections:diagnostic_sections(*)
+        `)
+        .eq('id', id)
+        .single()
+      if (data) {
+        setSbDiag(data)
+        setSbSections(data.sections || [])
+      }
+    } catch (err) {
+      console.error('Error loading diagnostic:', err)
+    }
+  }, [id, useSb])
+
+  const loadResponses = useCallback(async () => {
+    if (!useSb || !id) return
+    try {
+      const { data } = await supabase
+        .from('questionnaire_responses')
+        .select('*')
+        .eq('diagnostic_id', id)
+      if (data) setSbResponses(data)
+    } catch (err) {
+      console.error('Error loading responses:', err)
+    }
+  }, [id, useSb])
+
+  const loadSurvey = useCallback(async () => {
+    if (!useSb || !id) return
+    try {
+      const { data } = await supabase
+        .from('survey_responses')
+        .select('*')
+        .eq('diagnostic_id', id)
+      if (data) setSbSurvey(data)
+    } catch (err) {
+      console.error('Error loading survey:', err)
+    }
+  }, [id, useSb])
+
+  const loadDg = useCallback(async () => {
+    if (!useSb || !id) return
+    try {
+      const { data } = await supabase
+        .from('dg_responses')
+        .select('*')
+        .eq('diagnostic_id', id)
+        .maybeSingle()
+      if (data) setSbDg(data)
+    } catch (err) {
+      console.error('Error loading DG:', err)
+    }
+  }, [id, useSb])
+
+  const loadJournal = useCallback(async () => {
+    if (!useSb || !id) return
+    try {
+      const { data } = await supabase
+        .from('journal_entries')
+        .select('*, replies:journal_replies(*)')
+        .eq('diagnostic_id', id)
+        .order('created_at', { ascending: false })
+      if (data) setSbJournal(data)
+    } catch (err) {
+      console.error('Error loading journal:', err)
+    }
+  }, [id, useSb])
+
+  useEffect(() => {
+    async function init() {
+      setLoading(true)
+      if (useSb && id) {
+        await Promise.all([loadDiagnostic(), loadResponses(), loadSurvey(), loadDg(), loadJournal()])
+      }
+      setLoading(false)
+    }
+    init()
+  }, [id, useSb, loadDiagnostic, loadResponses, loadSurvey, loadDg, loadJournal])
+
+  // Realtime subscriptions
+  useEffect(() => {
+    if (!useSb || !id) return
+    const channel = supabase.channel(`admin-diag-${id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'survey_responses', filter: `diagnostic_id=eq.${id}` }, () => loadSurvey())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'questionnaire_responses', filter: `diagnostic_id=eq.${id}` }, () => loadResponses())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'diagnostic_sections', filter: `diagnostic_id=eq.${id}` }, () => loadDiagnostic())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'journal_entries', filter: `diagnostic_id=eq.${id}` }, () => loadJournal())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [id, useSb, loadSurvey, loadResponses, loadDiagnostic, loadJournal])
+
+  // Determine display data
+  const diagData = useSb && sbDiag ? {
+    company: sbDiag.organization?.name || 'Sans nom',
+    analyst: sbDiag.analyst_id ? 'Analyste' : 'Non assigné',
+    status: sbDiag.status || 'draft',
+    sector: sbDiag.organization?.sector_naf || '',
+    headcount: sbDiag.organization?.headcount_range || '',
+    revenue: sbDiag.organization?.revenue_range || '',
+  } : mockDiag ? {
+    company: mockDiag.company,
+    analyst: mockDiag.analyst,
+    status: mockDiag.status,
+    sector: mockDiag.sector,
+    headcount: mockDiag.headcount,
+    revenue: mockDiag.revenue,
+  } : null
+
+  if (loading) return <div style={{ padding: 32, fontFamily: 'DM Sans, sans-serif', color: '#B0AB9F' }}>Chargement...</div>
+  if (!diagData) return <div style={{ padding: 32, fontFamily: 'DM Sans, sans-serif', color: '#7A766D' }}>Diagnostic introuvable.</div>
+
+  const st = STATUS_CONFIG[diagData.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.questionnaire
 
   return (
     <div>
@@ -111,10 +241,10 @@ export default function AdminDiagnosticDetail() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontFamily: 'Fraunces, serif', fontWeight: 400, fontSize: '1.5rem', color: '#2A2A28', marginBottom: 10 }}>
-          {diag.company}
+          {diagData.company}
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-          {[diag.sector, diag.headcount + ' sal.', diag.revenue].map((pill, i) => (
+          {[diagData.sector, diagData.headcount ? diagData.headcount + ' sal.' : '', diagData.revenue].filter(Boolean).map((pill, i) => (
             <span key={i} style={{
               padding: '4px 12px', borderRadius: 12, backgroundColor: '#F0EDE6',
               fontSize: '0.75rem', color: '#7A766D', fontFamily: 'DM Sans, sans-serif',
@@ -130,8 +260,8 @@ export default function AdminDiagnosticDetail() {
             width: 24, height: 24, borderRadius: '50%', backgroundColor: '#1B4332',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '0.5rem', fontWeight: 600, color: '#fff',
-          }}>{diag.analyst.split(' ').map(n => n[0]).join('')}</div>
-          <span style={{ fontSize: '0.82rem', color: '#2A2A28', fontFamily: 'DM Sans, sans-serif' }}>{diag.analyst}</span>
+          }}>{diagData.analyst.split(' ').map(n => n[0]).join('')}</div>
+          <span style={{ fontSize: '0.82rem', color: '#2A2A28', fontFamily: 'DM Sans, sans-serif' }}>{diagData.analyst}</span>
         </div>
       </div>
 
@@ -156,28 +286,48 @@ export default function AdminDiagnosticDetail() {
         ))}
       </div>
 
-      {activeTab === 0 && <TabQuestionnaire />}
-      {activeTab === 1 && <TabReponses />}
-      {activeTab === 2 && <TabSondageDG />}
-      {activeTab === 3 && <TabDiagnostic />}
-      {activeTab === 4 && <TabJournal />}
+      {activeTab === 0 && <TabQuestionnaire sbResponses={sbResponses} useSb={useSb} />}
+      {activeTab === 1 && <TabReponses sbResponses={sbResponses} useSb={useSb} />}
+      {activeTab === 2 && <TabSondageDG sbSurvey={sbSurvey} sbDg={sbDg} useSb={useSb} />}
+      {activeTab === 3 && <TabDiagnostic diagnosticId={id || ''} sbSections={sbSections} useSb={useSb} userId={user?.id} refreshSections={loadDiagnostic} />}
+      {activeTab === 4 && <TabJournal diagnosticId={id || ''} sbJournal={sbJournal} useSb={useSb} userId={user?.id} refreshJournal={loadJournal} />}
     </div>
   )
 }
 
 // ── TAB 1: QUESTIONNAIRE ──────────────────────────
-function TabQuestionnaire() {
+function TabQuestionnaire({ sbResponses, useSb }: { sbResponses: any[]; useSb: boolean }) {
   const [expanded, setExpanded] = useState<number | null>(null)
 
-  const blocStatuses: ('complete' | 'in_progress' | 'not_started')[] = ['complete', 'complete', 'complete', 'complete']
+  // Build answers from Supabase responses if available
+  const getAnswers = (blocIdx: number) => {
+    if (useSb && sbResponses.length > 0) {
+      const blocResponses = sbResponses.filter(r => r.block === blocIdx + 1)
+      if (blocResponses.length > 0) {
+        return blocResponses.map(r => ({
+          q: r.question_key,
+          a: r.response_text || (r.response_value !== null ? String(r.response_value) : JSON.stringify(r.response_json)),
+          score: r.response_value ?? undefined,
+        }))
+      }
+    }
+    return MOCK_ANSWERS[`bloc${blocIdx + 1}`] || []
+  }
+
+  const blocStatuses: ('complete' | 'in_progress' | 'not_started')[] = BLOC_NAMES.map((_, i) => {
+    if (useSb && sbResponses.length > 0) {
+      const blocResponses = sbResponses.filter(r => r.block === i + 1)
+      return blocResponses.length > 0 ? 'complete' : 'not_started'
+    }
+    return 'complete'
+  })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {BLOC_NAMES.map((name, i) => {
         const status = blocStatuses[i]
         const isExpanded = expanded === i
-        const blocKey = `bloc${i + 1}`
-        const answers = MOCK_ANSWERS[blocKey] || []
+        const answers = getAnswers(i)
         return (
           <div key={i} style={{
             backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14,
@@ -217,7 +367,7 @@ function TabQuestionnaire() {
               transition: 'max-height 300ms ease',
             }}>
               <div style={{ padding: '0 22px 18px', borderTop: '1px solid #EDEAE3' }}>
-                {answers.map((a, j) => (
+                {answers.map((a: any, j: number) => (
                   <div key={j} style={{ padding: '10px 0', borderBottom: j < answers.length - 1 ? '1px solid #F0EDE6' : 'none' }}>
                     <p style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: '0.82rem', color: '#2A2A28', marginBottom: 4 }}>
                       {a.q}
@@ -237,8 +387,23 @@ function TabQuestionnaire() {
 }
 
 // ── TAB 2: RÉPONSES ──────────────────────────────
-function TabReponses() {
+function TabReponses({ sbResponses, useSb }: { sbResponses: any[]; useSb: boolean }) {
   const md = mockDiagnostic
+
+  const getAnswers = (blocIdx: number) => {
+    if (useSb && sbResponses.length > 0) {
+      const blocResponses = sbResponses.filter(r => r.block === blocIdx + 1)
+      if (blocResponses.length > 0) {
+        return blocResponses.map(r => ({
+          q: r.question_key,
+          a: r.response_text || (r.response_value !== null ? String(r.response_value) : JSON.stringify(r.response_json)),
+          score: r.response_value ?? undefined,
+        }))
+      }
+    }
+    return MOCK_ANSWERS[`bloc${blocIdx + 1}`] || []
+  }
+
   return (
     <div>
       {/* Profil Climat card */}
@@ -271,7 +436,7 @@ function TabReponses() {
 
       {/* Answers by bloc */}
       {['bloc1', 'bloc2', 'bloc3', 'bloc4'].map((blocKey, bi) => {
-        const answers = MOCK_ANSWERS[blocKey] || []
+        const answers = getAnswers(bi)
         return (
           <div key={blocKey} style={{ marginBottom: 28 }}>
             <p style={{
@@ -280,7 +445,7 @@ function TabReponses() {
             }}>
               BLOC {bi + 1} — {BLOC_NAMES[bi].toUpperCase()}
             </p>
-            {answers.map((a, j) => {
+            {answers.map((a: any, j: number) => {
               const isOpen = !a.score && a.a.length > 60
               return (
                 <div key={j} style={{ marginBottom: 12 }}>
@@ -314,13 +479,26 @@ function TabReponses() {
 }
 
 // ── TAB 3: SONDAGE & DG ──────────────────────────
-function TabSondageDG() {
+function TabSondageDG({ sbSurvey, sbDg, useSb }: { sbSurvey: any[]; sbDg: any; useSb: boolean }) {
   const POP_COLORS = ['#1B4332', '#2D6A4F', '#B0AB9F', '#B87333', '#DC4A4A']
   const POP_LABELS = ['Moteurs', 'Engagés', 'Indifférents', 'Sceptiques', 'Réfractaires']
   const popReal = mockDiagnostic.section4.populationReal
 
+  // Use Supabase survey data if available
+  const surveyCount = useSb && sbSurvey.length > 0 ? sbSurvey.length : 23
+  const surveyTarget = 30
+
   const popValues = [popReal.moteurs, popReal.engages, popReal.indifferents, popReal.sceptiques, popReal.refractaires]
   const popTotal = popValues.reduce((a, b) => a + b, 0)
+
+  // DG answers
+  const dgAnswers = useSb && sbDg ? [
+    { q: 'Gouvernance climat', a: sbDg.dg1_governance },
+    { q: 'Budget annuel climat', a: sbDg.dg2_budget },
+    { q: 'Horizon ROI attendu', a: sbDg.dg3_roi_horizon },
+    { q: 'Bénéfice principal', a: sbDg.dg4_main_benefit },
+    { q: 'Adéquation des moyens (1-10)', a: `${sbDg.dg5_means_score} / 10` },
+  ] : MOCK_DG_ANSWERS
 
   const scoreColor = (v: number) => {
     if (v >= 7) return '#E8F0EB'
@@ -341,8 +519,8 @@ function TabSondageDG() {
         padding: 24, marginBottom: 24, boxShadow: '0 1px 3px rgba(42,42,40,.04)',
       }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16 }}>
-          <span style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontSize: '2rem', color: '#1B4332' }}>23</span>
-          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: '#B0AB9F' }}>/30 réponses</span>
+          <span style={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontSize: '2rem', color: '#1B4332' }}>{surveyCount}</span>
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: '#B0AB9F' }}>/{surveyTarget} réponses</span>
         </div>
 
         {/* Population stacked bar */}
@@ -408,7 +586,10 @@ function TabSondageDG() {
         textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#B0AB9F', marginBottom: 12,
       }}>RÉPONSES OUVERTES (S10)</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
-        {MOCK_VERBATIMS.map((v, i) => (
+        {(useSb && sbSurvey.length > 0
+          ? sbSurvey.filter(s => s.s10_verbatim).map(s => ({ text: s.s10_verbatim, population: s.population || 'Collaborateur' }))
+          : MOCK_VERBATIMS
+        ).map((v: any, i: number) => (
           <div key={i} style={{
             backgroundColor: '#F7F5F0', borderRadius: 10, padding: 12,
             display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
@@ -432,10 +613,10 @@ function TabSondageDG() {
       <div style={{
         backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14, padding: 20,
       }}>
-        {MOCK_DG_ANSWERS.map((a, i) => (
+        {dgAnswers.map((a: any, i: number) => (
           <div key={i} style={{
             display: 'flex', justifyContent: 'space-between', padding: '10px 0',
-            borderBottom: i < MOCK_DG_ANSWERS.length - 1 ? '1px solid #F0EDE6' : 'none',
+            borderBottom: i < dgAnswers.length - 1 ? '1px solid #F0EDE6' : 'none',
           }}>
             <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', color: '#7A766D' }}>{a.q}</span>
             <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.82rem', fontWeight: 500, color: '#2A2A28' }}>{a.a}</span>
@@ -447,17 +628,74 @@ function TabSondageDG() {
 }
 
 // ── TAB 4: DIAGNOSTIC EDITOR ──────────────────────
-function TabDiagnostic() {
+function TabDiagnostic({ diagnosticId, sbSections, useSb, userId, refreshSections }: {
+  diagnosticId: string; sbSections: any[]; useSb: boolean; userId?: string; refreshSections: () => Promise<void>
+}) {
   const [editMode, setEditMode] = useState(false)
   const [editing, setEditing] = useState<number | null>(null)
   const [validated, setValidated] = useState<boolean[]>(Array(9).fill(false))
   const [aiLoading, setAiLoading] = useState<number | null>(null)
   const [aiContent, setAiContent] = useState<Record<number, string>>({})
 
-  const allValidated = validated.every(Boolean)
-  const DATA_SECTIONS = [2, 3, 5] // sections 3, 4, 6 (0-indexed) are calculated
+  // Init validated state from Supabase sections
+  useEffect(() => {
+    if (useSb && sbSections.length > 0) {
+      const newValidated = Array(9).fill(false)
+      for (const sec of sbSections) {
+        const idx = sec.section_number - 1
+        if (idx >= 0 && idx < 9) {
+          newValidated[idx] = sec.status === 'validated'
+          if (sec.content_json) {
+            setAiContent(prev => ({
+              ...prev,
+              [idx]: typeof sec.content_json === 'string' ? sec.content_json : JSON.stringify(sec.content_json),
+            }))
+          }
+        }
+      }
+      setValidated(newValidated)
+    }
+  }, [sbSections, useSb])
 
-  const handleAIFill = (idx: number) => {
+  const allValidated = validated.every(Boolean)
+  const DATA_SECTIONS = [2, 3, 5]
+
+  const handleAIFill = async (idx: number) => {
+    if (useSb) {
+      // Try calling the edge function
+      setAiLoading(idx)
+      try {
+        const session = await supabase.auth.getSession()
+        const token = session.data.session?.access_token
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-diagnostic`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ diagnostic_id: diagnosticId, section_number: idx + 1 }),
+        })
+
+        if (res.status === 404) {
+          // Edge function not deployed yet, fallback to mock
+          doMockAIFill(idx)
+        } else if (res.ok) {
+          await refreshSections()
+        } else {
+          console.error('AI generation error:', res.status)
+          doMockAIFill(idx)
+        }
+      } catch {
+        doMockAIFill(idx)
+      } finally {
+        setAiLoading(null)
+      }
+      return
+    }
+    doMockAIFill(idx)
+  }
+
+  const doMockAIFill = (idx: number) => {
     setAiLoading(idx)
     setTimeout(() => {
       setAiLoading(null)
@@ -468,6 +706,48 @@ function TabDiagnostic() {
           : `Contenu généré par IA pour la section "${SECTION_NAMES[idx]}". Ce brouillon a été créé à partir des données collectées dans le questionnaire, le sondage et le questionnaire DG. Il doit être relu et validé par l'analyste avant publication.`,
       }))
     }, 2000)
+  }
+
+  const handleSaveSection = async (idx: number, content: string, markValidated: boolean) => {
+    if (useSb) {
+      try {
+        const sectionKeys = ['synthesis', 'priorities', 'maturity', 'perception', 'sizing', 'carbon', 'regulatory', 'mapping', 'roadmap']
+        await supabase
+          .from('diagnostic_sections')
+          .upsert({
+            diagnostic_id: diagnosticId,
+            section_number: idx + 1,
+            section_key: sectionKeys[idx],
+            content_json: content,
+            status: markValidated ? 'validated' : 'draft',
+            last_edited_by: userId || null,
+          }, { onConflict: 'diagnostic_id,section_key' })
+        await refreshSections()
+      } catch (err) {
+        console.error('Error saving section:', err)
+      }
+    }
+    if (markValidated) {
+      setValidated(p => p.map((v, j) => j === idx ? true : v))
+    }
+    setEditing(null)
+  }
+
+  const handleUnlock = async () => {
+    if (useSb) {
+      try {
+        await supabase
+          .from('diagnostics')
+          .update({ status: 'delivered', unlocked_at: new Date().toISOString() })
+          .eq('id', diagnosticId)
+        alert('Diagnostic déverrouillé !')
+      } catch (err) {
+        console.error('Error unlocking:', err)
+        alert('Erreur lors du déverrouillage.')
+      }
+    } else {
+      alert('Diagnostic déverrouillé ! (mode démo)')
+    }
   }
 
   return (
@@ -499,7 +779,6 @@ function TabDiagnostic() {
       </div>
 
       {!editMode ? (
-        /* MODE LECTURE — simplified preview */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {SECTION_NAMES.map((name, i) => (
             <div key={i} style={{
@@ -522,7 +801,6 @@ function TabDiagnostic() {
           ))}
         </div>
       ) : (
-        /* MODE ÉDITION */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {SECTION_NAMES.map((name, i) => {
             const isData = DATA_SECTIONS.includes(i)
@@ -544,10 +822,15 @@ function TabDiagnostic() {
                     <p style={{ fontFamily: 'Fraunces, serif', fontWeight: 500, fontSize: '1rem', color: '#2A2A28' }}>{name}</p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    {/* Validated checkbox */}
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                       <div
-                        onClick={() => setValidated(p => p.map((v, j) => j === i ? !v : v))}
+                        onClick={() => {
+                          const newVal = !validated[i]
+                          setValidated(p => p.map((v, j) => j === i ? newVal : v))
+                          if (useSb && aiContent[i]) {
+                            handleSaveSection(i, aiContent[i], newVal)
+                          }
+                        }}
                         style={{
                           width: 18, height: 18, borderRadius: 4, border: '1.5px solid',
                           borderColor: validated[i] ? '#1B4332' : '#EDEAE3',
@@ -575,10 +858,8 @@ function TabDiagnostic() {
                   </div>
                 </div>
 
-                {/* Expanded editor */}
                 {isEditing && !isData && (
                   <div>
-                    {/* AI prefill for sections 1 and 2 */}
                     {(i === 0 || i === 1) && !hasAI && (
                       <button
                         onClick={() => handleAIFill(i)}
@@ -605,11 +886,11 @@ function TabDiagnostic() {
                       </button>
                     )}
 
-                    {/* AI content with accept/regenerate/cancel */}
                     {hasAI && (
                       <div style={{ marginBottom: 14 }}>
                         <textarea
                           defaultValue={aiContent[i]}
+                          onChange={e => setAiContent(prev => ({ ...prev, [i]: e.target.value }))}
                           style={{
                             width: '100%', minHeight: 200, padding: 14, borderRadius: 10,
                             border: '1px solid #EDEAE3', fontFamily: 'DM Sans, sans-serif',
@@ -617,7 +898,7 @@ function TabDiagnostic() {
                           }}
                         />
                         <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                          <button onClick={() => { setEditing(null); setValidated(p => p.map((v, j) => j === i ? true : v)) }}
+                          <button onClick={() => handleSaveSection(i, aiContent[i], true)}
                             style={{ padding: '8px 16px', borderRadius: 8, border: 'none', backgroundColor: '#1B4332', color: '#fff', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
                             Accepter
                           </button>
@@ -633,11 +914,11 @@ function TabDiagnostic() {
                       </div>
                     )}
 
-                    {/* Regular textarea for non-AI sections */}
                     {!hasAI && i !== 0 && i !== 1 && (
                       <div>
                         <textarea
                           placeholder={`Contenu de la section "${name}"...`}
+                          onChange={e => setAiContent(prev => ({ ...prev, [i]: e.target.value }))}
                           style={{
                             width: '100%', minHeight: 200, padding: 14, borderRadius: 10,
                             border: '1px solid #EDEAE3', fontFamily: 'DM Sans, sans-serif',
@@ -645,7 +926,7 @@ function TabDiagnostic() {
                           }}
                         />
                         <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                          <button onClick={() => setEditing(null)}
+                          <button onClick={() => handleSaveSection(i, aiContent[i] || '', false)}
                             style={{ padding: '8px 16px', borderRadius: 8, border: 'none', backgroundColor: '#1B4332', color: '#fff', fontFamily: 'DM Sans, sans-serif', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
                             Sauvegarder
                           </button>
@@ -659,7 +940,6 @@ function TabDiagnostic() {
                   </div>
                 )}
 
-                {/* Data section note */}
                 {isData && (
                   <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', color: '#B0AB9F', fontStyle: 'italic', marginTop: 8 }}>
                     Les données sont calculées automatiquement à partir des réponses.
@@ -669,8 +949,8 @@ function TabDiagnostic() {
             )
           })}
 
-          {/* Unlock button */}
           <button
+            onClick={handleUnlock}
             disabled={!allValidated}
             style={{
               width: '100%', padding: '14px 24px', borderRadius: 8, border: 'none',
@@ -691,9 +971,45 @@ function TabDiagnostic() {
 }
 
 // ── TAB 5: JOURNAL ──────────────────────────────
-function TabJournal() {
+function TabJournal({ diagnosticId, sbJournal, useSb, userId, refreshJournal }: {
+  diagnosticId: string; sbJournal: any[]; useSb: boolean; userId?: string; refreshJournal: () => Promise<void>
+}) {
   const [note, setNote] = useState('')
   const [isInternal, setIsInternal] = useState(false)
+
+  const entries = useSb && sbJournal.length > 0
+    ? sbJournal.map(e => ({
+        id: e.id,
+        author: e.author_id === userId ? 'analyst' as const : 'client' as const,
+        name: e.author_id === userId ? 'Vous' : 'Client',
+        initials: e.author_id === userId ? 'GP' : 'CL',
+        date: new Date(e.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+        text: e.content,
+        badge: e.step_change ? `Étape : ${e.step_change}` : null,
+        internal: false,
+      }))
+    : MOCK_JOURNAL
+
+  const handlePublish = async () => {
+    if (!note.trim()) return
+    if (useSb && userId) {
+      try {
+        await supabase
+          .from('journal_entries')
+          .insert({
+            diagnostic_id: diagnosticId,
+            author_id: userId,
+            content: note,
+          })
+        setNote('')
+        await refreshJournal()
+      } catch (err) {
+        console.error('Error publishing journal entry:', err)
+      }
+    } else {
+      setNote('')
+    }
+  }
 
   return (
     <div>
@@ -733,6 +1049,7 @@ function TabJournal() {
             </span>
           </label>
           <button
+            onClick={handlePublish}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px',
               borderRadius: 8, border: 'none', backgroundColor: '#1B4332', color: '#fff',
@@ -746,7 +1063,7 @@ function TabJournal() {
 
       {/* Entries */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {MOCK_JOURNAL.map(entry => (
+        {entries.map((entry: any) => (
           <div
             key={entry.id}
             style={{
