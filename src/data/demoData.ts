@@ -416,13 +416,233 @@ export const MAISON_DUVAL_FULL = MAISON_DUVAL
 /** @deprecated Use MAISON_DUVAL_FULL + buildDiagnosticAtStep instead */
 export const DEMO_DIAGNOSTICS: DemoDiagnostic[] = [MAISON_DUVAL]
 
-export function getDemoDiagnostic(_id: string): DemoDiagnostic | undefined {
+export function getDemoDiagnostic(id: string): DemoDiagnostic | undefined {
+  if (id === 'demo-duval') return MAISON_DUVAL
+  if (id === 'demo-meridien') return DEMO_MERIDIEN
+  if (id === 'demo-novatech') return DEMO_NOVATECH
+  // Legacy fallback
+  if (id === 'diag-001') return MAISON_DUVAL
   return MAISON_DUVAL
 }
 
 export const DEMO_ADMIN_KPIS = {
-  activeDiagnostics: 7,
-  awaitingRestitution: 2,
+  activeDiagnostics: 3,
+  awaitingRestitution: 1,
   avgSurveyRate: 76,
   avgDaysPerDiagnostic: 12,
+}
+
+// ────────────────────────────────────────────────
+// GROUPE MÉRIDIEN — In analysis phase
+// ────────────────────────────────────────────────
+const DEMO_MERIDIEN: DemoDiagnostic = {
+  id: 'demo-meridien',
+  status: 'analysis',
+  organization: {
+    name: 'Groupe Méridien',
+    sector: 'Industrie manufacturière',
+    naf: 'C — Industrie manufacturière',
+    headcount: '501–1 000',
+    revenue: '50–200 M€',
+    sites: '4 (Toulouse, Marseille, Nantes, Lille)',
+    rseStartYear: 2022,
+    contact: { name: 'Marc Fontaine', title: 'Directeur RSE', email: 'rse@meridien.fr' },
+    analyst: { name: 'Guillaume Pakula', title: 'Analyste climat senior', initials: 'GP' },
+  },
+  bloc1: {
+    tiles: {
+      bilan_carbone: { status: 'done', comment: 'BC scopes 1-2 réalisé en 2024' },
+      strategie_climat: { status: 'in_progress', comment: 'Stratégie en cours de formalisation' },
+      objectifs_reduction: { status: 'done', comment: '-25% scopes 1-2 d\'ici 2030' },
+      rapport_rse: { status: 'done', comment: 'Rapport RSE annuel depuis 2023' },
+      certification: { status: 'not_started' },
+      formation: { status: 'in_progress', comment: 'Formation managers en déploiement' },
+      eco_conception: { status: 'not_started' },
+      achats_responsables: { status: 'done', comment: 'Charte achats responsables signée' },
+      mobilite: { status: 'not_started' },
+      acv: { status: 'not_started' },
+      compensation: { status: 'not_started' },
+      initiatives_collectives: { status: 'not_started' },
+    },
+    headcount: '501–1 000',
+    revenue: '50–200 M€',
+    naf: 'C — Industrie manufacturière',
+  },
+  bloc1Completed: true,
+  bloc2: {
+    responses: [3, 2, 3, 2, 2, 3, 2, 3, 2, 2, 2, 2, 3, 2, 2, 3, 3, 2, 2, 2],
+    scores: { gouvernance: 55, mesure: 45, strategie: 48, culture: 42, global: 47 },
+    letters: { gouvernance: 'C', mesure: 'C', strategie: 'C', culture: 'D', global: 'C' },
+  },
+  bloc2Completed: true,
+  bloc3: {
+    q21_drivers: ['Conformité réglementaire', 'Réduction des coûts énergétiques'],
+    q22_barrier: 'Investissements lourds nécessaires pour décarboner les process industriels',
+    q23_regulatory: {
+      csrd: 'Sous 12 mois',
+      beges: 'Déjà concerné',
+      taxonomie: 'Sous 2-3 ans',
+      vigilance: 'Sous 12 mois',
+      donneurs_ordre: 'Déjà concerné',
+      affichage: 'Pas concerné',
+    },
+    q24_lost_tender: true,
+    q24_tender_detail: 'Perdu un appel d\'offres automobile faute de bilan carbone scope 3',
+    q25_carte_blanche: 'Décarboner l\'outil de production sans perdre en compétitivité',
+    q26_ambition: 'Être le premier industriel du secteur certifié SBTi',
+    q27_confidential: 'Le COMEX est divisé sur le budget à allouer. Le DG est convaincu mais le DAF freine.',
+    completed: true,
+  },
+  bloc3Completed: true,
+  bloc4: {
+    partA: [6, 4, 5, 6, 5, 4, 3, 5],
+    partB: [5, 4, 4, 5, 5, 3, 3, 4],
+    partC: [8, 20, 40, 25, 7],
+    completed: true,
+  },
+  bloc4Completed: true,
+  survey: {
+    respondents: 23,
+    target: 30,
+    averages: [5.2, 4.1, 3.8, 5.0, 4.5, 4.2, 3.2, 4.0],
+    profiles: [8, 20, 40, 25, 7],
+    verbatims: [
+      'Le bilan carbone c\'est bien mais on ne voit pas d\'actions concrètes sur le terrain.',
+      'La direction parle de RSE mais les budgets ne suivent pas.',
+      'On manque de formation sur les enjeux climat.',
+    ],
+    dailyResponses: [
+      { day: 'Lun', count: 5 }, { day: 'Mar', count: 8 }, { day: 'Mer', count: 6 },
+      { day: 'Jeu', count: 4 },
+    ],
+  },
+  dg: {
+    received: true,
+    dg1: 'Le sujet est stratégique mais les contraintes industrielles sont fortes. On avance pas à pas.',
+    dg2: 'La décarbonation de nos fours représente un investissement de 15M€. On cherche des financements.',
+    dg3: 'Budget RSE de 200k€/an hors investissements industriels.',
+    dg4: 'On est en retard par rapport aux grands groupes mais on progresse vite.',
+    dg5: 5,
+  },
+  documents: {
+    files: [
+      { name: 'Bilan Carbone 2024 - Méridien.pdf', size: '2.5 Mo', date: '15/01/2026', type: 'pdf' },
+      { name: 'Plan industriel 2025-2030.pdf', size: '5.2 Mo', date: '18/01/2026', type: 'pdf' },
+    ],
+    notes: 'Documents reçus, en attente du rapport RSE.',
+    corpus_validated: false,
+  },
+  journal: [
+    {
+      id: 'jm1', author: 'analyst', authorName: 'Guillaume',
+      date: new Date(Date.now() - 15 * 86400_000),
+      text: 'Diagnostic Méridien : profil industriel intéressant. Les enjeux scope 1 sont prépondérants.',
+      badge: 'Étape : Analyse', badgeColor: '#1B4332',
+    },
+  ],
+  messages: [],
+  diagnosticUnlocked: false,
+  diagnosticSections: Array(9).fill({ status: 'empty' as const }),
+  checklist: {
+    appel_lancement: true,
+    bloc1: true, bloc2: true, bloc3: true, bloc4: true,
+    sondage: true, dg: true,
+    ia_generated: false, validated: false,
+    restitution_planned: false, unlocked: false,
+  },
+  profilClimat: {
+    code: 'C · I · T · P',
+    name: 'L\'éveil industriel',
+    phrase: '« On sait qu\'il faut agir, on cherche comment. »',
+    family: 'Famille des Pragmatiques',
+  },
+}
+
+// ────────────────────────────────────────────────
+// NOVATECH — In questionnaire phase
+// ────────────────────────────────────────────────
+const DEMO_NOVATECH: DemoDiagnostic = {
+  id: 'demo-novatech',
+  status: 'questionnaire',
+  organization: {
+    name: 'NovaTech Solutions',
+    sector: 'Information et communication',
+    naf: 'J — Information et communication',
+    headcount: '51–250',
+    revenue: '10–50 M€',
+    sites: '2 (Paris, Remote)',
+    rseStartYear: 2024,
+    contact: { name: 'Léa Chen', title: 'COO', email: 'contact@novatech.fr' },
+    analyst: { name: 'Guillaume Pakula', title: 'Analyste climat senior', initials: 'GP' },
+  },
+  bloc1: {
+    tiles: {
+      bilan_carbone: { status: 'done', comment: 'Premier BC réalisé en 2024' },
+      strategie_climat: { status: 'not_started' },
+      objectifs_reduction: { status: 'not_started' },
+      rapport_rse: { status: 'not_started' },
+      certification: { status: 'not_started' },
+      formation: { status: 'not_started' },
+      eco_conception: { status: 'in_progress', comment: 'Réflexion en cours sur le green IT' },
+      achats_responsables: { status: 'not_started' },
+      mobilite: { status: 'done', comment: '100% remote-first, pas de flotte' },
+      acv: { status: 'not_started' },
+      compensation: { status: 'not_started' },
+      initiatives_collectives: { status: 'not_started' },
+    },
+    headcount: '51–250',
+    revenue: '10–50 M€',
+    naf: 'J — Information et communication',
+  },
+  bloc1Completed: true,
+  bloc2: {
+    responses: [2, 1, 2, 1, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 2, 1, 1, 1],
+    scores: { gouvernance: 35, mesure: 25, strategie: 28, culture: 22, global: 27 },
+    letters: { gouvernance: 'D', mesure: 'D', strategie: 'D', culture: 'D', global: 'D' },
+  },
+  bloc2Completed: false,
+  bloc3: {
+    q21_drivers: [],
+    q22_barrier: '',
+    q23_regulatory: {},
+    q24_lost_tender: false,
+    completed: false,
+  },
+  bloc3Completed: false,
+  bloc4: {
+    partA: [],
+    partB: [],
+    partC: [],
+    completed: false,
+  },
+  bloc4Completed: false,
+  survey: {
+    respondents: 0,
+    target: 30,
+    averages: [],
+    profiles: [],
+    verbatims: [],
+    dailyResponses: [],
+  },
+  dg: { received: false },
+  documents: { files: [], notes: '', corpus_validated: false },
+  journal: [
+    {
+      id: 'jn1', author: 'analyst', authorName: 'Guillaume',
+      date: new Date(Date.now() - 5 * 86400_000),
+      text: 'Bienvenue Léa ! Premier diagnostic pour NovaTech. Commençons par le questionnaire.',
+      badge: 'Étape : Démarrage', badgeColor: '#2D7A50',
+    },
+  ],
+  messages: [],
+  diagnosticUnlocked: false,
+  diagnosticSections: Array(9).fill({ status: 'empty' as const }),
+  checklist: {
+    appel_lancement: true,
+    bloc1: true, bloc2: false, bloc3: false, bloc4: false,
+    sondage: false, dg: false,
+    ia_generated: false, validated: false,
+    restitution_planned: false, unlocked: false,
+  },
+  profilClimat: undefined,
 }
