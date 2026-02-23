@@ -4,6 +4,9 @@ import { Check, ChevronRight, ChevronLeft, Clock } from 'lucide-react'
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts'
 import { maturityQuestions } from '@/data/maturityQuestions'
 import { computeDimensionScores, computeGlobalScore, computeProfilClimat } from '@/utils/maturityScoring'
+import { useQuestionnaire } from '@/hooks/useQuestionnaire'
+import { useAnalytics } from '@/hooks/useAnalytics'
+import { useDemoIfAvailable } from '@/hooks/useDemo'
 
 const STORAGE_KEY = 'boussole_bloc2'
 const TOTAL = 20
@@ -28,6 +31,13 @@ function DimensionIcon({ index }: { index: number }) {
 
 // ── Main Component ───────────────────────────
 export default function QuestionnaireBloc2() {
+  const demo = useDemoIfAvailable()
+  const diagnosticId = demo?.diagnostic?.id ?? 'demo'
+  const { setResponse: sbSetResponse } = useQuestionnaire({ diagnosticId, block: 2, localStorageKey: STORAGE_KEY })
+  const { track } = useAnalytics(diagnosticId)
+
+  useEffect(() => { track('block_start', { block: 2 }) }, [])
+
   const [answers, setAnswers] = useState<Record<number, number>>(loadState)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [phase, setPhase] = useState<'question' | 'transition' | 'feedback'>('question')
@@ -43,6 +53,7 @@ export default function QuestionnaireBloc2() {
 
   function selectOption(level: number) {
     setAnswers(prev => ({ ...prev, [question.id]: level }))
+    sbSetResponse(`q${question.id}`, level)
   }
 
   function goNext() {

@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
 import SectionLayout from '@/components/diagnostic/SectionLayout'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 const PRIORITY_COLORS = ['#1B4332', '#B87333', '#5B8C6E']
 const EFFORT_STYLES: Record<string, { bg: string; color: string }> = {
@@ -9,6 +11,9 @@ const EFFORT_STYLES: Record<string, { bg: string; color: string }> = {
 }
 
 export default function DiagnosticSection2() {
+  const { track } = useAnalytics()
+  useEffect(() => { track('section_view', { section: 2 }) }, [])
+
   const { priorities, antiRecommendation } = mockDiagnostic.section2
 
   return (

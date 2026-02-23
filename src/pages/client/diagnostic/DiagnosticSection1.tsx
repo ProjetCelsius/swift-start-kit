@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { Lightbulb, Shield, AlertTriangle, TrendingUp } from 'lucide-react'
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
 import SectionLayout from '@/components/diagnostic/SectionLayout'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 const ACCENT_COLORS = ['#1B4332', '#B87333', '#5B8C6E']
 
@@ -29,6 +31,9 @@ const SUMMARY_CARDS = [
 ]
 
 export default function DiagnosticSection1() {
+  const { track } = useAnalytics()
+  useEffect(() => { track('section_view', { section: 1 }) }, [])
+
   const { paragraphs, keyTakeaways } = mockDiagnostic.section1
 
   return (

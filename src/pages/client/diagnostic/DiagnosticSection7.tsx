@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { AlertCircle, AlertTriangle, ExternalLink } from 'lucide-react'
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
 import SectionLayout from '@/components/diagnostic/SectionLayout'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   'En cours': { bg: '#F5EDE4', color: '#B87333', label: 'En cours' },
@@ -47,6 +49,9 @@ function getUrgencyBadge(dateStr: string, status: string): { label: string; bg: 
 }
 
 export default function DiagnosticSection7() {
+  const { track } = useAnalytics()
+  useEffect(() => { track('section_view', { section: 7 }) }, [])
+
   const { deadlines } = mockDiagnostic.section7
 
   // Deadlines < 12 months not started

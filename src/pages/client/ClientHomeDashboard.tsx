@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Users, Compass, User, FolderOpen, Lock, AlertTriangle, CheckCircle, Clock, ChevronRight } from 'lucide-react'
 import { useAuth, MOCK_ANALYST } from '../../hooks/useAuth'
@@ -7,6 +7,7 @@ import ProtocolModal, { useProtocolModal } from '../../components/ProtocolModal'
 import guillaumePhoto from '../../assets/guillaume-photo.png'
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
 import type { DemoStatus } from '@/data/demoData'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 // ── Types ──────
 type BlocStatus = 'done' | 'active' | 'todo'
@@ -203,6 +204,10 @@ export default function ClientHomeDashboard() {
   const analyst = MOCK_ANALYST
   const firstName = user?.first_name || 'Claire'
   const protocol = useProtocolModal()
+  const diagnosticId = demo?.diagnostic?.id ?? 'demo'
+  const { track } = useAnalytics(diagnosticId)
+
+  useEffect(() => { track('page_view') }, [])
 
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : undefined
   const corpusValidated = demo?.enabled ? demo.activeDiagnostic.documents?.corpus_validated : false

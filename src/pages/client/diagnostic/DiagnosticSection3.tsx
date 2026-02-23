@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   PieChart, Pie, Cell,
@@ -5,6 +6,7 @@ import {
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
 import { MOCK_MATURITY } from '@/data/mockDiagnosticData'
 import SectionLayout from '@/components/diagnostic/SectionLayout'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 const GRADE_COLORS: Record<string, string> = { A: '#1B4332', B: '#5B8C6E', C: '#B87333', D: '#9B2C2C' }
 const GRADE_SCALE = [
@@ -15,6 +17,9 @@ const GRADE_SCALE = [
 ]
 
 export default function DiagnosticSection3() {
+  const { track } = useAnalytics()
+  useEffect(() => { track('section_view', { section: 3 }) }, [])
+
   const { globalScore, globalGrade, dimensions, sectorAverages, profileSummary } = mockDiagnostic.section3
   const globalColor = GRADE_COLORS[globalGrade]
   const sectorGlobal = MOCK_MATURITY.sectorAverages?.global ?? 59

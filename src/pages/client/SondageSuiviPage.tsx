@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts'
 import { Check, User, Copy, RefreshCw } from 'lucide-react'
+import { useSurveyTracking } from '@/hooks/useSurveyTracking'
+import { useAnalytics } from '@/hooks/useAnalytics'
+import { useDemoIfAvailable } from '@/hooks/useDemo'
+import { isSupabaseConfigured } from '@/lib/supabase'
 
 const MOCK_DATA = {
   totalResponses: 23,
@@ -27,13 +31,28 @@ function getEncouragement(count: number): string {
 
 export default function SondageSuiviPage() {
   const [copied, setCopied] = useState(false)
-  const { totalResponses, target, dgReceived, surveyLink, dailyResponses } = MOCK_DATA
+  const demo = useDemoIfAvailable()
+  const diagnosticId = demo?.diagnostic?.id ?? 'demo'
+  const surveyData = useSurveyTracking(diagnosticId, MOCK_DATA.target)
+  const { track } = useAnalytics(diagnosticId)
+
+  // Use Supabase data if available, otherwise mock
+  const useSb = isSupabaseConfigured() && !surveyData.loading && surveyData.totalResponses > 0
+  const totalResponses = useSb ? surveyData.totalResponses : MOCK_DATA.totalResponses
+  const target = useSb ? surveyData.targetCount : MOCK_DATA.target
+  const dailyResponses = useSb
+    ? surveyData.dailyCounts.map(d => ({ day: d.date.slice(5).replace('-', '/'), count: d.count }))
+    : MOCK_DATA.dailyResponses
+  const dgReceived = MOCK_DATA.dgReceived
+  const surveyLink = MOCK_DATA.surveyLink
+
   const progress = Math.min((totalResponses / target) * 100, 100)
   const onTarget = totalResponses >= target
 
   const handleCopy = () => {
     navigator.clipboard.writeText(surveyLink)
     setCopied(true)
+    track('survey_link_copied')
     setTimeout(() => setCopied(false), 2000)
   }
 

@@ -26,7 +26,7 @@ export function useJournal(diagnosticId: string): UseJournalResult {
   const [error, setError] = useState<string | null>(null)
 
   const fetchEntries = useCallback(async () => {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured()) {
       setLoading(false)
       return
     }
@@ -62,7 +62,7 @@ export function useJournal(diagnosticId: string): UseJournalResult {
 
   // Realtime on new entries and replies
   useEffect(() => {
-    if (!isSupabaseConfigured) return
+    if (!isSupabaseConfigured()) return
 
     const channel = supabase
       .channel(`journal-${diagnosticId}`)
@@ -82,7 +82,7 @@ export function useJournal(diagnosticId: string): UseJournalResult {
   }, [diagnosticId, fetchEntries])
 
   const addEntry = useCallback(async (content: string, stepChange?: string) => {
-    if (!isSupabaseConfigured) return
+    if (!isSupabaseConfigured()) return
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
@@ -101,7 +101,7 @@ export function useJournal(diagnosticId: string): UseJournalResult {
   }, [diagnosticId])
 
   const addReply = useCallback(async (entryId: string, content: string) => {
-    if (!isSupabaseConfigured) return
+    if (!isSupabaseConfigured()) return
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')

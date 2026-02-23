@@ -35,13 +35,13 @@ export function useQuestionnaire({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const pendingRef = useRef<Map<string, any>>(new Map())
 
   // ─── Load initial data ────────────────────────
   useEffect(() => {
     async function load() {
-      if (isSupabaseConfigured) {
+      if (isSupabaseConfigured()) {
         // Load from Supabase
         try {
           const { data, error: fetchError } = await supabase
@@ -91,7 +91,7 @@ export function useQuestionnaire({
     setSaving(true)
 
     try {
-      if (isSupabaseConfigured) {
+      if (isSupabaseConfigured()) {
         // Upsert each pending response
         const upserts = entries.map(([questionKey, value]) => {
           const row: any = {

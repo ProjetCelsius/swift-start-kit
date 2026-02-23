@@ -26,7 +26,7 @@ export function useAnalytics(diagnosticId?: string) {
   useEffect(() => {
     pageEnteredAt.current = Date.now()
 
-    if (!isSupabaseConfigured) return
+    if (!isSupabaseConfigured()) return
 
     // Fire-and-forget, no await
     supabase.from('analytics_events').insert({
@@ -40,7 +40,7 @@ export function useAnalytics(diagnosticId?: string) {
     // On unmount (page leave), log duration
     return () => {
       const duration = Date.now() - pageEnteredAt.current
-      if (duration > 1000 && isSupabaseConfigured) {
+      if (duration > 1000 && isSupabaseConfigured()) {
         supabase.from('analytics_events').insert({
           diagnostic_id: diagnosticId || null,
           session_id: SESSION_ID,
@@ -55,7 +55,7 @@ export function useAnalytics(diagnosticId?: string) {
   }, [location.pathname, diagnosticId])
 
   const track = useCallback((eventType: EventType, data?: Record<string, unknown>) => {
-    if (!isSupabaseConfigured) return
+    if (!isSupabaseConfigured()) return
 
     supabase.from('analytics_events').insert({
       diagnostic_id: diagnosticId || null,

@@ -1,8 +1,10 @@
+import { useEffect } from 'react'
 import { ExternalLink, CheckCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
 import guillaumePhoto from '@/assets/guillaume-photo.png'
 import SectionLayout from '@/components/diagnostic/SectionLayout'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 const PRIORITY_COLORS = ['#1B4332', '#B87333', '#5B8C6E']
 
@@ -13,6 +15,9 @@ const QUICK_ACTIONS = [
 ]
 
 export default function DiagnosticSection9() {
+  const { track } = useAnalytics()
+  useEffect(() => { track('section_view', { section: 9 }) }, [])
+
   const navigate = useNavigate()
   const { priorities } = mockDiagnostic.section2
   const { quarters } = mockDiagnostic.section9

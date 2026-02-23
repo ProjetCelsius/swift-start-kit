@@ -27,7 +27,7 @@ export function useDiagnostic({ diagnosticId }: UseDiagnosticOptions = {}): Diag
   const [error, setError] = useState<string | null>(null)
 
   const fetchDiagnostic = useCallback(async () => {
-    if (!diagnosticId || !isSupabaseConfigured) {
+    if (!diagnosticId || !isSupabaseConfigured()) {
       setLoading(false)
       return
     }
@@ -62,7 +62,7 @@ export function useDiagnostic({ diagnosticId }: UseDiagnosticOptions = {}): Diag
 
   // Subscribe to realtime updates on this diagnostic
   useEffect(() => {
-    if (!diagnosticId || !isSupabaseConfigured) return
+    if (!diagnosticId || !isSupabaseConfigured()) return
 
     const channel = supabase
       .channel(`diagnostic-${diagnosticId}`)
@@ -79,7 +79,7 @@ export function useDiagnostic({ diagnosticId }: UseDiagnosticOptions = {}): Diag
   }, [diagnosticId])
 
   const updateStatus = useCallback(async (status: DiagnosticStatus, analysisStep?: AnalysisStep) => {
-    if (!diagnosticId || !isSupabaseConfigured) return
+    if (!diagnosticId || !isSupabaseConfigured()) return
 
     const update: Partial<Diagnostic> = { status }
     if (analysisStep !== undefined) update.analysis_step = analysisStep
@@ -96,7 +96,7 @@ export function useDiagnostic({ diagnosticId }: UseDiagnosticOptions = {}): Diag
   }, [diagnosticId])
 
   const unlock = useCallback(async () => {
-    if (!diagnosticId || !isSupabaseConfigured) return
+    if (!diagnosticId || !isSupabaseConfigured()) return
 
     const { error: updateError } = await supabase
       .from('diagnostics')

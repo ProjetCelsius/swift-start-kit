@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { TrendingDown, ExternalLink } from 'lucide-react'
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -5,10 +6,14 @@ import {
 } from 'recharts'
 import { MOCK_FOOTPRINT } from '@/data/mockDiagnosticData'
 import SectionLayout from '@/components/diagnostic/SectionLayout'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 const SCOPE_COLORS = ['#1B4332', '#2D6A4F', '#93C5A0']
 
 export default function DiagnosticSection6() {
+  const { track } = useAnalytics()
+  useEffect(() => { track('section_view', { section: 6 }) }, [])
+
   const hasFootprint = MOCK_FOOTPRINT.hasFootprint
 
   return (
