@@ -76,9 +76,9 @@ export function MonComptePanel({ open, onClose }: { open: boolean; onClose: () =
     <OverlayPanel open={open} onClose={onClose} title="Mon compte">
       {/* Avatar + identity */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-        <img src={clientAvatar} alt="Claire Lefèvre" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid #EDEAE3' }} />
+        <img src={clientAvatar} alt="Sophie Duval-Martin" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid #EDEAE3' }} />
         <div>
-          <div className="font-display" style={{ fontSize: '1.15rem', fontWeight: 500, color: '#2A2A28' }}>Claire Lefèvre</div>
+          <div className="font-display" style={{ fontSize: '1.15rem', fontWeight: 500, color: '#2A2A28' }}>Sophie Duval-Martin</div>
           <span style={{
             display: 'inline-block', padding: '3px 12px', borderRadius: 12,
             border: '1px solid #EDEAE3', fontFamily: 'var(--font-sans)', fontWeight: 500,
@@ -90,9 +90,9 @@ export function MonComptePanel({ open, onClose }: { open: boolean; onClose: () =
       {/* Info fields */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.72rem', color: '#B0AB9F', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>INFORMATIONS PERSONNELLES</div>
-        <FieldRow label="E-mail" value="c.lefevre@republique.gouv.fr" icon={<Mail size={15} />} />
-        <FieldRow label="Téléphone" value="+33 1 42 75 80 00" icon={<Phone size={15} />} />
-        <FieldRow label="Organisation" value="République française" icon={<Shield size={15} />} />
+        <FieldRow label="E-mail" value="sophie@maison-duval.fr" icon={<Mail size={15} />} />
+        <FieldRow label="Téléphone" value="+33 4 72 68 45 00" icon={<Phone size={15} />} />
+        <FieldRow label="Organisation" value="Maison Duval" icon={<Shield size={15} />} />
       </div>
 
       {/* Diagnostic info */}

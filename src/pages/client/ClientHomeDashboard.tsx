@@ -202,7 +202,7 @@ export default function ClientHomeDashboard() {
   const demo = useDemoIfAvailable()
   const navigate = useNavigate()
   const analyst = MOCK_ANALYST
-  const firstName = user?.first_name || 'Claire'
+  const firstName = user?.first_name || 'Sophie'
   const protocol = useProtocolModal()
   const diagnosticId = demo?.diagnostic?.id ?? 'demo'
   const { track } = useAnalytics(diagnosticId)
