@@ -19,11 +19,11 @@ export const TOUR_STEPS: TourStep[] = [
     tooltipText: "Le responsable RSE reçoit un lien magique par email pour accéder à son espace. Pas de mot de passe à retenir.",
   },
   {
-    route: '/client/appel-lancement',
-    role: 'client',
+    route: '/setup/demo-duval',
+    role: 'admin',
     demoStep: 1,
-    tooltipTitle: 'Appel de lancement',
-    tooltipText: "L'analyste Celsius et le client paramètrent le diagnostic ensemble : secteur, taille, périmètre, objectifs.",
+    tooltipTitle: 'Paramétrage du diagnostic',
+    tooltipText: "L'analyste Celsius paramètre le diagnostic avec le client : profil entreprise, démarche actuelle, configuration du sondage et de l'entretien DG.",
   },
   {
     route: '/client/questionnaire/bloc1',
