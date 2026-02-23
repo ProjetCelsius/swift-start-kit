@@ -309,17 +309,18 @@ export const MOCK_DEADLINES: Deadline[] = [
 export interface TileEnrichment {
   status: 'done' | 'in_progress' | 'not_started'
   relevance: 'essential' | 'recommended' | 'optional'
+  celsiusOffer?: string
 }
 
 export const MOCK_TILE_ENRICHMENTS: Record<string, TileEnrichment> = {
   bilan_carbone: { status: 'done', relevance: 'essential' },
   strategie_climat: { status: 'in_progress', relevance: 'essential' },
-  objectifs_reduction: { status: 'not_started', relevance: 'essential' },
-  rapport_rse: { status: 'not_started', relevance: 'essential' },
+  objectifs_reduction: { status: 'not_started', relevance: 'essential', celsiusOffer: 'Accompagnement trajectoire SBTi — 6 à 8 semaines' },
+  rapport_rse: { status: 'not_started', relevance: 'essential', celsiusOffer: 'Reporting CSRD clé en main — à partir de 15k€' },
   certification: { status: 'not_started', relevance: 'optional' },
-  formation: { status: 'in_progress', relevance: 'recommended' },
-  eco_conception: { status: 'not_started', relevance: 'recommended' },
-  achats_responsables: { status: 'not_started', relevance: 'essential' },
+  formation: { status: 'in_progress', relevance: 'recommended', celsiusOffer: 'Fresque du Climat + ateliers métiers sur mesure' },
+  eco_conception: { status: 'not_started', relevance: 'recommended', celsiusOffer: 'ACV produit & démarche d\'éco-conception' },
+  achats_responsables: { status: 'not_started', relevance: 'essential', celsiusOffer: 'Audit fournisseurs & politique achats responsables' },
   mobilite: { status: 'done', relevance: 'recommended' },
   acv: { status: 'not_started', relevance: 'optional' },
   compensation: { status: 'not_started', relevance: 'optional' },

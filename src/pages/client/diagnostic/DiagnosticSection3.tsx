@@ -3,6 +3,7 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts'
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
+import { MOCK_MATURITY } from '@/data/mockDiagnosticData'
 import SectionLayout from '@/components/diagnostic/SectionLayout'
 
 const GRADE_COLORS: Record<string, string> = { A: '#1B4332', B: '#5B8C6E', C: '#B87333', D: '#9B2C2C' }
@@ -16,6 +17,8 @@ const GRADE_SCALE = [
 export default function DiagnosticSection3() {
   const { globalScore, globalGrade, dimensions, sectorAverages } = mockDiagnostic.section3
   const globalColor = GRADE_COLORS[globalGrade]
+  const sectorGlobal = MOCK_MATURITY.sectorAverages?.global ?? 59
+  const aboveSector = globalScore > sectorGlobal
 
   // Circular progress ring data
   const ringData = [
@@ -34,7 +37,7 @@ export default function DiagnosticSection3() {
     <SectionLayout sectionNumber={3}>
       {/* Score hero with circular ring */}
       <div
-        className="rounded-xl p-8 mb-6 text-center"
+        className="rounded-xl p-8 mb-4 text-center"
         style={{ backgroundColor: '#FFFFFF', border: '1px solid #EDEAE3' }}
       >
         <div className="relative w-[120px] h-[120px] mx-auto mb-3">
@@ -66,13 +69,33 @@ export default function DiagnosticSection3() {
         <p className="text-sm mt-1" style={{ color: '#7A766D' }}>
           Score global : <span className="font-bold" style={{ color: globalColor }}>{globalScore}</span>/100
         </p>
+        <p style={{ fontSize: '0.78rem', color: '#B0AB9F', marginTop: 4 }}>
+          Moyenne sectorielle : {sectorGlobal}/100
+          {aboveSector && <span style={{ color: '#1B4332', marginLeft: 4 }}>↑</span>}
+        </p>
       </div>
+
+      {/* Profile summary */}
+      {MOCK_MATURITY.profileSummary && (
+        <div
+          className="rounded-xl mb-6"
+          style={{ backgroundColor: 'var(--color-fond)', padding: '20px 24px', borderRadius: 12 }}
+        >
+          <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '1rem', color: '#2A2A28', marginBottom: 8 }}>
+            Votre profil en un mot
+          </h3>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.88rem', lineHeight: 1.7, color: '#2A2A28' }}>
+            {MOCK_MATURITY.profileSummary}
+          </p>
+        </div>
+      )}
 
       {/* 2×2 Dimension cards */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         {dimensions.map(dim => {
           const dimColor = GRADE_COLORS[dim.grade]
           const sectorAvg = sectorAverages[dim.name as keyof typeof sectorAverages] || 50
+          const dimDetail = MOCK_MATURITY.dimensions.find(d => d.label === dim.name)
           return (
             <div
               key={dim.name}
@@ -91,7 +114,7 @@ export default function DiagnosticSection3() {
               <p className="text-xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: dimColor }}>
                 {dim.score}<span className="text-xs font-normal text-[#B0AB9F]">/100</span>
               </p>
-              {/* Bar with sector marker */}
+              {/* Main score bar */}
               <div className="relative">
                 <div className="h-2 rounded-full" style={{ backgroundColor: '#EDEAE3' }}>
                   <div
@@ -105,9 +128,37 @@ export default function DiagnosticSection3() {
                   style={{ left: `${sectorAvg}%`, borderColor: '#B0AB9F' }}
                 />
               </div>
-              <p className="text-[10px] mt-1.5" style={{ color: '#B0AB9F' }}>
-                Moyenne sectorielle : {sectorAvg}/100
+              {/* Sector comparison mini bar */}
+              <div className="relative mt-2">
+                <div className="h-[3px] rounded-full" style={{ backgroundColor: 'var(--color-gris-200)' }} />
+                <div
+                  className="absolute"
+                  style={{
+                    left: `${sectorAvg}%`,
+                    top: -4,
+                    transform: 'translateX(-50%)',
+                    fontSize: '8px',
+                    color: '#B0AB9F',
+                    lineHeight: 1,
+                  }}
+                >
+                  ▲
+                </div>
+              </div>
+              <p style={{ fontSize: '0.7rem', color: '#B0AB9F', marginTop: 4 }}>
+                Moy. sectorielle : {sectorAvg}
               </p>
+              {/* Dimension analysis */}
+              {dimDetail?.analysis && (
+                <p style={{ fontSize: '0.75rem', lineHeight: 1.5, color: '#7A766D', marginTop: 8 }}>
+                  {dimDetail.analysis}
+                </p>
+              )}
+              {dimDetail?.sectorPosition && (
+                <p style={{ fontSize: '0.7rem', fontWeight: 600, marginTop: 4, color: dimDetail.sectorPositive ? '#1B4332' : '#B87333' }}>
+                  {dimDetail.sectorPositive ? '↑' : '↓'} {dimDetail.sectorPosition}
+                </p>
+              )}
             </div>
           )
         })}
