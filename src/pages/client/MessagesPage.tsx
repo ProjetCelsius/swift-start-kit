@@ -11,17 +11,17 @@ interface Message {
 
 const MOCK_MESSAGES: Message[] = [
   {
-    id: '1', author: 'analyst', authorName: 'Claire Lefèvre',
+    id: '1', author: 'analyst', authorName: 'Guillaume Pakula',
     date: new Date(Date.now() - 5 * 86400_000),
     text: "Bonjour ! J'ai une question sur vos réponses au Bloc 3 : vous mentionnez une pression réglementaire comme moteur principal, mais vous n'avez pas coché la CSRD dans les réglementations qui vous concernent. Pourriez-vous préciser ?",
   },
   {
     id: '2', author: 'client', authorName: 'Vous',
     date: new Date(Date.now() - 4 * 86400_000),
-    text: "Bonjour Claire, merci pour la question. En fait, nous ne sommes pas encore sûrs de notre éligibilité CSRD — nous sommes juste en dessous du seuil de 250 salariés mais notre CA dépasse 50M€. C'est justement un point que j'aimerais clarifier avec vous.",
+    text: "Bonjour Guillaume, merci pour la question. En fait, nous ne sommes pas encore sûrs de notre éligibilité CSRD — nous sommes juste en dessous du seuil de 250 salariés mais notre CA dépasse 50M€. C'est justement un point que j'aimerais clarifier avec vous.",
   },
   {
-    id: '3', author: 'analyst', authorName: 'Claire Lefèvre',
+    id: '3', author: 'analyst', authorName: 'Guillaume Pakula',
     date: new Date(Date.now() - 3 * 86400_000),
     text: "Parfait, c'est noté. Avec un CA supérieur à 50M€, vous serez effectivement concernés par la CSRD dès l'exercice 2025 (publication en 2026). Je prends cela en compte dans l'analyse et nous en reparlerons lors de la restitution. Bonne journée !",
   },
