@@ -57,7 +57,7 @@ export default function DevToolbar() {
           <button
             onClick={() => demo.setEnabled(false)}
             className="w-8 h-4 rounded-full relative transition-colors"
-            style={{ backgroundColor: '#1B5E3B' }}
+            style={{ backgroundColor: '#1B4332' }}
           >
             <div className="absolute right-0.5 top-0.5 w-3 h-3 rounded-full bg-white transition-transform" />
           </button>
@@ -95,7 +95,7 @@ export default function DevToolbar() {
               }}
               className="text-[10px] font-medium px-2 py-0.5 rounded transition-colors"
               style={{
-                backgroundColor: demo.role === r.value ? '#1B5E3B' : 'rgba(255,255,255,0.08)',
+                backgroundColor: demo.role === r.value ? '#1B4332' : 'rgba(255,255,255,0.08)',
                 color: demo.role === r.value ? 'white' : 'rgba(255,255,255,0.5)',
               }}
             >
@@ -186,7 +186,7 @@ export default function DevToolbar() {
                     onClick={() => navigate(n.path)}
                     className="text-[9px] px-1.5 py-0.5 rounded transition-colors"
                     style={{
-                      backgroundColor: location.pathname === n.path ? '#1B5E3B' : 'rgba(255,255,255,0.08)',
+                      backgroundColor: location.pathname === n.path ? '#1B4332' : 'rgba(255,255,255,0.08)',
                       color: location.pathname === n.path ? 'white' : 'rgba(255,255,255,0.4)',
                     }}
                   >
@@ -204,7 +204,7 @@ export default function DevToolbar() {
                     onClick={() => navigate(`/client/diagnostic/${i + 1}`)}
                     className="text-[9px] px-1.5 py-0.5 rounded transition-colors"
                     style={{
-                      backgroundColor: location.pathname === `/client/diagnostic/${i + 1}` ? '#1B5E3B' : 'rgba(255,255,255,0.08)',
+                      backgroundColor: location.pathname === `/client/diagnostic/${i + 1}` ? '#1B4332' : 'rgba(255,255,255,0.08)',
                       color: location.pathname === `/client/diagnostic/${i + 1}` ? 'white' : 'rgba(255,255,255,0.4)',
                     }}
                   >
@@ -226,7 +226,7 @@ export default function DevToolbar() {
                     onClick={() => { demo.setRole('admin'); navigate(n.path) }}
                     className="text-[9px] px-1.5 py-0.5 rounded transition-colors"
                     style={{
-                      backgroundColor: location.pathname === n.path ? '#1B5E3B' : 'rgba(255,255,255,0.08)',
+                      backgroundColor: location.pathname === n.path ? '#1B4332' : 'rgba(255,255,255,0.08)',
                       color: location.pathname === n.path ? 'white' : 'rgba(255,255,255,0.4)',
                     }}
                   >
@@ -248,7 +248,7 @@ export default function DevToolbar() {
                     onClick={() => navigate(n.path)}
                     className="text-[9px] px-1.5 py-0.5 rounded transition-colors"
                     style={{
-                      backgroundColor: location.pathname === n.path ? '#1B5E3B' : 'rgba(255,255,255,0.08)',
+                      backgroundColor: location.pathname === n.path ? '#1B4332' : 'rgba(255,255,255,0.08)',
                       color: location.pathname === n.path ? 'white' : 'rgba(255,255,255,0.4)',
                     }}
                   >
