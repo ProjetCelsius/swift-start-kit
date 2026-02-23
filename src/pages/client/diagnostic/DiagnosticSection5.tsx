@@ -1,8 +1,13 @@
+import { useEffect } from 'react'
 import { User, Users } from 'lucide-react'
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
 import SectionLayout from '@/components/diagnostic/SectionLayout'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 export default function DiagnosticSection5() {
+  const { track } = useAnalytics()
+  useEffect(() => { track('section_view', { section: 5 }) }, [])
+
   const { currentFTE, recommendedFTE, analysisText, recommendations } = mockDiagnostic.section5
 
   return (

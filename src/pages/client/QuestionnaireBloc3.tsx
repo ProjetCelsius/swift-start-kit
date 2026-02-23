@@ -8,6 +8,9 @@ import {
   type RegulatoryAnswer,
 } from '@/data/bloc3Data'
 import { computeFullProfil } from '@/utils/profilClimat'
+import { useQuestionnaire } from '@/hooks/useQuestionnaire'
+import { useAnalytics } from '@/hooks/useAnalytics'
+import { useDemoIfAvailable } from '@/hooks/useDemo'
 
 const STORAGE_KEY = 'boussole_bloc3'
 const MAX_CHARS = 500
@@ -83,6 +86,13 @@ function CountedTextarea({ value, onChange, placeholder }: {
 // ── Main Component ───────────────────────────
 export default function QuestionnaireBloc3() {
   const navigate = useNavigate()
+  const demo = useDemoIfAvailable()
+  const diagnosticId = demo?.diagnostic?.id ?? 'demo'
+  const { setResponse: sbSetResponse } = useQuestionnaire({ diagnosticId, block: 3, localStorageKey: STORAGE_KEY })
+  const { track } = useAnalytics(diagnosticId)
+
+  useEffect(() => { track('block_start', { block: 3 }) }, [])
+
   const [state, setState] = useState<Bloc3State>(loadState)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showOverlay, setShowOverlay] = useState(false)
@@ -90,6 +100,7 @@ export default function QuestionnaireBloc3() {
 
   const update = useCallback(<K extends keyof Bloc3State>(key: K, value: Bloc3State[K]) => {
     setState(prev => ({ ...prev, [key]: value }))
+    sbSetResponse(key, value as any)
   }, [])
 
   useEffect(() => {

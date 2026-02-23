@@ -23,7 +23,7 @@ export function useSurveyTracking(diagnosticId: string, targetCount: number = 20
 
   // Initial fetch
   useEffect(() => {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured()) {
       setLoading(false)
       return
     }
@@ -76,7 +76,7 @@ export function useSurveyTracking(diagnosticId: string, targetCount: number = 20
 
   // Realtime subscription
   useEffect(() => {
-    if (!isSupabaseConfigured) return
+    if (!isSupabaseConfigured()) return
 
     const channel = supabase
       .channel(`survey-${diagnosticId}`)

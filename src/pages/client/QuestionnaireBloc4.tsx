@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, ChevronLeft, Rocket, CheckCircle, Minus, HelpCircle, XCircle, Clock } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
@@ -6,6 +6,9 @@ import {
   PERCEPTION_AFFIRMATIONS,
   POPULATION_PROFILES,
 } from '@/data/bloc4Data'
+import { useQuestionnaire } from '@/hooks/useQuestionnaire'
+import { useAnalytics } from '@/hooks/useAnalytics'
+import { useDemoIfAvailable } from '@/hooks/useDemo'
 
 const STORAGE_KEY = 'boussole_bloc4'
 
@@ -118,6 +121,13 @@ function PopulationDonut({ values }: { values: number[] }) {
 // ── Main Component ───────────────────────────
 export default function QuestionnaireBloc4() {
   const navigate = useNavigate()
+  const demo = useDemoIfAvailable()
+  const diagnosticId = demo?.diagnostic?.id ?? 'demo'
+  const { setResponse: sbSetResponse } = useQuestionnaire({ diagnosticId, block: 4, localStorageKey: STORAGE_KEY })
+  const { track } = useAnalytics(diagnosticId)
+
+  useEffect(() => { track('block_start', { block: 4 }) }, [])
+
   const [state, setState] = useState<Bloc4State>(loadState)
   const [phase, setPhase] = useState<'intro' | 'self' | 'transition' | 'pred' | 'population' | 'done'>('intro')
   const [questionIndex, setQuestionIndex] = useState(0)
@@ -133,6 +143,7 @@ export default function QuestionnaireBloc4() {
     setState(prev => {
       const arr = [...(isSelf ? prev.selfScores : prev.predScores)]
       arr[index] = value
+      sbSetResponse(isSelf ? `self_${index}` : `pred_${index}`, value)
       return { ...prev, [isSelf ? 'selfScores' : 'predScores']: arr }
     })
   }

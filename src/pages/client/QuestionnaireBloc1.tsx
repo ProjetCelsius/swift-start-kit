@@ -4,6 +4,9 @@ import { Check, RefreshCw, X, ChevronRight, ChevronLeft, Clock } from 'lucide-re
 import { ADVANCEMENT_TILES, type TileStatus } from '@/data/bloc1Tiles'
 import AdvancementTileCard from '@/components/questionnaire/AdvancementTileCard'
 import BlocIntroScreen from '@/components/questionnaire/BlocIntroScreen'
+import { useQuestionnaire } from '@/hooks/useQuestionnaire'
+import { useAnalytics } from '@/hooks/useAnalytics'
+import { useDemoIfAvailable } from '@/hooks/useDemo'
 
 // ── Types ────────────────────────────────────
 interface TileState {
@@ -58,6 +61,13 @@ function Stepper({ step }: { step: number }) {
 // ── Main Component ───────────────────────────
 export default function QuestionnaireBloc1() {
   const navigate = useNavigate()
+  const demo = useDemoIfAvailable()
+  const diagnosticId = demo?.diagnostic?.id ?? 'demo'
+  const { setResponse: sbSetResponse } = useQuestionnaire({ diagnosticId, block: 1, localStorageKey: STORAGE_KEY })
+  const { track } = useAnalytics(diagnosticId)
+
+  useEffect(() => { track('block_start', { block: 1 }) }, [])
+
   const saved = loadState()
   const hasStarted = !!saved
 
@@ -85,6 +95,7 @@ export default function QuestionnaireBloc1() {
       const next: TileStatus = current === 'not_started' ? 'done' : current === 'done' ? 'in_progress' : 'not_started'
       if (next !== 'not_started') setExpandedTile(id)
       else setExpandedTile(cur => cur === id ? null : cur)
+      sbSetResponse(id, next)
       return { ...prev, [id]: { ...prev[id], status: next } }
     })
   }

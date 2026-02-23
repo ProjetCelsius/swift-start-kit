@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { AlertTriangle, Quote } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
@@ -6,6 +7,7 @@ import {
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
 import { POPULATION_PROFILES } from '@/data/bloc4Data'
 import SectionLayout from '@/components/diagnostic/SectionLayout'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 const PROFILE_COLORS = POPULATION_PROFILES.map(p => p.color)
 const SENTIMENT_STYLE: Record<string, { border: string }> = {
@@ -15,6 +17,9 @@ const SENTIMENT_STYLE: Record<string, { border: string }> = {
 }
 
 export default function DiagnosticSection4() {
+  const { track } = useAnalytics()
+  useEffect(() => { track('section_view', { section: 4 }) }, [])
+
   const { perceptionData, populationEstimated, populationReal, verbatims } = mockDiagnostic.section4
 
   // Find biggest gap

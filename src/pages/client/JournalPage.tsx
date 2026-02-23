@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { BookOpen, Send } from 'lucide-react'
+import { useJournal } from '@/hooks/useJournal'
+import { useAnalytics } from '@/hooks/useAnalytics'
+import { useDemoIfAvailable } from '@/hooks/useDemo'
+import { isSupabaseConfigured } from '@/lib/supabase'
 
 interface JournalEntry {
   id: string
@@ -55,8 +59,28 @@ function formatDate(date: Date): string {
 
 export default function JournalPage() {
   const [replyStates, setReplyStates] = useState<Record<string, string>>({})
+  const demo = useDemoIfAvailable()
+  const diagnosticId = demo?.diagnostic?.id ?? 'demo'
+  const { entries: sbEntries, addReply } = useJournal(diagnosticId)
+  const { track } = useAnalytics(diagnosticId)
 
-  if (MOCK_ENTRIES.length === 0) {
+  // Use Supabase entries if configured and available, otherwise mock
+  const useSupabase = isSupabaseConfigured() && sbEntries.length > 0
+  const displayEntries = useSupabase ? sbEntries.map(e => ({
+    id: e.id,
+    author: 'analyst' as const,
+    authorName: `${e.author.first_name} ${e.author.last_name}`,
+    initials: `${e.author.first_name[0]}${e.author.last_name[0]}`,
+    date: new Date(e.created_at),
+    text: e.content,
+    badge: e.step_change || undefined,
+    replies: e.replies?.map(r => ({
+      author: 'Vous',
+      text: r.content,
+      date: new Date(r.created_at),
+    })),
+  })) : MOCK_ENTRIES
+  if (displayEntries.length === 0) {
     return (
       <div style={{ maxWidth: 960 }}>
         <h1 className="font-display" style={{ fontSize: '1.75rem', fontWeight: 400, marginBottom: 32 }}>
@@ -79,7 +103,7 @@ export default function JournalPage() {
       </h1>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {MOCK_ENTRIES.map(entry => (
+        {displayEntries.map(entry => (
           <div key={entry.id} style={{
             backgroundColor: '#fff', border: '1px solid #EDEAE3', borderRadius: 14,
             padding: 20, boxShadow: '0 1px 3px rgba(42,42,40,.04)',
@@ -134,7 +158,15 @@ export default function JournalPage() {
                   resize: 'none', outline: 'none',
                 }}
               />
-              <button style={{
+              <button
+                onClick={() => {
+                  const text = replyStates[entry.id]?.trim()
+                  if (!text) return
+                  addReply(entry.id, text)
+                  track('cta_clicked', { action: 'journal_reply', entryId: entry.id })
+                  setReplyStates(prev => ({ ...prev, [entry.id]: '' }))
+                }}
+                style={{
                 padding: '0 14px', borderRadius: 8, backgroundColor: '#1B4332',
                 color: '#fff', border: 'none', cursor: 'pointer', flexShrink: 0,
               }}>

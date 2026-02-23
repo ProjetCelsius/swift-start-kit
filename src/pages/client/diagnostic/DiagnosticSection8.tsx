@@ -1,11 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Check, Clock, AlertTriangle, Flag } from 'lucide-react'
 import { mockDiagnostic, MOCK_TILE_ENRICHMENTS } from '@/data/mockDiagnosticData'
 import SectionLayout from '@/components/diagnostic/SectionLayout'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 type FilterMode = 'all' | 'essential' | 'not_done'
 
 export default function DiagnosticSection8() {
+  const { track } = useAnalytics()
+  useEffect(() => { track('section_view', { section: 8 }) }, [])
+
   const { tiles } = mockDiagnostic.section8
   const [filter, setFilter] = useState<FilterMode>('all')
 

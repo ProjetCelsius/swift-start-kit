@@ -1,9 +1,11 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, CheckCircle, Clock, Lock, Check } from 'lucide-react'
 import { mockDiagnostic } from '@/data/mockDiagnosticData'
 import { useDiagnosticReading, type ReadingState } from '@/hooks/useDiagnosticReading'
 import { useDemoIfAvailable } from '@/hooks/useDemo'
 import type { DemoStatus } from '@/data/demoData'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 
 const d = mockDiagnostic
@@ -149,6 +151,10 @@ export default function DiagnosticSynthesis() {
   const demoStatus = demo?.enabled ? demo.activeDiagnostic.status : 'delivered'
   const org = demo?.enabled ? demo.activeDiagnostic.organization : null
   const pageState = getPageState(demoStatus as DemoStatus)
+  const diagnosticId = demo?.diagnostic?.id ?? 'demo'
+  const { track } = useAnalytics(diagnosticId)
+
+  useEffect(() => { track('page_view') }, [])
 
   if (pageState === 'analysis') return <AnalysisView status={demoStatus as DemoStatus} />
   if (pageState === 'locked') return <LockedView status={demoStatus as DemoStatus} />
