@@ -188,7 +188,7 @@ export default function AdminDashboard() {
                 return (
                   <tr
                     key={d.id}
-                    onClick={() => navigate(`/admin/diagnostics/${d.id}`)}
+                    onClick={() => navigate(`/admin/diagnostic/${d.id}`)}
                     style={{ borderBottom: '1px solid #EDEAE3', cursor: 'pointer', transition: 'background 0.15s' }}
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#F7F5F0')}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}

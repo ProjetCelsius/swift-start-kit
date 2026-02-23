@@ -121,7 +121,7 @@ function AppRoutes() {
           <Route path="/admin/settings" element={<div className="p-8"><h1 className="text-2xl font-bold">Paramètres</h1><p className="text-sm mt-2" style={{ color: 'var(--color-texte-secondary)' }}>À implémenter.</p></div>} />
           {/* Legacy redirects */}
           <Route path="/admin/new" element={<Navigate to="/admin/nouveau" replace />} />
-          <Route path="/admin/diagnostics/:id" element={<Navigate to="/admin/diagnostic/:id" replace />} />
+          {/* Legacy redirect handled by catch-all or direct navigation */}
         </Route>
 
         {/* Fallback */}
