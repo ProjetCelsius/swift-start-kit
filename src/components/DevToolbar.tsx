@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { ChevronUp, ChevronDown, Unlock, RotateCcw, Play, RotateCw } from 'lucide-react'
 import { useDiagnosticReading } from '@/hooks/useDiagnosticReading'
 import { STEP_LABELS, type DemoRole } from '@/data/demoData'
+import { useGuidedTour } from '@/hooks/useGuidedTour'
 
 const ROLE_OPTIONS: { value: DemoRole; label: string }[] = [
   { value: 'client', label: 'Client' },
@@ -13,10 +14,14 @@ const ROLE_OPTIONS: { value: DemoRole; label: string }[] = [
 
 export default function DevToolbar() {
   const demo = useDemo()
+  const { active: tourActive } = useGuidedTour()
   const navigate = useNavigate()
   const location = useLocation()
   const [expanded, setExpanded] = useState(false)
   const { unlockAll, resetProgress } = useDiagnosticReading()
+
+  // Hide completely when guided tour is active
+  if (tourActive) return null
 
   if (!demo.enabled) {
     return (

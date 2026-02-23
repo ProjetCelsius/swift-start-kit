@@ -2,7 +2,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ScrollToTop from './components/ScrollToTop'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import { DemoProvider, useDemoIfAvailable } from './hooks/useDemo'
+import { GuidedTourProvider, useGuidedTour } from './hooks/useGuidedTour'
 import DevToolbar from './components/DevToolbar'
+import GuidedTourButton from './components/GuidedTourButton'
+import GuidedTourBar from './components/GuidedTourBar'
+import GuidedTourTooltip from './components/GuidedTourTooltip'
 import ClientLayout from './components/layout/ClientLayout'
 import Login from './pages/Login'
 import ClientHomeDashboard from './pages/client/ClientHomeDashboard'
@@ -21,7 +25,6 @@ import AnalystProfilePage from './pages/client/AnalystProfilePage'
 import AttentePage from './pages/client/AttentePage'
 import AppelLancementPage from './pages/client/AppelLancementPage'
 import DiagnosticSynthesis from './pages/client/DiagnosticSynthesis'
-// OnboardingSetupPage removed — replaced by /setup/:diagnosticId
 import EntretiensPage from './pages/client/EntretiensPage'
 import QuestionnaireRsePage from './pages/client/QuestionnaireRsePage'
 import AdminLayout from './components/layout/AdminLayout'
@@ -38,8 +41,8 @@ import {
 
 function AppRoutes() {
   const { user, loading } = useAuth()
+  const { active: tourActive } = useGuidedTour()
   const demo = useDemoIfAvailable()
-  // Force re-render when active diagnostic changes
   const demoKey = demo?.enabled ? demo.activeDiagnosticId : 'none'
   const isDemo = demo?.enabled ?? false
   const isAuthenticated = isDemo || !!user
@@ -61,7 +64,7 @@ function AppRoutes() {
   return (
     <>
       <Routes>
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/client/dashboard" /> : <Login />} />
+        <Route path="/login" element={isAuthenticated && !tourActive ? <Navigate to="/client/dashboard" /> : <Login />} />
         
         {/* Espace Client */}
         <Route element={isAuthenticated ? <ClientLayout key={demoKey} /> : <Navigate to="/login" />}>
@@ -125,6 +128,9 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
 
+      <GuidedTourTooltip />
+      <GuidedTourButton />
+      <GuidedTourBar />
       <DevToolbar />
     </>
   )
@@ -136,7 +142,9 @@ export default function App() {
       <ScrollToTop />
       <DemoProvider>
         <AuthProvider>
-          <AppRoutes />
+          <GuidedTourProvider>
+            <AppRoutes />
+          </GuidedTourProvider>
         </AuthProvider>
       </DemoProvider>
     </BrowserRouter>
