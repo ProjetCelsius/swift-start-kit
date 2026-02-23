@@ -1,18 +1,9 @@
 import { useState } from 'react'
 import { useDemo } from '@/hooks/useDemo'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ChevronUp, ChevronDown, Unlock, RotateCcw } from 'lucide-react'
+import { ChevronUp, ChevronDown, Unlock, RotateCcw, Play, RotateCw } from 'lucide-react'
 import { useDiagnosticReading } from '@/hooks/useDiagnosticReading'
-import type { DemoStatus, DemoRole } from '@/data/demoData'
-
-const STATUS_OPTIONS: { value: DemoStatus; label: string }[] = [
-  { value: 'onboarding', label: 'Onboarding' },
-  { value: 'questionnaire', label: 'Questionnaire' },
-  { value: 'survey_pending', label: 'Sondage en cours' },
-  { value: 'analysis', label: 'Analyse' },
-  { value: 'ready_for_restitution', label: 'Prêt restitution' },
-  { value: 'delivered', label: 'Livré' },
-]
+import { STEP_LABELS, type DemoRole } from '@/data/demoData'
 
 const ROLE_OPTIONS: { value: DemoRole; label: string }[] = [
   { value: 'client', label: 'Client' },
@@ -45,6 +36,8 @@ export default function DevToolbar() {
     )
   }
 
+  const isLastStep = demo.currentStep === 6
+
   return (
     <div
       className="fixed bottom-0 left-0 right-0 z-[9999] transition-all"
@@ -66,22 +59,41 @@ export default function DevToolbar() {
 
         <div className="w-px h-5" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }} />
 
-        {/* Diagnostic selector */}
-        <select
-          value={demo.activeDiagnosticId}
-          onChange={e => {
-            demo.setActiveDiagnosticId(e.target.value)
-            navigate('/client/dashboard')
+        {/* Company name */}
+        <span className="text-[10px] font-bold tracking-wider" style={{ color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' as const }}>
+          MAISON DUVAL
+        </span>
+
+        <div className="w-px h-5" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }} />
+
+        {/* Step indicator */}
+        <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          Étape {demo.currentStep}/6 : <span style={{ color: 'white', fontWeight: 500 }}>{STEP_LABELS[demo.currentStep]}</span>
+        </span>
+
+        {/* Advance / Reset button */}
+        <button
+          onClick={() => {
+            if (isLastStep) {
+              demo.resetDemo()
+            } else {
+              demo.advanceStep()
+            }
           }}
-          className="text-[10px] px-2 py-1 rounded border-none focus:outline-none"
-          style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', maxWidth: 140 }}
+          className="text-[10px] font-bold px-3 py-1 rounded-md transition-colors flex items-center gap-1.5"
+          style={{
+            backgroundColor: isLastStep ? 'rgba(255,255,255,0.1)' : '#1B4332',
+            color: 'white',
+          }}
         >
-          {demo.diagnostics.map(d => (
-            <option key={d.id} value={d.id} style={{ backgroundColor: '#1A1A1A' }}>
-              {d.organization.name}
-            </option>
-          ))}
-        </select>
+          {isLastStep ? (
+            <><RotateCw size={11} /> Recommencer</>
+          ) : (
+            <><Play size={10} fill="white" /> Étape suivante</>
+          )}
+        </button>
+
+        <div className="w-px h-5" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }} />
 
         {/* Role */}
         <div className="flex gap-0.5">
@@ -106,26 +118,6 @@ export default function DevToolbar() {
 
         <div className="w-px h-5" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }} />
 
-        {/* Status */}
-        <select
-          value={demo.activeDiagnostic.status}
-          onChange={e => {
-            const newStatus = e.target.value as DemoStatus
-            demo.setDiagnosticStatus(newStatus)
-            if (newStatus === 'onboarding') {
-              navigate(`/setup/${demo.activeDiagnosticId}`)
-            }
-          }}
-          className="text-[10px] px-2 py-1 rounded border-none focus:outline-none"
-          style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white' }}
-        >
-          {STATUS_OPTIONS.map(s => (
-            <option key={s.value} value={s.value} style={{ backgroundColor: '#1A1A1A' }}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-
         {/* Unlock all sections button */}
         <button
           onClick={unlockAll}
@@ -133,7 +125,7 @@ export default function DevToolbar() {
           style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
           title="Débloquer toutes les sections du diagnostic"
         >
-          <Unlock size={10} /> Débloquer sections
+          <Unlock size={10} /> Débloquer
         </button>
 
         {/* Reset reading progress */}
@@ -143,15 +135,10 @@ export default function DevToolbar() {
           style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
           title="Remettre la lecture à l'état initial"
         >
-          <RotateCcw size={10} /> Reset lecture
+          <RotateCcw size={10} /> Reset
         </button>
 
-        {/* Current info */}
-        <div className="flex-1 text-right">
-          <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            {demo.activeDiagnostic.organization.name} · {STATUS_OPTIONS.find(s => s.value === demo.activeDiagnostic.status)?.label}
-          </span>
-        </div>
+        <div className="flex-1" />
 
         <button
           onClick={() => setExpanded(!expanded)}
@@ -241,7 +228,7 @@ export default function DevToolbar() {
                 {[
                   { label: 'Sondage', path: '/sondage/demo' },
                   { label: 'DG', path: '/dg/demo' },
-                  { label: 'Setup', path: `/setup/${demo.activeDiagnosticId}` },
+                  { label: 'Setup', path: `/setup/${demo.diagnostic.id}` },
                 ].map(n => (
                   <button
                     key={n.path}
