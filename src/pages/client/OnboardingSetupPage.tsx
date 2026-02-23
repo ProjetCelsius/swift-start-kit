@@ -25,7 +25,7 @@ export default function OnboardingSetupPage() {
     // Move demo to questionnaire stage
     setTimeout(() => {
       if (demo?.enabled) {
-        demo.setDiagnosticStatus('questionnaire')
+        demo.setStep(2 as any) // advance to questionnaire completed
       }
       navigate('/client/dashboard')
     }, 800)

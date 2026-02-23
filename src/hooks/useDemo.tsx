@@ -1,16 +1,20 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
-import { DEMO_DIAGNOSTICS, type DemoDiagnostic, type DemoStatus, type DemoRole } from '@/data/demoData'
+import { MAISON_DUVAL_FULL, buildDiagnosticAtStep, type DemoDiagnostic, type DemoStep, type DemoRole } from '@/data/demoData'
 
 interface DemoState {
   enabled: boolean
   role: DemoRole
-  activeDiagnosticId: string
-  activeDiagnostic: DemoDiagnostic
-  diagnostics: DemoDiagnostic[]
+  currentStep: DemoStep
+  diagnostic: DemoDiagnostic
   setEnabled: (v: boolean) => void
   setRole: (r: DemoRole) => void
-  setActiveDiagnosticId: (id: string) => void
-  setDiagnosticStatus: (status: DemoStatus) => void
+  advanceStep: () => void
+  resetDemo: () => void
+  setStep: (step: DemoStep) => void
+  // Backward compat aliases
+  activeDiagnostic: DemoDiagnostic
+  activeDiagnosticId: string
+  diagnostics: DemoDiagnostic[]
 }
 
 const DemoContext = createContext<DemoState | undefined>(undefined)
@@ -30,15 +34,14 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
   const [enabled, setEnabled] = useState(initial?.enabled ?? urlDemo ?? false)
   const [role, setRole] = useState<DemoRole>(initial?.role ?? 'client')
-  const [activeDiagnosticId, setActiveDiagnosticId] = useState<string>(initial?.activeDiagnosticId ?? DEMO_DIAGNOSTICS[0].id)
-  const [diagnostics, setDiagnostics] = useState<DemoDiagnostic[]>(DEMO_DIAGNOSTICS)
+  const [currentStep, setCurrentStep] = useState<DemoStep>((initial?.currentStep as DemoStep) ?? 6)
 
-  const activeDiagnostic = diagnostics.find(d => d.id === activeDiagnosticId) ?? diagnostics[0]
+  const diagnostic = buildDiagnosticAtStep(MAISON_DUVAL_FULL, currentStep)
 
   // Persist state
   useEffect(() => {
-    localStorage.setItem('demo-state', JSON.stringify({ enabled, role, activeDiagnosticId }))
-  }, [enabled, role, activeDiagnosticId])
+    localStorage.setItem('demo-state', JSON.stringify({ enabled, role, currentStep }))
+  }, [enabled, role, currentStep])
 
   // Keyboard shortcut: Ctrl+Shift+D
   useEffect(() => {
@@ -52,32 +55,33 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  const setDiagnosticStatus = useCallback((status: DemoStatus) => {
-    setDiagnostics(prev => prev.map(d => {
-      if (d.id !== activeDiagnosticId) return d
-      // Map status to appropriate state
-      const unlocked = status === 'delivered'
-      const sectionStatus = status === 'delivered' ? 'validated' : 'empty'
-      return {
-        ...d,
-        status,
-        diagnosticUnlocked: unlocked,
-        diagnosticSections: Array(9).fill({ status: sectionStatus }),
-      }
-    }))
-  }, [activeDiagnosticId])
+  const advanceStep = useCallback(() => {
+    setCurrentStep(s => Math.min(s + 1, 6) as DemoStep)
+  }, [])
+
+  const resetDemo = useCallback(() => {
+    setCurrentStep(1)
+  }, [])
+
+  const setStep = useCallback((step: DemoStep) => {
+    setCurrentStep(step)
+  }, [])
 
   return (
     <DemoContext.Provider value={{
       enabled,
       role,
-      activeDiagnosticId,
-      activeDiagnostic,
-      diagnostics,
+      currentStep,
+      diagnostic,
       setEnabled,
       setRole,
-      setActiveDiagnosticId,
-      setDiagnosticStatus,
+      advanceStep,
+      resetDemo,
+      setStep,
+      // Backward compat
+      activeDiagnostic: diagnostic,
+      activeDiagnosticId: diagnostic.id,
+      diagnostics: [diagnostic],
     }}>
       {children}
     </DemoContext.Provider>
