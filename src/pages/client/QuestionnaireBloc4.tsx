@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, ChevronLeft, Rocket, CheckCircle, Minus, HelpCircle, XCircle, Clock } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
@@ -12,7 +12,7 @@ import { useDemoIfAvailable } from '@/hooks/useDemo'
 
 const STORAGE_KEY = 'boussole_bloc4'
 
-const PROFILE_ICONS: Record<string, React.ReactNode> = {
+const PROFILE_ICONS: Record<string, ReactNode> = {
   Rocket: <Rocket size={20} />,
   CheckCircle: <CheckCircle size={20} />,
   Minus: <Minus size={20} />,

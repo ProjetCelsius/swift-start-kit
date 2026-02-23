@@ -35,8 +35,8 @@ export function useQuestionnaire({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const pendingRef = useRef<Map<string, any>>(new Map())
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const pendingRef = useRef(new Map<string, any>())
 
   // ─── Load initial data ────────────────────────
   useEffect(() => {
