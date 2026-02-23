@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import ScrollToTop from './components/ScrollToTop'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import { DemoProvider, useDemoIfAvailable } from './hooks/useDemo'
 import DevToolbar from './components/DevToolbar'
@@ -86,7 +87,7 @@ function AppRoutes() {
           <Route path="/client/perception" element={<QuestionnaireBloc4 />} />
           <Route path="/client/documents" element={<DocumentsPage />} />
           <Route path="/client/synthesis" element={<DiagnosticSynthesis />} />
-          <Route path="/client/diagnostic" element={<DiagnosticSynthesis />} />
+          <Route path="/client/diagnostic" element={<Navigate to="/client/synthesis" replace />} />
           <Route path="/client/diagnostic/:sectionId" element={<DiagnosticSectionPage />} />
           <Route path="/client/journal" element={<JournalPage />} />
           <Route path="/client/messages" element={<MessagesPage />} />
@@ -132,6 +133,7 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <DemoProvider>
         <AuthProvider>
           <AppRoutes />

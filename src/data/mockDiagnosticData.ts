@@ -51,7 +51,8 @@ export const mockDiagnostic = {
       'Mesure et données': 58,
       'Stratégie et trajectoire': 50,
       'Culture et engagement': 55,
-    }
+    },
+    profileSummary: "Vous êtes en phase de structuration. Les fondations sont posées — gouvernance identifiée, données collectées — mais la démarche n'a pas encore infusé dans la culture de l'organisation. Le passage de « conformité » à « conviction » est votre prochain palier."
   },
 
   section4: {

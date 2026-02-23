@@ -49,24 +49,32 @@ function getUrgencyBadge(dateStr: string, status: string): { label: string; bg: 
 export default function DiagnosticSection7() {
   const { deadlines } = mockDiagnostic.section7
 
-  // Count deadlines < 12 months not started
-  const urgentNotStarted = deadlines.filter(d => {
+  // Deadlines < 12 months not started
+  const urgentDeadlines = deadlines.filter(d => {
     const m = getMonthsUntil(d.date)
     return m !== null && m < 12 && d.status === 'Pas commence'
-  }).length
+  })
+  const urgentNotStarted = urgentDeadlines.length
 
   return (
     <SectionLayout sectionNumber={7}>
       {/* Alert block for urgent not-started deadlines */}
       {urgentNotStarted > 0 && (
         <div
-          className="rounded-xl mb-6 flex items-center gap-3"
+          className="rounded-xl mb-6"
           style={{ backgroundColor: '#FEE2E2', borderRadius: 12, padding: '16px 20px' }}
         >
-          <AlertTriangle size={20} color="#DC4A4A" className="shrink-0" />
-          <p className="text-sm" style={{ color: '#2A2A28' }}>
-            <strong style={{ color: '#DC4A4A' }}>{urgentNotStarted} échéance{urgentNotStarted > 1 ? 's' : ''} dans les 12 prochains mois</strong> {urgentNotStarted > 1 ? "n'ont" : "n'a"} pas été commencé{urgentNotStarted > 1 ? 'es' : 'e'}
-          </p>
+          <div className="flex items-center gap-3">
+            <AlertTriangle size={20} color="#DC4A4A" className="shrink-0" />
+            <p className="text-sm" style={{ color: '#2A2A28' }}>
+              <strong style={{ color: '#DC4A4A' }}>{urgentNotStarted} échéance{urgentNotStarted > 1 ? 's' : ''} dans les 12 prochains mois</strong> {urgentNotStarted > 1 ? "n'ont" : "n'a"} pas été commencé{urgentNotStarted > 1 ? 'es' : 'e'}
+            </p>
+          </div>
+          <ul className="mt-2 ml-8 space-y-1">
+            {urgentDeadlines.map((d, i) => (
+              <li key={i} style={{ fontSize: '0.78rem', color: '#2A2A28' }}>• {d.obligation} ({d.date})</li>
+            ))}
+          </ul>
         </div>
       )}
 

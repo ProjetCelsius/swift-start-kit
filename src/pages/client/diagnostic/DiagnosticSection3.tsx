@@ -15,7 +15,7 @@ const GRADE_SCALE = [
 ]
 
 export default function DiagnosticSection3() {
-  const { globalScore, globalGrade, dimensions, sectorAverages } = mockDiagnostic.section3
+  const { globalScore, globalGrade, dimensions, sectorAverages, profileSummary } = mockDiagnostic.section3
   const globalColor = GRADE_COLORS[globalGrade]
   const sectorGlobal = MOCK_MATURITY.sectorAverages?.global ?? 59
   const aboveSector = globalScore > sectorGlobal
@@ -76,7 +76,7 @@ export default function DiagnosticSection3() {
       </div>
 
       {/* Profile summary */}
-      {MOCK_MATURITY.profileSummary && (
+      {profileSummary && (
         <div
           className="rounded-xl mb-6"
           style={{ backgroundColor: 'var(--color-fond)', padding: '20px 24px', borderRadius: 12 }}
@@ -85,7 +85,7 @@ export default function DiagnosticSection3() {
             Votre profil en un mot
           </h3>
           <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.88rem', lineHeight: 1.7, color: '#2A2A28' }}>
-            {MOCK_MATURITY.profileSummary}
+            {profileSummary}
           </p>
         </div>
       )}
